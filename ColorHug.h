@@ -37,10 +37,10 @@
 #define	CH_CMD_TAKE_READING			0x0e
 #define	CH_CMD_TAKE_READING_XYZ			0x0f
 
-/* secret code */	
+/* secret code */
 #define	CH_WRITE_PROTECT_MAGIC			"Un1c0rn2"
 
-/* EEPROM addresses */	
+/* EEPROM addresses */
 #define	CH_EEPROM_ADDR_SERIAL			0x00 /* 10 bytes */
 #define	CH_EEPROM_ADDR_FIRMWARE_MAJOR		0x0a /* 2 bytes */
 #define	CH_EEPROM_ADDR_FIRMWARE_MINOR		0x0c /* 2 bytes */
