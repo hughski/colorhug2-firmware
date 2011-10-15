@@ -19,18 +19,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/**
- * Code for TDSDB14550 or TDSDB146J50 using C18
- * This program demonstrates how to compile code for either the bootloader or using a PICKIT2/3 or similar programmer.
- **/
-
 #include <p18cxxx.h>
 #include <delays.h>
+
+#include "ColorHug.h"
 
 /* turn off extended mode */
 #pragma config XINST = OFF
 
 #pragma code
+
+/* suitable for TDSDB146J50 or TDSDB14550 demo board */
+#define BUTTON2			LATBbits.LATB2
+#define BUTTON3			LATBbits.LATB3
+#define LED0			LATEbits.LATE0
+#define LED1			LATEbits.LATE1
+
+/**
+ * set_color_select:
+ **/
+void
+set_color_select (ChColorSelect color_select)
+{
+	LATAbits.LATA0 = color_select & 0x01;
+	LATAbits.LATA1 = color_select & 0x02;
+}
+
+/**
+ * set_multiplier:
+ **/
+void
+set_multiplier (ChFreqScale multiplier)
+{
+	LATAbits.LATA2 = multiplier & 0x01;
+	LATAbits.LATA3 = multiplier & 0x02;
+}
 
 /**
  * main:
@@ -46,30 +69,42 @@ main (void)
 		unsigned int pll_startup_counter = 600;
 		OSCTUNEbits.PLLEN = 1;
 		while (pll_startup_counter--);
-			ANCON0 = 0xFF;		/* Default all pins to digital */
-		ANCON1 = 0xFF;			/* Default all pins to digital */
+			ANCON0 = 0xFF;
+		/* default all pins to digital */
+		ANCON1 = 0xFF;
 	}
 #elif defined(__18F4550)
-	ADCON1 = 0x0F;				/* Default all pins to digital */
+	/* default all pins to digital */
+	ADCON1 = 0x0F;
 #endif
 
-	TRISA = 0xc0;		/* Set RA0 to RA5 to output */
-	TRISB = 0x00;		/* Set RB0 to RB7 to output */
-	TRISC = 0xF8;		/* Set RC0 to RC2 to output */
-	TRISD = 0x00;		/* Set RD0 to RD7 to output */
-	TRISE = 0xF8;		/* Set RE0 TO RE2 to output */
+	/* set RA0, RA1 to output (freq scaling),
+	 * set RA2, RA3 to output (color select),
+	 * set RA4 to input (frequency counter),
+	 * set RA5 to input (unused) */
+	TRISA = 0xf0;
+
+	/* set RB2, RB3 to input (switches) others input (unused) */
+	TRISB = 0xff;
+
+	/* set RC0 to RC2 to input (unused) */
+	TRISC = 0xff;
+
+	/* set RD0 to RD7 to output (freq test) */
+	TRISD = 0x00;
+
+	/* set RE0, RE1 output (LEDs) others input (unused) */
+	TRISE = 0x3c;
+
+	/* set some defaults to power down the sensor */
+	set_color_select (CH_COLOR_SELECT_WHITE);
+	set_multiplier (CH_FREQ_SCALE_0);
 
 	while(1) {
-#if defined(__18F46J50)
-		/* on the 46j50 as RA4 and LAT4 do not exist LATA++ would never
-		 * toggle RA5 as RA4=0 always */
-		LATA+= 0x21;
-#elif defined(__18F4550)
-		LATA++;
-#endif
-		LATB++;
-		LATC++;
+		if (BUTTON2)
+			LED0 = 1;
+		else
+			LED0 = 0;
 		LATD++;
-		LATE++;
 	}
 }
