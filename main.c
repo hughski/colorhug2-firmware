@@ -24,8 +24,14 @@
 
 #include "ColorHug.h"
 
-/* turn off extended mode */
-#pragma config XINST = OFF
+#pragma config XINST	= OFF		/* turn off extended instruction set */
+#pragma config STVREN	= ON		/* Stack overflow reset */
+#pragma config PLLDIV	= 3		/* (12 MHz crystal used on this board) */
+#pragma config WDTEN	= OFF		/* Watch Dog Timer (WDT) */
+#pragma config CP0	= OFF		/* Code protect */
+#pragma config CPUDIV	= OSC1		/* OSC1 = divide by 1 mode */
+#pragma config IESO	= OFF		/* Internal External (clock) Switchover */
+#pragma config FCMEN	= OFF		/* Fail Safe Clock Monitor */
 
 #pragma code
 
