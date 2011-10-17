@@ -36,30 +36,78 @@
 #define LED1			LATEbits.LATE1
 
 /**
- * set_color_select:
+ * CHugSetColorSelect:
  **/
 void
-set_color_select (ChColorSelect color_select)
+CHugSetColorSelect(ChColorSelect color_select)
 {
 	LATAbits.LATA0 = color_select & 0x01;
 	LATAbits.LATA1 = color_select & 0x02;
 }
 
 /**
- * set_multiplier:
+ * CHugSetMultiplier:
  **/
 void
-set_multiplier (ChFreqScale multiplier)
+CHugSetMultiplier(ChFreqScale multiplier)
 {
 	LATAbits.LATA2 = multiplier & 0x01;
 	LATAbits.LATA3 = multiplier & 0x02;
 }
 
 /**
- * main:
+ * CHugSetMultiplier:
+ **/
+static void
+CHugFatalError (ChFatalError fatal_error)
+{
+	char i;
+	while (1) {
+		for (i = 0; i < fatal_error + 2; i++) {
+			LED0 = 1;
+			Delay10KTCYx(1);
+			LED0 = 0;
+			Delay10KTCYx(1);
+		}
+		Delay10KTCYx(10);
+	}
+}
+
+/**
+ * ProcessIO:
  **/
 void
-main (void)
+ProcessIO(void)
+{
+	if (BUTTON2)
+		LED0 = 1;
+	else
+		LED0 = 0;
+	if (BUTTON3)
+		CHugFatalError(CH_FATAL_ERROR_UNKNOWN_CMD);
+	LATD++;
+}
+
+/**
+ * UserInit:
+ **/
+void
+UserInit(void)
+{
+	/* turn off LEDs */
+	LED0 = 0;
+	LED1 = 0;
+
+	/* set some defaults to power down the sensor */
+	CHugSetColorSelect(CH_COLOR_SELECT_WHITE);
+	CHugSetMultiplier(CH_FREQ_SCALE_0);
+}
+
+/**
+ * InitializeSystem:
+ **/
+void
+InitializeSystem(void)
 {
 // processor specific startup code
 #if defined(__18F46J50)
@@ -69,8 +117,9 @@ main (void)
 		unsigned int pll_startup_counter = 600;
 		OSCTUNEbits.PLLEN = 1;
 		while (pll_startup_counter--);
-			ANCON0 = 0xFF;
+
 		/* default all pins to digital */
+		ANCON0 = 0xFF;
 		ANCON1 = 0xFF;
 	}
 #elif defined(__18F4550)
@@ -96,15 +145,19 @@ main (void)
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
 
-	/* set some defaults to power down the sensor */
-	set_color_select (CH_COLOR_SELECT_WHITE);
-	set_multiplier (CH_FREQ_SCALE_0);
+	/* do all user init code */
+	UserInit();
+}
+
+/**
+ * main:
+ **/
+void
+main(void)
+{
+	InitializeSystem();
 
 	while(1) {
-		if (BUTTON2)
-			LED0 = 1;
-		else
-			LED0 = 0;
-		LATD++;
+		ProcessIO();
 	}
 }
