@@ -21,6 +21,8 @@
 
 #include <p18cxxx.h>
 #include <delays.h>
+#include <flash.h>
+#include <GenericTypeDefs.h>
 
 #include "ColorHug.h"
 
@@ -32,6 +34,21 @@
 #pragma config CPUDIV	= OSC1		/* OSC1 = divide by 1 mode */
 #pragma config IESO	= OFF		/* Internal External (clock) Switchover */
 #pragma config FCMEN	= OFF		/* Fail Safe Clock Monitor */
+
+#pragma rom
+
+/* The 18F46J50 does not have real EEPROM, so we fake some by using the
+ * program flash. This is rated at 10,000 erase cycles which will be
+ * fine, considering a device will be calibrated usually only once */
+#define	EEPROM_ADDR		0xfbf8
+
+#pragma udata
+
+static DWORD SensorSerial = 0;
+static WORD SensorVersion[3] = { 0, 0, 0 };
+static float SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
+				       0.0f, 1.0f, 0.0f,
+				       0.0f, 0.0f, 1.0f };
 
 #pragma code
 
@@ -80,6 +97,47 @@ CHugFatalError (ChFatalError fatal_error)
 }
 
 /**
+ * CHugReadEEprom:
+ **/
+void
+CHugReadEEprom(void)
+{
+	/* read this into RAM so it can be changed */
+	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_SERIAL,
+		  4, (unsigned char *) &SensorSerial);
+	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MAJOR,
+		  2, (unsigned char *) &SensorVersion[0]);
+	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MINOR,
+		  4, (unsigned char *) &SensorVersion[1]);
+	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MICRO,
+		  4, (unsigned char *) &SensorVersion[2]);
+	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
+		  9 * 4, (unsigned char *) SensorCalibration);
+}
+
+/**
+ * CHugWriteEEprom:
+ **/
+void
+CHugWriteEEprom(void)
+{
+	/* we can't call this more than 10,000 times otherwise we'll
+	 * burn out the device */
+	EraseFlash(EEPROM_ADDR,
+		   EEPROM_ADDR + 0x400);
+	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_SERIAL,
+			4, (unsigned char *) &SensorSerial);
+	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MAJOR,
+			2, (unsigned char *) &SensorVersion[0]);
+	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MINOR,
+			2, (unsigned char *) &SensorVersion[1]);
+	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MICRO,
+			2, (unsigned char *) &SensorVersion[2]);
+	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
+			9 * sizeof(float), (unsigned char *) SensorCalibration);
+}
+
+/**
  * ProcessIO:
  **/
 void
@@ -89,8 +147,10 @@ ProcessIO(void)
 		LED0 = 1;
 	else
 		LED0 = 0;
-	if (BUTTON3)
+	if (BUTTON3) {
 		CHugFatalError(CH_FATAL_ERROR_UNKNOWN_CMD);
+		CHugWriteEEprom();
+	}
 	LATD++;
 }
 
@@ -107,6 +167,9 @@ UserInit(void)
 	/* set some defaults to power down the sensor */
 	CHugSetColorSelect(CH_COLOR_SELECT_WHITE);
 	CHugSetMultiplier(CH_FREQ_SCALE_0);
+
+	/* read out the sensor data from EEPROM */
+	CHugReadEEprom();
 }
 
 /**
