@@ -44,11 +44,12 @@
 
 #pragma udata
 
-static DWORD SensorSerial = 0;
-static WORD SensorVersion[3] = { 0, 0, 0 };
-static float SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
-				       0.0f, 1.0f, 0.0f,
-				       0.0f, 0.0f, 1.0f };
+static DWORD	SensorSerial = 0;
+static WORD	SensorVersion[3] = { 0, 0, 0 };
+static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
+					  0.0f, 1.0f, 0.0f,
+					  0.0f, 0.0f, 1.0f };
+static WORD	SensorIntegralTime = 0;
 
 #pragma code
 
@@ -59,6 +60,15 @@ static float SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
 #define LED1			LATEbits.LATE1
 
 /**
+ * CHugGetColorSelect:
+ **/
+ChColorSelect
+CHugGetColorSelect(void)
+{
+	return LATAbits.LATA1 * 2 + LATAbits.LATA0;
+}
+
+/**
  * CHugSetColorSelect:
  **/
 void
@@ -66,6 +76,15 @@ CHugSetColorSelect(ChColorSelect color_select)
 {
 	LATAbits.LATA0 = color_select & 0x01;
 	LATAbits.LATA1 = color_select & 0x02;
+}
+
+/**
+ * CHugGetMultiplier:
+ **/
+ChFreqScale
+CHugGetMultiplier(void)
+{
+	return LATAbits.LATA3 * 2 + LATAbits.LATA2;
 }
 
 /**
