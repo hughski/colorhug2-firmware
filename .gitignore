@@ -1,4 +1,5 @@
 *.cof
 *.hex
 *.map
+*.mcs
 *.o
