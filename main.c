@@ -36,6 +36,9 @@
 #pragma config IESO	= OFF		/* Internal External (clock) Switchover */
 #pragma config FCMEN	= OFF		/* Fail Safe Clock Monitor */
 
+#pragma interrupt	CHugHighPriorityISRCode
+#pragma interruptlow	CHugLowPriorityISRCode
+
 #pragma rom
 
 /* The 18F46J50 does not have real EEPROM, so we fake some by using the
@@ -55,6 +58,10 @@ static WORD	SensorIntegralTime = 0;
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
 
+/* need to save this so we can power down in USB suspend and then power
+ * back up in the same mode */
+static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
+
 #pragma code
 
 /* suitable for TDSDB146J50 or TDSDB14550 demo board */
@@ -62,6 +69,28 @@ USB_HANDLE	USBInHandle = 0;
 #define BUTTON3			LATBbits.LATB3
 #define LED0			LATEbits.LATE0
 #define LED1			LATEbits.LATE1
+
+/**
+ * CHugHighPriorityISRCode:
+ *
+ * Returns with "retfie fast" as interrupt
+ **/
+void
+CHugHighPriorityISRCode()
+{
+	/* nothing to do */
+}
+
+/**
+ * CHugLowPriorityISRCode:
+ *
+ * Returns with "retfie" as interruptlow
+ **/
+void
+CHugLowPriorityISRCode()
+{
+	/* nothing to do */
+}
 
 /**
  * CHugGetColorSelect:

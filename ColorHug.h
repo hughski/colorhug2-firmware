@@ -27,6 +27,7 @@
 #define	CH_USB_HID_EP				0x0001
 #define	CH_USB_HID_EP_IN			(0x0001 & 0x80)
 #define	CH_USB_HID_EP_OUT			(0x0001 & 0x00)
+#define	CD_USB_HID_EP_SIZE			64
 
 /* device commands */
 #define	CH_CMD_GET_COLOR_SELECT			0x01
