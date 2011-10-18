@@ -23,6 +23,7 @@
 #include <delays.h>
 #include <flash.h>
 #include <GenericTypeDefs.h>
+#include <USB/usb.h>
 
 #include "ColorHug.h"
 
@@ -50,6 +51,9 @@ static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
 					  0.0f, 1.0f, 0.0f,
 					  0.0f, 0.0f, 1.0f };
 static WORD	SensorIntegralTime = 0;
+
+USB_HANDLE	USBOutHandle = 0;
+USB_HANDLE	USBInHandle = 0;
 
 #pragma code
 

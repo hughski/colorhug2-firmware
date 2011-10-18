@@ -8,7 +8,7 @@ dir_src=
 dir_bin=
 dir_tmp=
 dir_sin=
-dir_inc=
+dir_inc=C:\Microchip Solutions v2011-07-14\Microchip\Include
 dir_lib=C:\Program Files\Microchip\mplabc18\v3.40\lib
 dir_lkr=
 [CAT_FILTERS]
