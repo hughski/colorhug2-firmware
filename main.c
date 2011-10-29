@@ -65,10 +65,10 @@ static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 #pragma code
 
 /* suitable for TDSDB146J50 or TDSDB14550 demo board */
-#define BUTTON2			LATBbits.LATB2
-#define BUTTON3			LATBbits.LATB3
-#define LED0			LATEbits.LATE0
-#define LED1			LATEbits.LATE1
+#define BUTTON2			(PORTBbits.RB2 == 0)
+#define BUTTON3			(PORTBbits.RB3 == 0)
+#define LED0			PORTEbits.RE0
+#define LED1			PORTEbits.RE1
 
 /**
  * CHugHighPriorityISRCode:
