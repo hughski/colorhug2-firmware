@@ -34,7 +34,7 @@
 #pragma config CP0	= OFF		/* Code protect */
 #pragma config CPUDIV	= OSC1		/* OSC1 = divide by 1 mode */
 #pragma config IESO	= OFF		/* Internal External (clock) Switchover */
-#pragma config FCMEN	= OFF		/* Fail Safe Clock Monitor */
+#pragma config FCMEN	= ON		/* Fail Safe Clock Monitor */
 
 #pragma interrupt	CHugHighPriorityISRCode
 #pragma interruptlow	CHugLowPriorityISRCode
@@ -230,19 +230,16 @@ UserInit(void)
 void
 InitializeSystem(void)
 {
-// processor specific startup code
 #if defined(__18F46J50)
-	{
-		/* Enable the PLL and wait 2+ms until the PLL locks
-		 * before enabling USB module */
-		unsigned int pll_startup_counter = 600;
-		OSCTUNEbits.PLLEN = 1;
-		while (pll_startup_counter--);
+	/* Enable the PLL and wait 2+ms until the PLL locks
+	 * before enabling USB module */
+	unsigned int pll_startup_counter = 600;
+	OSCTUNEbits.PLLEN = 1;
+	while (pll_startup_counter--);
 
-		/* default all pins to digital */
-		ANCON0 = 0xFF;
-		ANCON1 = 0xFF;
-	}
+	/* default all pins to digital */
+	ANCON0 = 0xFF;
+	ANCON1 = 0xFF;
 #elif defined(__18F4550)
 	/* default all pins to digital */
 	ADCON1 = 0x0F;
