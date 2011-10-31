@@ -26,15 +26,39 @@ subfolder_lkr=
 [FILE_SUBFOLDERS]
 file_000=.
 file_001=.
+file_002=.
+file_003=.
+file_004=.
+file_005=.
+file_006=.
+file_007=.
 [GENERATED_FILES]
 file_000=no
 file_001=no
+file_002=no
+file_003=no
+file_004=no
+file_005=no
+file_006=no
+file_007=no
 [OTHER_FILES]
 file_000=no
 file_001=no
+file_002=no
+file_003=no
+file_004=no
+file_005=no
+file_006=no
+file_007=no
 [FILE_INFO]
 file_000=main.c
-file_001=ColorHug.h
+file_001=C:\Microchip Solutions v2011-07-14\Microchip\USB\usb_device.c
+file_002=C:\Microchip Solutions v2011-07-14\Microchip\USB\HID Device Driver\usb_function_hid.c
+file_003=usb_descriptors.c
+file_004=ColorHug.h
+file_005=HardwareProfile.h
+file_006=usb_config.h
+file_007=H:\Code\ColorHug\firmware-hid\HardwareProfile - PIC18F46J50 PIM.h
 [SUITE_INFO]
 suite_guid={5B7D72DD-9861-47BD-9F60-2BE967BF8416}
 suite_state=

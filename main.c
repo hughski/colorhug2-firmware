@@ -17,29 +17,58 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Additionally, some constants and code snippets have been taken from
+ * freely available datasheets which are:
+ *
+ * Copyright (C) Microchip Technology, Inc.
  */
+
+#include "ColorHug.h"
+#include "HardwareProfile.h"
+#include "usb_config.h"
 
 #include <p18cxxx.h>
 #include <delays.h>
 #include <flash.h>
 #include <GenericTypeDefs.h>
+
 #include <USB/usb.h>
+#include <USB/usb_common.h>
+#include <USB/usb_device.h>
+#include <USB/usb_function_hid.h>
 
-#include "ColorHug.h"
-
+/* configuration */
+#if defined(PIC18F46J50_PIM)
 #pragma config XINST	= OFF		/* turn off extended instruction set */
 #pragma config STVREN	= ON		/* Stack overflow reset */
 #pragma config PLLDIV	= 3		/* (12 MHz crystal used on this board) */
 #pragma config WDTEN	= OFF		/* Watch Dog Timer (WDT) */
 #pragma config CP0	= OFF		/* Code protect */
+#pragma config OSC	= HSPLL		/* HS oscillator, PLL enabled, HSPLL used by USB */
 #pragma config CPUDIV	= OSC1		/* OSC1 = divide by 1 mode */
 #pragma config IESO	= OFF		/* Internal External (clock) Switchover */
 #pragma config FCMEN	= ON		/* Fail Safe Clock Monitor */
+#pragma config T1DIG	= ON		/* secondary clock Source */
+#pragma config LPT1OSC	= OFF		/* low power timer*/
+#pragma config WDTPS	= 32768		/* Watchdog Timer Postscaler */
+#pragma config DSWDTOSC	= INTOSCREF	/* DSWDT uses INTOSC/INTRC as reference clock */
+#pragma config RTCOSC	= T1OSCREF	/* RTCC uses T1OSC/T1CKI as reference clock */
+#pragma config DSBOREN	= OFF		/* Zero-Power BOR disabled in Deep Sleep */
+#pragma config DSWDTEN	= OFF		/* Deep Sleep Watchdog Timer Enable */
+#pragma config DSWDTPS	= 8192		/* Deep Sleep Watchdog Timer Postscale Select 1:8,192 (8.5 seconds) */
+#pragma config IOL1WAY	= OFF		/* The IOLOCK bit (PPSCON<0>) can be set and cleared as needed */
+#pragma config MSSP7B_EN = MSK7		/* 7 Bit address masking */
+#pragma config WPFP	= PAGE_1	/* Write Protect Program Flash Page 0 */
+#pragma config WPEND	= PAGE_0	/* Write/Erase protect Flash Memory pages */
+#pragma config WPCFG	= OFF		/* Write/Erase Protection of last page Disabled */
+#pragma config WPDIS	= OFF		/* Write Protect Disable */
+#else
+#error No hardware board defined, see "HardwareProfile.h" and __FILE__
+#endif
 
 #pragma interrupt	CHugHighPriorityISRCode
 #pragma interruptlow	CHugLowPriorityISRCode
-
-#pragma rom
 
 /* The 18F46J50 does not have real EEPROM, so we fake some by using the
  * program flash. This is rated at 10,000 erase cycles which will be
@@ -54,6 +83,10 @@ static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
 					  0.0f, 1.0f, 0.0f,
 					  0.0f, 0.0f, 1.0f };
 static WORD	SensorIntegralTime = 0;
+
+/* USB buffers */
+unsigned char ReceivedDataBuffer[CH_USB_HID_EP_SIZE];
+unsigned char ToSendDataBuffer[CH_USB_HID_EP_SIZE];
 
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
@@ -78,7 +111,9 @@ static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 void
 CHugHighPriorityISRCode()
 {
-	/* nothing to do */
+#if defined(USB_INTERRUPT)
+	USBDeviceTasks();
+#endif
 }
 
 /**
@@ -210,20 +245,158 @@ CHugWriteEEprom(void)
 }
 
 /**
+ * IsMagicUnicorn:
+ **/
+static char
+IsMagicUnicorn(const char *text)
+{
+	if (text[0] == 'U' &&
+	    text[1] == 'n' &&
+	    text[2] == '1' &&
+	    text[3] == 'c' &&
+	    text[4] == '0' &&
+	    text[5] == 'r' &&
+	    text[6] == 'n' &&
+	    text[7] == '2')
+		return TRUE;
+	return FALSE;
+}
+
+/**
  * ProcessIO:
  **/
 void
 ProcessIO(void)
 {
-	if (BUTTON2)
-		LED0 = 1;
-	else
-		LED0 = 0;
+	unsigned char cmd;
+	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
+	unsigned char retval = CH_FATAL_ERROR_NONE;
+
 	if (BUTTON3) {
 		CHugFatalError(CH_FATAL_ERROR_UNKNOWN_CMD);
 		CHugWriteEEprom();
 	}
 	LATD++;
+
+	/* User Application USB tasks */
+	if ((USBDeviceState < CONFIGURED_STATE) ||
+	    (USBSuspendControl == 1))
+		return;
+
+	/* no data was received */
+	if(HIDRxHandleBusy(USBOutHandle))
+		return;
+
+#ifdef __DEBUG
+	/* clear for debugging */
+	memset (ToSendDataBuffer, 0xff, sizeof (ToSendDataBuffer));
+#endif
+
+	cmd = ReceivedDataBuffer[CH_BUFFER_INPUT_CMD];
+	switch(cmd) {
+	case CH_CMD_GET_COLOR_SELECT:
+		ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetColorSelect();
+		reply_len += 1;
+		break;
+	case CH_CMD_SET_COLOR_SELECT:
+		CHugSetColorSelect(ReceivedDataBuffer[CH_BUFFER_INPUT_DATA]);
+		break;
+	case CH_CMD_GET_LEDS:
+		ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetLEDs();
+		reply_len += 1;
+		break;
+	case CH_CMD_SET_LEDS:
+		CHugSetLEDs(ReceivedDataBuffer[CH_BUFFER_INPUT_DATA]);
+		break;
+	case CH_CMD_GET_MULTIPLIER:
+		ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();
+		reply_len += 1;
+		break;
+	case CH_CMD_SET_MULTIPLIER:
+		CHugSetMultiplier(ReceivedDataBuffer[CH_BUFFER_INPUT_DATA]);
+		break;
+	case CH_CMD_GET_INTERGRAL_TIME:
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			(void *) &SensorIntegralTime,
+			2);
+		reply_len += 2;
+		break;
+	case CH_CMD_SET_INTERGRAL_TIME:
+		memcpy (&SensorIntegralTime,
+			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			2);
+		break;
+	case CH_CMD_GET_FIRMWARE_VERSION:
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			&SensorVersion,
+			2 * 3);
+		reply_len += 2 * 3;
+		break;
+	case CH_CMD_SET_FIRMWARE_VERSION:
+		memcpy ((void *) &SensorVersion,
+			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			2 * 3);
+		break;
+	case CH_CMD_GET_CALIBRATION:
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			&SensorCalibration,
+			9 * sizeof(float));
+		reply_len += 9 * sizeof(float);
+		break;
+	case CH_CMD_SET_CALIBRATION:
+		memcpy ((void *) &SensorCalibration,
+			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			9 * sizeof(float));
+		break;
+	case CH_CMD_GET_SERIAL_NUMBER:
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) &SensorSerial,
+			4);
+		reply_len += 4;
+		break;
+	case CH_CMD_SET_SERIAL_NUMBER:
+		memcpy (&SensorSerial,
+			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			4);
+		break;
+	case CH_CMD_WRITE_EEPROM:
+		/* verify the magic matched */
+		if (IsMagicUnicorn ((const char *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA])) {
+			CHugWriteEEprom();
+		} else {
+			/* copy the magic for debugging */
+			memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+				(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+				8);
+			retval = 1;
+		}
+		break;
+	case CH_CMD_TAKE_READING:
+		/* TODO */
+		reply_len += 0;
+		break;
+	case CH_CMD_TAKE_READING_XYZ:
+		/* TODO */
+		reply_len += 0;
+		break;
+	default:
+		CHugFatalError(CH_FATAL_ERROR_UNKNOWN_CMD);
+		break;
+	}
+
+	/* always send return code */
+	if(!HIDTxHandleBusy(USBInHandle)) {
+		ToSendDataBuffer[CH_BUFFER_OUTPUT_RETVAL] = retval;
+		ToSendDataBuffer[CH_BUFFER_OUTPUT_CMD] = cmd;
+		USBInHandle = HIDTxPacket(HID_EP,
+					  (BYTE*)&ToSendDataBuffer[0],
+					  reply_len);
+	}
+
+	/* re-arm the OUT endpoint for the next packet */
+	USBOutHandle = HIDRxPacket(HID_EP,
+				   (BYTE*)&ReceivedDataBuffer,
+				   CH_USB_HID_EP_SIZE);
 }
 
 /**
@@ -280,8 +453,167 @@ InitializeSystem(void)
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
 
+	/* only turn on the USB module when the device has power */
+#if defined(USE_USB_BUS_SENSE_IO)
+	tris_usb_bus_sense = INPUT_PIN; // See HardwareProfile.h
+#endif
+
+	/* we're self powered */
+#if defined(USE_SELF_POWER_SENSE_IO)
+	tris_self_power = INPUT_PIN;  // See HardwareProfile.h
+#endif
+
 	/* do all user init code */
 	UserInit();
+
+	/* Initializes USB module SFRs and firmware variables to known states */
+	USBDeviceInit();
+
+#if defined(USB_INTERRUPT)
+	USBDeviceAttach();
+#endif
+}
+
+/**
+ * USBCBSuspend:
+ *
+ * Callback that is invoked when a USB suspend is detected
+ **/
+void
+USBCBSuspend(void)
+{
+	/* need to reduce power to < 2.5mA, so power down sensor */
+	multiplier_old = CHugGetMultiplier();
+	CHugSetMultiplier(CH_FREQ_SCALE_0);
+
+	/* power down LEDs */
+	CHugSetLEDs(0);
+}
+
+/**
+ * USBCBWakeFromSuspend:
+ *
+ * The host may put USB peripheral devices in low power
+ * suspend mode (by "sending" 3+ms of idle).  Once in suspend
+ * mode, the host may wake the device back up by sending non-
+ * idle state signalling.
+ *
+ * This call back is invoked when a wakeup from USB suspend
+ * is detected.
+ **/
+void
+USBCBWakeFromSuspend(void)
+{
+	/* restore full power mode */
+	CHugSetMultiplier(multiplier_old);
+}
+
+/**
+ * USBCB_SOF_Handler:
+ *
+ * The USB host sends out a SOF packet to full-speed devices every 1 ms.
+ **/
+void
+USBCB_SOF_Handler(void)
+{
+}
+
+/**
+ * USBCBErrorHandler:
+ *
+ * The purpose of this callback is mainly for debugging during
+ * development. Check UEIR to see which error causes the interrupt.
+ **/
+void
+USBCBErrorHandler(void)
+{
+}
+
+/**
+ * USBCBCheckOtherReq:
+ *
+ * Process the SETUP request and fulfill the request.
+ **/
+void
+USBCBCheckOtherReq(void)
+{
+	USBCheckHIDRequest();
+}
+
+/**
+ * USBCBStdSetDscHandler:
+ *
+ * SET_DESCRIPTOR request, not used
+ **/
+void
+USBCBStdSetDscHandler(void)
+{
+}
+
+/**
+ * USBCBInitEP:
+ *
+ * Called when the host sends a SET_CONFIGURATION.
+ **/
+void
+USBCBInitEP(void)
+{
+	/* enable the HID endpoint */
+	USBEnableEndpoint(HID_EP,
+			  USB_IN_ENABLED|
+			  USB_OUT_ENABLED|
+			  USB_HANDSHAKE_ENABLED|
+			  USB_DISALLOW_SETUP);
+
+	/* re-arm the OUT endpoint for the next packet */
+	USBOutHandle = HIDRxPacket(HID_EP,
+				   (BYTE*)&ReceivedDataBuffer,
+				   CH_USB_HID_EP_SIZE);
+}
+
+/**
+ * USER_USB_CALLBACK_EVENT_HANDLER:
+ * @event: the type of event
+ * @pdata: pointer to the event data
+ * @size: size of the event data
+ *
+ * This function is called from the USB stack to
+ * notify a user application that a USB event
+ * occured.  This callback is in interrupt context
+ * when the USB_INTERRUPT option is selected.
+ **/
+BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
+{
+	switch(event) {
+	case EVENT_TRANSFER:
+		break;
+	case EVENT_SOF:
+		USBCB_SOF_Handler();
+		break;
+	case EVENT_SUSPEND:
+		USBCBSuspend();
+		break;
+	case EVENT_RESUME:
+		USBCBWakeFromSuspend();
+		break;
+	case EVENT_CONFIGURED:
+		USBCBInitEP();
+		break;
+	case EVENT_SET_DESCRIPTOR:
+		USBCBStdSetDscHandler();
+		break;
+	case EVENT_EP0_REQUEST:
+		USBCBCheckOtherReq();
+		break;
+	case EVENT_BUS_ERROR:
+		USBCBErrorHandler();
+		break;
+	case EVENT_TRANSFER_TERMINATED:
+		break;
+	default:
+		break;
+	}
+	return TRUE;
 }
 
 /**
@@ -293,6 +625,12 @@ main(void)
 	InitializeSystem();
 
 	while(1) {
+
+#if defined(USB_POLLING)
+		/* check bus status and service USB interrupts */
+		USBDeviceTasks();
+#endif
+
 		ProcessIO();
 	}
 }
