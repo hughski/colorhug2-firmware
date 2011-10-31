@@ -93,6 +93,25 @@ CHugLowPriorityISRCode()
 }
 
 /**
+ * CHugGetLEDs:
+ **/
+unsigned char
+CHugGetLEDs(void)
+{
+	return (PORTEbits.RE1 << 1) + PORTEbits.RE0;
+}
+
+/**
+ * CHugSetLEDs:
+ **/
+void
+CHugSetLEDs(unsigned char leds)
+{
+	PORTEbits.RE0 = leds;
+	PORTEbits.RE1 = leds >> 1;
+}
+
+/**
  * CHugGetColorSelect:
  **/
 ChColorSelect
@@ -212,11 +231,8 @@ ProcessIO(void)
 void
 UserInit(void)
 {
-	/* turn off LEDs */
-	LED0 = 0;
-	LED1 = 0;
-
 	/* set some defaults to power down the sensor */
+	CHugSetLEDs(0);
 	CHugSetColorSelect(CH_COLOR_SELECT_WHITE);
 	CHugSetMultiplier(CH_FREQ_SCALE_0);
 
