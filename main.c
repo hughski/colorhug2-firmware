@@ -159,11 +159,12 @@ CHugFatalError (ChFatalError fatal_error)
 	while (1) {
 		for (i = 0; i < fatal_error + 2; i++) {
 			LED0 = 1;
-			Delay10KTCYx(20);
+			Delay10KTCYx(0xFF);
 			LED0 = 0;
-			Delay10KTCYx(20);
+			Delay10KTCYx(0xFF);
 		}
-		Delay10KTCYx(80);
+		Delay10KTCYx(0xFF);
+		Delay10KTCYx(0xFF);
 	}
 }
 
