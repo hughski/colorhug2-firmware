@@ -152,7 +152,7 @@ CHugSetLEDs(unsigned char leds)
 ChColorSelect
 CHugGetColorSelect(void)
 {
-	return (PORTAbits.RA1 << 1) + PORTAbits.RA0;
+	return (PORTAbits.RA2 << 1) + PORTAbits.RA3;
 }
 
 /**
@@ -161,8 +161,8 @@ CHugGetColorSelect(void)
 void
 CHugSetColorSelect(ChColorSelect color_select)
 {
-	PORTAbits.RA0 = (color_select & 0x01);
-	PORTAbits.RA1 = (color_select & 0x02) >> 1;
+	PORTAbits.RA2 = (color_select & 0x01);
+	PORTAbits.RA3 = (color_select & 0x02) >> 1;
 }
 
 /**
@@ -171,7 +171,7 @@ CHugSetColorSelect(ChColorSelect color_select)
 ChFreqScale
 CHugGetMultiplier(void)
 {
-	return (PORTAbits.RA3 << 1) + PORTAbits.RA2;
+	return (PORTAbits.RA1 << 1) + PORTAbits.RA0;
 }
 
 /**
@@ -180,8 +180,8 @@ CHugGetMultiplier(void)
 void
 CHugSetMultiplier(ChFreqScale multiplier)
 {
-	PORTAbits.RA2 = (multiplier & 0x01);
-	PORTAbits.RA3 = (multiplier & 0x02) >> 1;
+	PORTAbits.RA0 = (multiplier & 0x01);
+	PORTAbits.RA1 = (multiplier & 0x02) >> 1;
 }
 
 /**
