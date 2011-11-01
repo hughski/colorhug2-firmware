@@ -268,11 +268,32 @@ IsMagicUnicorn(const char *text)
 }
 
 /**
+ * TakeReading:
+ **/
+static UINT16
+TakeReading(void)
+{
+	UINT16 i;
+	UINT16 cnt = 0;
+	unsigned char ra_tmp = PORTA;
+
+	/* count how many times the output state changes */
+	for (i = 0; i < 0xffff; i++) {
+		if (ra_tmp != PORTA) {
+			cnt++;
+			ra_tmp = PORTA;
+		}
+	}
+	return cnt;
+}
+
+/**
  * ProcessIO:
  **/
 void
 ProcessIO(void)
 {
+	UINT16 reading;
 	unsigned char cmd;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	unsigned char retval = CH_FATAL_ERROR_NONE;
@@ -387,9 +408,53 @@ ProcessIO(void)
 			retval = 1;
 		}
 		break;
-	case CH_CMD_TAKE_READING:
-		/* TODO */
-		reply_len += 0;
+	case CH_CMD_TAKE_READING_RAW:
+		/* take a single reading */
+		reading = TakeReading();
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) &reading,
+			2);
+		reply_len += 2;
+		break;
+	case CH_CMD_TAKE_READINGS:
+
+		/* do red */
+		CHugSetColorSelect(CH_COLOR_SELECT_RED);
+		reading = TakeReading();
+		if (reading >= DarkCalibration[CH_COLOR_OFFSET_RED]) {
+			reading -= DarkCalibration[CH_COLOR_OFFSET_RED];
+		} else {
+			retval = CH_FATAL_ERROR_UNDERFLOW;
+		}
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] + 0,
+			(const void *) &reading,
+			2);
+
+		/* do green */
+		CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
+		reading = TakeReading();
+		if (reading >= DarkCalibration[CH_COLOR_OFFSET_GREEN]) {
+			reading -= DarkCalibration[CH_COLOR_OFFSET_GREEN];
+		} else {
+			retval = CH_FATAL_ERROR_UNDERFLOW;
+		}
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] + 2,
+			(const void *) &reading,
+			2);
+
+		/* do blue */
+		CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
+		reading = TakeReading();
+		if (reading >= DarkCalibration[CH_COLOR_OFFSET_BLUE]) {
+			reading -= DarkCalibration[CH_COLOR_OFFSET_BLUE];
+		} else {
+			retval = CH_FATAL_ERROR_UNDERFLOW;
+		}
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] + 4,
+			(const void *) &reading,
+			2);
+
+		reply_len += 6;
 		break;
 	case CH_CMD_TAKE_READING_XYZ:
 		/* TODO */
