@@ -152,7 +152,7 @@ CHugSetLEDs(unsigned char leds)
 ChColorSelect
 CHugGetColorSelect(void)
 {
-	return (PORTAbits.RA2 << 1) + PORTAbits.RA3;
+	return (PORTAbits.RA3 << 1) + PORTAbits.RA2;
 }
 
 /**
