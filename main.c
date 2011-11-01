@@ -77,12 +77,13 @@
 
 #pragma udata
 
-static DWORD	SensorSerial = 0;
-static WORD	SensorVersion[3] = { 0, 0, 0 };
+static UINT32	SensorSerial = 0;
+static UINT16	SensorVersion[3] = { 0, 0, 0 };
+static UINT16	DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
 static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
 					  0.0f, 1.0f, 0.0f,
 					  0.0f, 0.0f, 1.0f };
-static WORD	SensorIntegralTime = 0;
+static UINT16	SensorIntegralTime = 0;
 
 /* USB buffers */
 unsigned char ReceivedDataBuffer[CH_USB_HID_EP_SIZE];
@@ -220,6 +221,8 @@ CHugReadEEprom(void)
 		  4, (unsigned char *) &SensorVersion[2]);
 	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
 		  9 * 4, (unsigned char *) SensorCalibration);
+	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_DARK_OFFSET_RED,
+		  2 * 3, (unsigned char *) DarkCalibration);
 }
 
 /**
@@ -242,6 +245,8 @@ CHugWriteEEprom(void)
 			2, (unsigned char *) &SensorVersion[2]);
 	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
 			9 * sizeof(float), (unsigned char *) SensorCalibration);
+	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_DARK_OFFSET_RED,
+			2 * 3, (unsigned char *) DarkCalibration);
 }
 
 /**
@@ -347,6 +352,17 @@ ProcessIO(void)
 		memcpy ((void *) &SensorCalibration,
 			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
 			9 * sizeof(float));
+		break;
+	case CH_CMD_GET_DARK_OFFSETS:
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			&DarkCalibration,
+			2 * 3);
+		reply_len += 2 * 3;
+		break;
+	case CH_CMD_SET_DARK_OFFSETS:
+		memcpy ((void *) &DarkCalibration,
+			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			2 * 3);
 		break;
 	case CH_CMD_GET_SERIAL_NUMBER:
 		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
