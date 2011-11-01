@@ -250,10 +250,10 @@ CHugWriteEEprom(void)
 }
 
 /**
- * IsMagicUnicorn:
+ * CHugIsMagicUnicorn:
  **/
 static char
-IsMagicUnicorn(const char *text)
+CHugIsMagicUnicorn(const char *text)
 {
 	if (text[0] == 'U' &&
 	    text[1] == 'n' &&
@@ -268,10 +268,10 @@ IsMagicUnicorn(const char *text)
 }
 
 /**
- * TakeReading:
+ * CHugTakeReading:
  **/
 static UINT16
-TakeReading(void)
+CHugTakeReading (void)
 {
 	UINT16 i;
 	UINT16 cnt = 0;
@@ -288,12 +288,48 @@ TakeReading(void)
 }
 
 /**
+ * CHugTakeReadings:
+ **/
+static UINT8
+CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
+{
+	UINT16 reading;
+	UINT8 retval = CH_FATAL_ERROR_UNDERFLOW;
+
+	/* do red */
+	CHugSetColorSelect(CH_COLOR_SELECT_RED);
+	reading = CHugTakeReading();
+	if (reading < DarkCalibration[CH_COLOR_OFFSET_RED])
+		goto out;
+	*red = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
+
+	/* do green */
+	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
+	reading = CHugTakeReading();
+	if (reading < DarkCalibration[CH_COLOR_OFFSET_GREEN])
+		goto out;
+	*green = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
+
+	/* do blue */
+	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
+	reading = CHugTakeReading();
+	if (reading < DarkCalibration[CH_COLOR_OFFSET_BLUE])
+		goto out;
+	*blue = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
+
+	/* success */
+	retval = CH_FATAL_ERROR_NONE;
+out:
+	return retval;
+}
+
+/**
  * ProcessIO:
  **/
 void
 ProcessIO(void)
 {
-	UINT16 reading;
+	UINT16 readings[3];
 	unsigned char cmd;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	unsigned char retval = CH_FATAL_ERROR_NONE;
@@ -398,7 +434,7 @@ ProcessIO(void)
 		break;
 	case CH_CMD_WRITE_EEPROM:
 		/* verify the magic matched */
-		if (IsMagicUnicorn ((const char *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA])) {
+		if (CHugIsMagicUnicorn ((const char *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA])) {
 			CHugWriteEEprom();
 		} else {
 			/* copy the magic for debugging */
@@ -410,50 +446,20 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READING_RAW:
 		/* take a single reading */
-		reading = TakeReading();
+		readings[0] = CHugTakeReading();
 		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) &reading,
+			(const void *) &readings[0],
 			2);
 		reply_len += 2;
 		break;
 	case CH_CMD_TAKE_READINGS:
-
-		/* do red */
-		CHugSetColorSelect(CH_COLOR_SELECT_RED);
-		reading = TakeReading();
-		if (reading >= DarkCalibration[CH_COLOR_OFFSET_RED]) {
-			reading -= DarkCalibration[CH_COLOR_OFFSET_RED];
-		} else {
-			retval = CH_FATAL_ERROR_UNDERFLOW;
-		}
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] + 0,
-			(const void *) &reading,
-			2);
-
-		/* do green */
-		CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
-		reading = TakeReading();
-		if (reading >= DarkCalibration[CH_COLOR_OFFSET_GREEN]) {
-			reading -= DarkCalibration[CH_COLOR_OFFSET_GREEN];
-		} else {
-			retval = CH_FATAL_ERROR_UNDERFLOW;
-		}
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] + 2,
-			(const void *) &reading,
-			2);
-
-		/* do blue */
-		CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
-		reading = TakeReading();
-		if (reading >= DarkCalibration[CH_COLOR_OFFSET_BLUE]) {
-			reading -= DarkCalibration[CH_COLOR_OFFSET_BLUE];
-		} else {
-			retval = CH_FATAL_ERROR_UNDERFLOW;
-		}
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] + 4,
-			(const void *) &reading,
-			2);
-
+		/* take multiple readings */
+		retval = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
+					  &readings[CH_COLOR_OFFSET_GREEN],
+					  &readings[CH_COLOR_OFFSET_BLUE]);
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) readings,
+			2 * 3);
 		reply_len += 6;
 		break;
 	case CH_CMD_TAKE_READING_XYZ:
