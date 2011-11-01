@@ -77,13 +77,13 @@
 
 #pragma udata
 
-static UINT32	SensorSerial = 0;
-static UINT16	SensorVersion[3] = { 0, 0, 0 };
+static UINT32	SensorSerial = 0x00000000;
+static UINT16	SensorVersion[3] = { 0x0000, 0x0000, 0x0000 };
 static UINT16	DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
 static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
 					  0.0f, 1.0f, 0.0f,
 					  0.0f, 0.0f, 1.0f };
-static UINT16	SensorIntegralTime = 0;
+static UINT16	SensorIntegralTime = 0xffff;
 
 /* USB buffers */
 unsigned char ReceivedDataBuffer[CH_USB_HID_EP_SIZE];
@@ -278,7 +278,7 @@ CHugTakeReading (void)
 	unsigned char ra_tmp = PORTA;
 
 	/* count how many times the output state changes */
-	for (i = 0; i < 0xffff; i++) {
+	for (i = 0; i < SensorIntegralTime; i++) {
 		if (ra_tmp != PORTA) {
 			cnt++;
 			ra_tmp = PORTA;
