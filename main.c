@@ -377,10 +377,11 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READING_XYZ:
 		/* TODO */
-		reply_len += 0;
+		retval = CH_FATAL_ERROR_NOT_IMPLEMENTED;
+		reply_len += 4*3*3;
 		break;
 	default:
-		CHugFatalError(CH_FATAL_ERROR_UNKNOWN_CMD);
+		retval = CH_FATAL_ERROR_UNKNOWN_CMD;
 		break;
 	}
 
