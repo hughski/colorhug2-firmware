@@ -75,10 +75,14 @@
  * fine, considering a device will be calibrated usually only once */
 #define	EEPROM_ADDR		0xfbf8
 
+#pragma rom
+
+/* ensure this is incremented on each released build */
+static UINT16	FirmwareVersion[3] = { 0, 0, 3 };
+
 #pragma udata
 
 static UINT32	SensorSerial = 0x00000000;
-static UINT16	SensorVersion[3] = { 0x0000, 0x0000, 0x0000 };
 static UINT16	DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
 static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
 					  0.0f, 1.0f, 0.0f,
@@ -213,12 +217,6 @@ CHugReadEEprom(void)
 	/* read this into RAM so it can be changed */
 	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_SERIAL,
 		  4, (unsigned char *) &SensorSerial);
-	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MAJOR,
-		  2, (unsigned char *) &SensorVersion[0]);
-	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MINOR,
-		  4, (unsigned char *) &SensorVersion[1]);
-	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MICRO,
-		  4, (unsigned char *) &SensorVersion[2]);
 	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
 		  9 * 4, (unsigned char *) SensorCalibration);
 	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_DARK_OFFSET_RED,
@@ -237,12 +235,6 @@ CHugWriteEEprom(void)
 		   EEPROM_ADDR + 0x400);
 	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_SERIAL,
 			4, (unsigned char *) &SensorSerial);
-	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MAJOR,
-			2, (unsigned char *) &SensorVersion[0]);
-	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MINOR,
-			2, (unsigned char *) &SensorVersion[1]);
-	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_FIRMWARE_MICRO,
-			2, (unsigned char *) &SensorVersion[2]);
 	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
 			9 * sizeof(float), (unsigned char *) SensorCalibration);
 	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_DARK_OFFSET_RED,
@@ -390,14 +382,9 @@ ProcessIO(void)
 		break;
 	case CH_CMD_GET_FIRMWARE_VERSION:
 		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
-			&SensorVersion,
+			&FirmwareVersion,
 			2 * 3);
 		reply_len += 2 * 3;
-		break;
-	case CH_CMD_SET_FIRMWARE_VERSION:
-		memcpy ((void *) &SensorVersion,
-			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
-			2 * 3);
 		break;
 	case CH_CMD_GET_CALIBRATION:
 		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
