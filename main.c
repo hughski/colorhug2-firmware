@@ -260,6 +260,19 @@ CHugIsMagicUnicorn(const char *text)
 }
 
 /**
+ * CHugScaleByIntegral:
+ **/
+static void
+CHugScaleByIntegral (UINT16 *pulses)
+{
+	UINT32 tmp;
+
+	/* do this as integer math for speed */
+	tmp = (UINT32) *pulses * 0xffff;
+	*pulses = tmp / (UINT32) SensorIntegralTime;
+}
+
+/**
  * CHugTakeReading:
  **/
 static UINT16
@@ -276,6 +289,10 @@ CHugTakeReading (void)
 			ra_tmp = PORTA;
 		}
 	}
+
+	/* scale by the integral time */
+	CHugScaleByIntegral(&cnt);
+
 	return cnt;
 }
 
