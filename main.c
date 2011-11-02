@@ -388,12 +388,12 @@ ProcessIO(void)
 		break;
 	case CH_CMD_GET_CALIBRATION:
 		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
-			&SensorCalibration,
+			(const void *) SensorCalibration,
 			9 * sizeof(float));
 		reply_len += 9 * sizeof(float);
 		break;
 	case CH_CMD_SET_CALIBRATION:
-		memcpy ((void *) &SensorCalibration,
+		memcpy ((void *) SensorCalibration,
 			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
 			9 * sizeof(float));
 		break;
