@@ -333,11 +333,65 @@ out:
 }
 
 /**
+ * CHugVectorMultiply:
+ **/
+static void
+CHugVectorMultiply (const float *cal,
+		    const float *device_rgb,
+		    float *xyz)
+{
+	xyz[0] = cal[0] * device_rgb[0] +
+		 cal[1] * device_rgb[1] +
+		 cal[2] * device_rgb[2];
+	xyz[1] = cal[3] * device_rgb[0] +
+		 cal[4] * device_rgb[1] +
+		 cal[5] * device_rgb[2];
+	xyz[2] = cal[6] * device_rgb[0] +
+		 cal[7] * device_rgb[1] +
+		 cal[8] * device_rgb[2];
+}
+
+/**
+ * CHugTakeReadingsXYZ:
+ **/
+static UINT8
+CHugTakeReadingsXYZ (float *red, float *green, float *blue)
+{
+	float readings_f[3];
+	float readings_xyz[3];
+	UINT16 readings[3];
+	UINT8 i;
+	UINT8 retval;
+
+	/* get integer readings */
+	retval = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
+				  &readings[CH_COLOR_OFFSET_GREEN],
+				  &readings[CH_COLOR_OFFSET_BLUE]);
+
+	/* convert to floats */
+	for (i = 0; i < 3; i++)
+		readings_f[i] = (float) readings[i] / (float) 0xffff;
+
+	/* convert to xyz */
+	CHugVectorMultiply(SensorCalibration,
+			   readings_f,
+			   readings_xyz);
+
+	/* copy values */
+	*red = readings_xyz[CH_COLOR_OFFSET_RED];
+	*green = readings_xyz[CH_COLOR_OFFSET_GREEN];
+	*blue = readings_xyz[CH_COLOR_OFFSET_BLUE];
+
+	return retval;
+}
+
+/**
  * ProcessIO:
  **/
 void
 ProcessIO(void)
 {
+	float readings_xyz[3];
 	UINT16 readings[3];
 	unsigned char cmd;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
@@ -467,9 +521,15 @@ ProcessIO(void)
 		reply_len += 6;
 		break;
 	case CH_CMD_TAKE_READING_XYZ:
-		/* TODO */
-		retval = CH_FATAL_ERROR_NOT_IMPLEMENTED;
-		reply_len += 4*3*3;
+		/* take multiple readings and multiply with the
+		 * calibration matrix */
+		retval = CHugTakeReadingsXYZ(&readings_xyz[CH_COLOR_OFFSET_RED],
+					     &readings_xyz[CH_COLOR_OFFSET_GREEN],
+					     &readings_xyz[CH_COLOR_OFFSET_BLUE]);
+		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) readings_xyz,
+			4*3);
+		reply_len += 4*3;
 		break;
 	default:
 		retval = CH_FATAL_ERROR_UNKNOWN_CMD;
