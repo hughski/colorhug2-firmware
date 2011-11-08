@@ -107,9 +107,9 @@ sizeof(sd000),USB_DESCRIPTOR_STRING,{0x0409
 }};
 
 /* Manufacturer string descriptor (unicode) */
-ROM struct{BYTE bLength;BYTE bDscType;WORD string[11];}sd001={
+ROM struct{BYTE bLength;BYTE bDscType;WORD string[12];}sd001={
 sizeof(sd001),USB_DESCRIPTOR_STRING,
-{'H','u','g','h','s','i','e','.','c','o','m',
+{'H','u','g','h','s','k','i',' ','L','t','d','.',
 }};
 
 /* Product string descriptor (unicode) */
