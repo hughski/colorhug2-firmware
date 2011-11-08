@@ -305,6 +305,16 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 	UINT16 reading;
 	UINT8 retval = CH_FATAL_ERROR_UNDERFLOW;
 
+	/* check the device is sane */
+	if (SensorSerial == 0xffffffff) {
+		retval = CH_FATAL_ERROR_NO_SERIAL;
+		goto out;
+	}
+	if (DarkCalibration[CH_COLOR_OFFSET_RED] == 0xffff) {
+		retval = CH_FATAL_ERROR_NO_SERIAL;
+		goto out;
+	}
+
 	/* do red */
 	CHugSetColorSelect(CH_COLOR_SELECT_RED);
 	reading = CHugTakeReading();
