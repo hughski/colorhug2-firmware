@@ -73,7 +73,7 @@
 /* The 18F46J50 does not have real EEPROM, so we fake some by using the
  * program flash. This is rated at 10,000 erase cycles which will be
  * fine, considering a device will be calibrated usually only once */
-#define	EEPROM_ADDR		0xfbf8
+#define	EEPROM_ADDR		0xf000
 
 #pragma rom
 
@@ -235,10 +235,10 @@ CHugWriteEEprom(void)
 		   EEPROM_ADDR + 0x400);
 	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_SERIAL,
 			4, (unsigned char *) &SensorSerial);
-	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
-			9 * sizeof(float), (unsigned char *) SensorCalibration);
 	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_DARK_OFFSET_RED,
 			2 * 3, (unsigned char *) DarkCalibration);
+	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
+			9 * sizeof(float), (unsigned char *) SensorCalibration);
 }
 
 /**

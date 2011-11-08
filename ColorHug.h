@@ -65,10 +65,10 @@
 
 /* EEPROM address offsets */
 #define	CH_EEPROM_ADDR_SERIAL			0x00 /* 4 bytes, LE */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_RED		0x02 /* 2 bytes, LE */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_GREEN	0x04 /* 2 bytes, LE */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		0x06 /* 2 bytes, LE */
-#define	CH_EEPROM_ADDR_CALIBRATION_MATRIX	0x08 /* 36 bytes, LE */
+#define	CH_EEPROM_ADDR_DARK_OFFSET_RED		0x04 /* 2 bytes, LE */
+#define	CH_EEPROM_ADDR_DARK_OFFSET_GREEN	0x06 /* 2 bytes, LE */
+#define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		0x08 /* 2 bytes, LE */
+#define	CH_EEPROM_ADDR_CALIBRATION_MATRIX	0x0a /* 36 bytes, LE */
 
 #define CH_COLOR_OFFSET_RED			0x00
 #define CH_COLOR_OFFSET_GREEN			0x01
