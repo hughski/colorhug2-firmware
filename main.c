@@ -568,7 +568,7 @@ void
 UserInit(void)
 {
 	/* set some defaults to power down the sensor */
-	CHugSetLEDs(0);
+	CHugSetLEDs(3);
 	CHugSetColorSelect(CH_COLOR_SELECT_WHITE);
 	CHugSetMultiplier(CH_FREQ_SCALE_0);
 
