@@ -103,8 +103,6 @@ static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 #pragma code
 
 /* suitable for TDSDB146J50 or TDSDB14550 demo board */
-#define BUTTON2			(PORTBbits.RB2 == 0)
-#define BUTTON3			(PORTBbits.RB3 == 0)
 #define LED0			PORTEbits.RE0
 #define LED1			PORTEbits.RE1
 
@@ -407,10 +405,6 @@ ProcessIO(void)
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	unsigned char retval = CH_FATAL_ERROR_NONE;
 
-	if (BUTTON3) {
-		CHugFatalError(CH_FATAL_ERROR_UNKNOWN_CMD);
-		CHugWriteEEprom();
-	}
 	LATD++;
 
 	/* User Application USB tasks */
