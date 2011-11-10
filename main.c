@@ -43,7 +43,7 @@
 #pragma config XINST	= OFF		/* turn off extended instruction set */
 #pragma config STVREN	= ON		/* Stack overflow reset */
 #pragma config PLLDIV	= 3		/* (12 MHz crystal used on this board) */
-#pragma config WDTEN	= OFF		/* Watch Dog Timer (WDT) */
+#pragma config WDTEN	= ON		/* Watch Dog Timer (WDT) */
 #pragma config CP0	= OFF		/* Code protect */
 #pragma config OSC	= HSPLL		/* HS oscillator, PLL enabled, HSPLL used by USB */
 #pragma config CPUDIV	= OSC1		/* OSC1 = divide by 1 mode */
@@ -51,7 +51,7 @@
 #pragma config FCMEN	= ON		/* Fail Safe Clock Monitor */
 #pragma config T1DIG	= ON		/* secondary clock Source */
 #pragma config LPT1OSC	= OFF		/* low power timer*/
-#pragma config WDTPS	= 32768		/* Watchdog Timer Postscaler */
+#pragma config WDTPS	= 2048		/* Watchdog Timer Postscaler */
 #pragma config DSWDTOSC	= INTOSCREF	/* DSWDT uses INTOSC/INTRC as reference clock */
 #pragma config RTCOSC	= T1OSCREF	/* RTCC uses T1OSC/T1CKI as reference clock */
 #pragma config DSBOREN	= OFF		/* Zero-Power BOR disabled in Deep Sleep */
@@ -194,6 +194,10 @@ static void
 CHugFatalError (ChFatalError fatal_error)
 {
 	char i;
+
+	/* turn off watchdog */
+	WDTCONbits.SWDTEN = 0;
+
 	while (1) {
 		for (i = 0; i < fatal_error + 2; i++) {
 			LED0 = 1;
@@ -780,7 +784,14 @@ main(void)
 {
 	InitializeSystem();
 
+	/* the watchdog saved us from our doom */
+	if (!RCONbits.NOT_TO)
+		CHugFatalError(CH_FATAL_ERROR_WATCHDOG);
+
 	while(1) {
+
+		/* clear watchdog */
+		ClrWdt();
 
 #if defined(USB_POLLING)
 		/* check bus status and service USB interrupts */
