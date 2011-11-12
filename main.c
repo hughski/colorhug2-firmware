@@ -70,11 +70,6 @@
 #pragma interrupt	CHugHighPriorityISRCode
 #pragma interruptlow	CHugLowPriorityISRCode
 
-/* The 18F46J50 does not have real EEPROM, so we fake some by using the
- * program flash. This is rated at 10,000 erase cycles which will be
- * fine, considering a device will be calibrated usually only once */
-#define	EEPROM_ADDR		0xf000
-
 #pragma rom
 
 /* ensure this is incremented on each released build */
@@ -232,11 +227,11 @@ void
 CHugReadEEprom(void)
 {
 	/* read this into RAM so it can be changed */
-	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_SERIAL,
+	ReadFlash(CH_EEPROM_ADDR_SERIAL,
 		  4, (unsigned char *) &SensorSerial);
-	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
+	ReadFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
 		  9 * 4, (unsigned char *) SensorCalibration);
-	ReadFlash(EEPROM_ADDR + CH_EEPROM_ADDR_DARK_OFFSET_RED,
+	ReadFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
 		  2 * 3, (unsigned char *) DarkCalibration);
 }
 
@@ -248,13 +243,13 @@ CHugWriteEEprom(void)
 {
 	/* we can't call this more than 10,000 times otherwise we'll
 	 * burn out the device */
-	EraseFlash(EEPROM_ADDR,
-		   EEPROM_ADDR + 0x400);
-	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_SERIAL,
+	EraseFlash(CH_EEPROM_ADDR,
+		   CH_EEPROM_ADDR + 0x400);
+	WriteBytesFlash(CH_EEPROM_ADDR_SERIAL,
 			4, (unsigned char *) &SensorSerial);
-	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_DARK_OFFSET_RED,
+	WriteBytesFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
 			2 * 3, (unsigned char *) DarkCalibration);
-	WriteBytesFlash(EEPROM_ADDR + CH_EEPROM_ADDR_CALIBRATION_MATRIX,
+	WriteBytesFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
 			9 * sizeof(float), (unsigned char *) SensorCalibration);
 }
 
