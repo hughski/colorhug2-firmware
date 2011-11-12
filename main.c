@@ -94,8 +94,8 @@ static UINT8 idle_command = 0x00;
 static UINT8 idle_counter = 0x00;
 
 /* USB buffers */
-unsigned char ReceivedDataBuffer[CH_USB_HID_EP_SIZE];
-unsigned char ToSendDataBuffer[CH_USB_HID_EP_SIZE];
+unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
+unsigned char TxBuffer[CH_USB_HID_EP_SIZE];
 
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
@@ -455,90 +455,90 @@ ProcessIO(void)
 
 #ifdef __DEBUG
 	/* clear for debugging */
-	memset (ToSendDataBuffer, 0xff, sizeof (ToSendDataBuffer));
+	memset (TxBuffer, 0xff, sizeof (TxBuffer));
 #endif
 
-	cmd = ReceivedDataBuffer[CH_BUFFER_INPUT_CMD];
+	cmd = RxBuffer[CH_BUFFER_INPUT_CMD];
 	switch(cmd) {
 	case CH_CMD_GET_COLOR_SELECT:
-		ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetColorSelect();
+		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetColorSelect();
 		reply_len += 1;
 		break;
 	case CH_CMD_SET_COLOR_SELECT:
-		CHugSetColorSelect(ReceivedDataBuffer[CH_BUFFER_INPUT_DATA]);
+		CHugSetColorSelect(RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	case CH_CMD_GET_LEDS:
-		ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetLEDs();
+		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetLEDs();
 		reply_len += 1;
 		break;
 	case CH_CMD_SET_LEDS:
-		CHugSetLEDs(ReceivedDataBuffer[CH_BUFFER_INPUT_DATA]);
+		CHugSetLEDs(RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	case CH_CMD_GET_MULTIPLIER:
-		ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();
+		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();
 		reply_len += 1;
 		break;
 	case CH_CMD_SET_MULTIPLIER:
-		CHugSetMultiplier(ReceivedDataBuffer[CH_BUFFER_INPUT_DATA]);
+		CHugSetMultiplier(RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	case CH_CMD_GET_INTERGRAL_TIME:
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(void *) &SensorIntegralTime,
 			2);
 		reply_len += 2;
 		break;
 	case CH_CMD_SET_INTERGRAL_TIME:
 		memcpy (&SensorIntegralTime,
-			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			2);
 		break;
 	case CH_CMD_GET_FIRMWARE_VERSION:
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&FirmwareVersion,
 			2 * 3);
 		reply_len += 2 * 3;
 		break;
 	case CH_CMD_GET_CALIBRATION:
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) SensorCalibration,
 			9 * sizeof(float));
 		reply_len += 9 * sizeof(float);
 		break;
 	case CH_CMD_SET_CALIBRATION:
 		memcpy ((void *) SensorCalibration,
-			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			9 * sizeof(float));
 		break;
 	case CH_CMD_GET_DARK_OFFSETS:
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&DarkCalibration,
 			2 * 3);
 		reply_len += 2 * 3;
 		break;
 	case CH_CMD_SET_DARK_OFFSETS:
 		memcpy ((void *) &DarkCalibration,
-			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			2 * 3);
 		break;
 	case CH_CMD_GET_SERIAL_NUMBER:
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &SensorSerial,
 			4);
 		reply_len += 4;
 		break;
 	case CH_CMD_SET_SERIAL_NUMBER:
 		memcpy (&SensorSerial,
-			(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			4);
 		break;
 	case CH_CMD_WRITE_EEPROM:
 		/* verify the magic matched */
-		if (CHugIsMagicUnicorn ((const char *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA])) {
+		if (CHugIsMagicUnicorn ((const char *) &RxBuffer[CH_BUFFER_INPUT_DATA])) {
 			CHugWriteEEprom();
 		} else {
 			/* copy the magic for debugging */
-			memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
-				(const void *) &ReceivedDataBuffer[CH_BUFFER_INPUT_DATA],
+			memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+				(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 				8);
 			retval = 1;
 		}
@@ -546,7 +546,7 @@ ProcessIO(void)
 	case CH_CMD_TAKE_READING_RAW:
 		/* take a single reading */
 		readings[0] = CHugTakeReading();
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &readings[0],
 			2);
 		reply_len += 2;
@@ -556,7 +556,7 @@ ProcessIO(void)
 		retval = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
 					  &readings[CH_COLOR_OFFSET_GREEN],
 					  &readings[CH_COLOR_OFFSET_BLUE]);
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			2 * 3);
 		reply_len += 6;
@@ -567,7 +567,7 @@ ProcessIO(void)
 		retval = CHugTakeReadingsXYZ(&readings_xyz[CH_COLOR_OFFSET_RED],
 					     &readings_xyz[CH_COLOR_OFFSET_GREEN],
 					     &readings_xyz[CH_COLOR_OFFSET_BLUE]);
-		memcpy (&ToSendDataBuffer[CH_BUFFER_OUTPUT_DATA],
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings_xyz,
 			4*3);
 		reply_len += 4*3;
@@ -583,16 +583,16 @@ ProcessIO(void)
 
 	/* always send return code */
 	if(!HIDTxHandleBusy(USBInHandle)) {
-		ToSendDataBuffer[CH_BUFFER_OUTPUT_RETVAL] = retval;
-		ToSendDataBuffer[CH_BUFFER_OUTPUT_CMD] = cmd;
+		TxBuffer[CH_BUFFER_OUTPUT_RETVAL] = retval;
+		TxBuffer[CH_BUFFER_OUTPUT_CMD] = cmd;
 		USBInHandle = HIDTxPacket(HID_EP,
-					  (BYTE*)&ToSendDataBuffer[0],
+					  (BYTE*)&TxBuffer[0],
 					  reply_len);
 	}
 
 	/* re-arm the OUT endpoint for the next packet */
 	USBOutHandle = HIDRxPacket(HID_EP,
-				   (BYTE*)&ReceivedDataBuffer,
+				   (BYTE*)&RxBuffer,
 				   CH_USB_HID_EP_SIZE);
 }
 
@@ -764,7 +764,7 @@ USBCBInitEP(void)
 
 	/* re-arm the OUT endpoint for the next packet */
 	USBOutHandle = HIDRxPacket(HID_EP,
-				   (BYTE*)&ReceivedDataBuffer,
+				   (BYTE*)&RxBuffer,
 				   CH_USB_HID_EP_SIZE);
 }
 
