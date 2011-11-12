@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef HARDWARE_PROFILE_PIC18F46J50_PIM_H
-#define HARDWARE_PROFILE_PIC18F46J50_PIM_H
+#ifndef HARDWARE_PROFILE_COLORHUG_H
+#define HARDWARE_PROFILE_COLORHUG_H
 
 /* USB stack hardware selection options */
 
@@ -34,8 +34,7 @@
 
 //#define PROGRAMMABLE_WITH_USB_HID_BOOTLOADER
 
-#define DEMO_BOARD		PIC18F46J50_PIM
-#define PIC18F46J50_PIM
+#define COLORHUG
 #define CLOCK_FREQ		48000000
 
 #endif

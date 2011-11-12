@@ -39,7 +39,7 @@
 #include <USB/usb_function_hid.h>
 
 /* configuration */
-#if defined(PIC18F46J50_PIM)
+#if defined(COLORHUG)
 #pragma config XINST	= OFF		/* turn off extended instruction set */
 #pragma config STVREN	= ON		/* Stack overflow reset */
 #pragma config PLLDIV	= 3		/* (12 MHz crystal used on this board) */

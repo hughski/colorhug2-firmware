@@ -22,6 +22,6 @@
 #ifndef HARDWARE_PROFILE_H
 #define HARDWARE_PROFILE_H
 
-#include "HardwareProfile - PIC18F46J50 PIM.h"
+#include "HardwareProfile - ColorHug.h"
 
 #endif
