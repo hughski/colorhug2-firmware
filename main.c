@@ -67,9 +67,6 @@
 #error No hardware board defined, see "HardwareProfile.h" and __FILE__
 #endif
 
-#pragma interrupt	CHugHighPriorityISRCode
-#pragma interruptlow	CHugLowPriorityISRCode
-
 #pragma rom
 
 /* ensure this is incremented on each released build */
@@ -104,30 +101,6 @@ static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 /* suitable for TDSDB146J50 or TDSDB14550 demo board */
 #define LED0			PORTEbits.RE0
 #define LED1			PORTEbits.RE1
-
-/**
- * CHugHighPriorityISRCode:
- *
- * Returns with "retfie fast" as interrupt
- **/
-void
-CHugHighPriorityISRCode()
-{
-#if defined(USB_INTERRUPT)
-	USBDeviceTasks();
-#endif
-}
-
-/**
- * CHugLowPriorityISRCode:
- *
- * Returns with "retfie" as interruptlow
- **/
-void
-CHugLowPriorityISRCode()
-{
-	/* nothing to do */
-}
 
 /**
  * CHugBootFlash:
@@ -702,12 +675,12 @@ InitializeSystem(void)
 
 	/* only turn on the USB module when the device has power */
 #if defined(USE_USB_BUS_SENSE_IO)
-	tris_usb_bus_sense = INPUT_PIN; // See HardwareProfile.h
+	tris_usb_bus_sense = INPUT_PIN;
 #endif
 
 	/* we're self powered */
 #if defined(USE_SELF_POWER_SENSE_IO)
-	tris_self_power = INPUT_PIN;  // See HardwareProfile.h
+	tris_self_power = INPUT_PIN;
 #endif
 
 	/* do all user init code */
@@ -715,10 +688,6 @@ InitializeSystem(void)
 
 	/* Initializes USB module SFRs and firmware variables to known states */
 	USBDeviceInit();
-
-#if defined(USB_INTERRUPT)
-	USBDeviceAttach();
-#endif
 }
 
 /**
