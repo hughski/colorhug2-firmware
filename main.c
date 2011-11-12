@@ -89,6 +89,10 @@ static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
 					  0.0f, 0.0f, 1.0f };
 static UINT16	SensorIntegralTime = 0xffff;
 
+/* USB idle support */
+static UINT8 idle_command = 0x00;
+static UINT8 idle_counter = 0x00;
+
 /* USB buffers */
 unsigned char ReceivedDataBuffer[CH_USB_HID_EP_SIZE];
 unsigned char ToSendDataBuffer[CH_USB_HID_EP_SIZE];
@@ -398,6 +402,29 @@ CHugTakeReadingsXYZ (float *red, float *green, float *blue)
 }
 
 /**
+ * CHugCalculateChecksum:
+ **/
+static UINT8
+CHugCalculateChecksum(UINT8 *data, UINT8 length)
+{
+	int i;
+	UINT8 checksum = 0xff;
+	for (i = 0; i < length; i++)
+		checksum ^= data[i];
+	return checksum;
+}
+
+/**
+ * CHugDeviceIdle:
+ **/
+static void
+CHugDeviceIdle(void)
+{
+	if (idle_command == CH_CMD_RESET)
+		Reset();
+}
+
+/**
  * ProcessIO:
  **/
 void
@@ -417,8 +444,14 @@ ProcessIO(void)
 		return;
 
 	/* no data was received */
-	if(HIDRxHandleBusy(USBOutHandle))
+	if(HIDRxHandleBusy(USBOutHandle)) {
+		if (idle_counter++ == 0xff)
+			CHugDeviceIdle();
 		return;
+	}
+
+	/* got data, reset idle counter */
+	idle_counter = 0;
 
 #ifdef __DEBUG
 	/* clear for debugging */
@@ -538,6 +571,10 @@ ProcessIO(void)
 			(const void *) readings_xyz,
 			4*3);
 		reply_len += 4*3;
+		break;
+	case CH_CMD_RESET:
+		/* only reset when USB stack is not busy */
+		idle_command = CH_CMD_RESET;
 		break;
 	default:
 		retval = CH_FATAL_ERROR_UNKNOWN_CMD;

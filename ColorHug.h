@@ -52,6 +52,7 @@
 #define	CH_CMD_TAKE_READING_RAW			0x21
 #define	CH_CMD_TAKE_READINGS			0x22
 #define	CH_CMD_TAKE_READING_XYZ			0x23
+#define	CH_CMD_RESET				0x24
 
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
