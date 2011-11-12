@@ -725,27 +725,6 @@ USBCBWakeFromSuspend(void)
 }
 
 /**
- * USBCB_SOF_Handler:
- *
- * The USB host sends out a SOF packet to full-speed devices every 1 ms.
- **/
-void
-USBCB_SOF_Handler(void)
-{
-}
-
-/**
- * USBCBErrorHandler:
- *
- * The purpose of this callback is mainly for debugging during
- * development. Check UEIR to see which error causes the interrupt.
- **/
-void
-USBCBErrorHandler(void)
-{
-}
-
-/**
  * USBCBCheckOtherReq:
  *
  * Process the SETUP request and fulfill the request.
@@ -754,16 +733,6 @@ void
 USBCBCheckOtherReq(void)
 {
 	USBCheckHIDRequest();
-}
-
-/**
- * USBCBStdSetDscHandler:
- *
- * SET_DESCRIPTOR request, not used
- **/
-void
-USBCBStdSetDscHandler(void)
-{
 }
 
 /**
@@ -803,9 +772,6 @@ BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 	switch(event) {
 	case EVENT_TRANSFER:
 		break;
-	case EVENT_SOF:
-		USBCB_SOF_Handler();
-		break;
 	case EVENT_SUSPEND:
 		USBCBSuspend();
 		break;
@@ -815,14 +781,8 @@ BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 	case EVENT_CONFIGURED:
 		USBCBInitEP();
 		break;
-	case EVENT_SET_DESCRIPTOR:
-		USBCBStdSetDscHandler();
-		break;
 	case EVENT_EP0_REQUEST:
 		USBCBCheckOtherReq();
-		break;
-	case EVENT_BUS_ERROR:
-		USBCBErrorHandler();
 		break;
 	case EVENT_TRANSFER_TERMINATED:
 		break;
