@@ -135,6 +135,17 @@ CHugLowPriorityISRCode()
 }
 
 /**
+ * CHugBootFlash:
+ **/
+static void
+CHugBootFlash(void)
+{
+	_asm
+	goto CH_EEPROM_ADDR_RUNCODE
+	_endasm
+}
+
+/**
  * CHugGetLEDs:
  **/
 unsigned char
@@ -863,6 +874,15 @@ BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 void
 main(void)
 {
+	UINT16 runcode_start = 0xffff;
+
+	/* boot into the flashed program if we didn't do soft-reset
+	 * and the flashed program exists */
+	ReadFlash(CH_EEPROM_ADDR_RUNCODE, 2,
+		  (unsigned char *) &runcode_start);
+	if (RCONbits.NOT_RI && runcode_start != 0xffff)
+		CHugBootFlash();
+
 	InitializeSystem();
 
 	/* the watchdog saved us from our doom */
