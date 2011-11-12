@@ -431,7 +431,10 @@ void
 ProcessIO(void)
 {
 	float readings_xyz[3];
+	UINT16 address;
 	UINT16 readings[3];
+	UINT8 length;
+	UINT8 checksum;
 	unsigned char cmd;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	unsigned char retval = CH_FATAL_ERROR_NONE;
@@ -575,6 +578,47 @@ ProcessIO(void)
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
 		idle_command = CH_CMD_RESET;
+		break;
+	case CH_CMD_READ_FLASH:
+		/* allow to read any address */
+		memcpy (&address,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
+			2);
+		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
+		if (length > 60) {
+			retval = CH_FATAL_ERROR_INVALID_LENGTH;
+			break;
+		}
+		ReadFlash(address, length,
+			  (unsigned char *) &TxBuffer[CH_BUFFER_OUTPUT_DATA+1]);
+		checksum = CHugCalculateChecksum (&TxBuffer[CH_BUFFER_OUTPUT_DATA+1],
+						  length);
+		TxBuffer[CH_BUFFER_OUTPUT_DATA+0] = checksum;
+		reply_len += length + 1;
+		break;
+	case CH_CMD_WRITE_FLASH:
+		/* write to flash that's not the bootloader */
+		memcpy (&address,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
+			2);
+		if (address < CH_EEPROM_ADDR_RUNCODE) {
+			retval = CH_FATAL_ERROR_INVALID_ADDRESS;
+			break;
+		}
+		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
+		if (length > 59) {
+			retval = CH_FATAL_ERROR_INVALID_LENGTH;
+			break;
+		}
+		checksum = CHugCalculateChecksum(&RxBuffer[CH_BUFFER_INPUT_DATA+4],
+						 length);
+		if (checksum != RxBuffer[CH_BUFFER_INPUT_DATA+3]) {
+			retval = CH_FATAL_ERROR_INVALID_CHECKSUM;
+			break;
+		}
+		EraseFlash(address, address + length);
+		WriteBytesFlash(address, length,
+				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA+4]);
 		break;
 	default:
 		retval = CH_FATAL_ERROR_UNKNOWN_CMD;

@@ -232,6 +232,26 @@
  **/
 #define	CH_CMD_RESET				0x24
 
+/**
+ * CH_CMD_READ_FLASH:
+ *
+ * Read in raw data from the flash memory.
+ *
+ * IN:  [1:cmd][2:address][1:length]
+ * OUT: [1:retval][1:cmd][1:checksum][1-60:data]
+ **/
+#define	CH_CMD_READ_FLASH			0x25
+
+/**
+ * CH_CMD_WRITE_FLASH:
+ *
+ * Write raw data to the flash memory.
+ *
+ * IN:  [1:cmd][2:address][1:length][1:checksum][1-59:data]
+ * OUT: [1:retval][1:cmd]
+ **/
+#define	CH_CMD_WRITE_FLASH			0x26
+
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
 
@@ -241,6 +261,9 @@
 #define	CH_BUFFER_OUTPUT_RETVAL			0x00
 #define	CH_BUFFER_OUTPUT_CMD			0x01
 #define	CH_BUFFER_OUTPUT_DATA			0x02
+
+/* where the custom firmware is stored */
+#define CH_EEPROM_ADDR_RUNCODE			0x4000
 
 /* EEPROM address offsets */
 #define	CH_EEPROM_ADDR_SERIAL			0x00 /* 4 bytes, LE */
@@ -278,6 +301,9 @@ typedef enum {
 	CH_FATAL_ERROR_UNDERFLOW,
 	CH_FATAL_ERROR_NO_SERIAL,
 	CH_FATAL_ERROR_WATCHDOG,
+	CH_FATAL_ERROR_INVALID_ADDRESS,
+	CH_FATAL_ERROR_INVALID_LENGTH,
+	CH_FATAL_ERROR_INVALID_CHECKSUM,
 	CH_FATAL_ERROR_LAST
 } ChFatalError;
 
