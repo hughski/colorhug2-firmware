@@ -96,6 +96,10 @@ USB_HANDLE	USBInHandle = 0;
  * back up in the same mode */
 static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 
+/* flash the LEDs when in bootloader mode */
+#define	BOOTLOADER_FLASH_INTERVAL	0x2fff
+static UINT16 led_counter = 0x0;
+
 #pragma code
 
 /* suitable for TDSDB146J50 or TDSDB14550 demo board */
@@ -424,7 +428,14 @@ ProcessIO(void)
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	unsigned char retval = CH_FATAL_ERROR_NONE;
 
-	LATD++;
+	/* reset the LED state */
+	if (PORTE != 0x01 && PORTE != 0x02)
+		PORTE = 0x01;
+	led_counter--;
+	if (led_counter == 0) {
+		PORTE ^= 0x03;
+		led_counter = BOOTLOADER_FLASH_INTERVAL;
+	}
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
