@@ -452,10 +452,8 @@ ProcessIO(void)
 	/* got data, reset idle counter */
 	idle_counter = 0;
 
-#ifdef __DEBUG
 	/* clear for debugging */
 	memset (TxBuffer, 0xff, sizeof (TxBuffer));
-#endif
 
 	cmd = RxBuffer[CH_BUFFER_INPUT_CMD];
 	switch(cmd) {
