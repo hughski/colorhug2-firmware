@@ -51,14 +51,14 @@ file_005=no
 file_006=no
 file_007=no
 [FILE_INFO]
-file_000=main.c
+file_000=firmware.c
 file_001=C:\Microchip Solutions v2011-07-14\Microchip\USB\usb_device.c
 file_002=C:\Microchip Solutions v2011-07-14\Microchip\USB\HID Device Driver\usb_function_hid.c
 file_003=usb_descriptors.c
 file_004=ColorHug.h
 file_005=HardwareProfile.h
 file_006=usb_config.h
-file_007=H:\Code\ColorHug\firmware-hid\HardwareProfile - PIC18F46J50 PIM.h
+file_007=HardwareProfile - ColorHug.h
 [SUITE_INFO]
 suite_guid={5B7D72DD-9861-47BD-9F60-2BE967BF8416}
 suite_state=
