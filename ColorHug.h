@@ -252,6 +252,16 @@
  **/
 #define	CH_CMD_WRITE_FLASH			0x26
 
+/**
+ * CH_CMD_BOOT_FLASH:
+ *
+ * Boot into to the flash memory.
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd]
+ **/
+#define	CH_CMD_BOOT_FLASH			0x27
+
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
 

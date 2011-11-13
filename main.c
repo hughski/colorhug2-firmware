@@ -399,8 +399,14 @@ CHugCalculateChecksum(UINT8 *data, UINT8 length)
 static void
 CHugDeviceIdle(void)
 {
-	if (idle_command == CH_CMD_RESET)
+	switch (idle_command) {
+	case CH_CMD_RESET:
 		Reset();
+		break;
+	case CH_CMD_BOOT_FLASH:
+		CHugBootFlash();
+		break;
+	}
 }
 
 /**
@@ -598,6 +604,10 @@ ProcessIO(void)
 		EraseFlash(address, address + length);
 		WriteBytesFlash(address, length,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA+4]);
+		break;
+	case CH_CMD_BOOT_FLASH:
+		/* only boot when USB stack is not busy */
+		idle_command = CH_CMD_BOOT_FLASH;
 		break;
 	default:
 		retval = CH_FATAL_ERROR_UNKNOWN_CMD;
