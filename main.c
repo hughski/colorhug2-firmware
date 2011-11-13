@@ -694,8 +694,8 @@ InitializeSystem(void)
 	/* set RC0 to RC2 to input (unused) */
 	TRISC = 0xff;
 
-	/* set RD0 to RD7 to output (freq test) */
-	TRISD = 0x00;
+	/* set RD0 to RD7 to input (unused) */
+	TRISD = 0xff;
 
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
@@ -854,10 +854,8 @@ main(void)
 		/* clear watchdog */
 		ClrWdt();
 
-#if defined(USB_POLLING)
 		/* check bus status and service USB interrupts */
 		USBDeviceTasks();
-#endif
 
 		ProcessIO();
 	}
