@@ -96,26 +96,11 @@ USB_HANDLE	USBInHandle = 0;
  * back up in the same mode */
 static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 
-/* flash the LEDs when in bootloader mode */
-#define	BOOTLOADER_FLASH_INTERVAL	0x2fff
-static UINT16 led_counter = 0x0;
-
 #pragma code
 
 /* suitable for TDSDB146J50 or TDSDB14550 demo board */
 #define LED0			PORTEbits.RE0
 #define LED1			PORTEbits.RE1
-
-/**
- * CHugBootFlash:
- **/
-static void
-CHugBootFlash(void)
-{
-	_asm
-	goto CH_EEPROM_ADDR_RUNCODE
-	_endasm
-}
 
 /**
  * CHugGetLEDs:
@@ -385,19 +370,6 @@ CHugTakeReadingsXYZ (float *red, float *green, float *blue)
 }
 
 /**
- * CHugCalculateChecksum:
- **/
-static UINT8
-CHugCalculateChecksum(UINT8 *data, UINT8 length)
-{
-	int i;
-	UINT8 checksum = 0xff;
-	for (i = 0; i < length; i++)
-		checksum ^= data[i];
-	return checksum;
-}
-
-/**
  * CHugDeviceIdle:
  **/
 static void
@@ -406,9 +378,6 @@ CHugDeviceIdle(void)
 	switch (idle_command) {
 	case CH_CMD_RESET:
 		Reset();
-		break;
-	case CH_CMD_BOOT_FLASH:
-		CHugBootFlash();
 		break;
 	}
 }
@@ -427,15 +396,6 @@ ProcessIO(void)
 	unsigned char cmd;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	unsigned char retval = CH_FATAL_ERROR_NONE;
-
-	/* reset the LED state */
-	if (PORTE != 0x01 && PORTE != 0x02)
-		PORTE = 0x01;
-	led_counter--;
-	if (led_counter == 0) {
-		PORTE ^= 0x03;
-		led_counter = BOOTLOADER_FLASH_INTERVAL;
-	}
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
@@ -573,53 +533,8 @@ ProcessIO(void)
 		/* only reset when USB stack is not busy */
 		idle_command = CH_CMD_RESET;
 		break;
-	case CH_CMD_READ_FLASH:
-		/* allow to read any address */
-		memcpy (&address,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
-			2);
-		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
-		if (length > 60) {
-			retval = CH_FATAL_ERROR_INVALID_LENGTH;
-			break;
-		}
-		ReadFlash(address, length,
-			  (unsigned char *) &TxBuffer[CH_BUFFER_OUTPUT_DATA+1]);
-		checksum = CHugCalculateChecksum (&TxBuffer[CH_BUFFER_OUTPUT_DATA+1],
-						  length);
-		TxBuffer[CH_BUFFER_OUTPUT_DATA+0] = checksum;
-		reply_len += length + 1;
-		break;
-	case CH_CMD_WRITE_FLASH:
-		/* write to flash that's not the bootloader */
-		memcpy (&address,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
-			2);
-		if (address < CH_EEPROM_ADDR_RUNCODE) {
-			retval = CH_FATAL_ERROR_INVALID_ADDRESS;
-			break;
-		}
-		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
-		if (length > 59) {
-			retval = CH_FATAL_ERROR_INVALID_LENGTH;
-			break;
-		}
-		checksum = CHugCalculateChecksum(&RxBuffer[CH_BUFFER_INPUT_DATA+4],
-						 length);
-		if (checksum != RxBuffer[CH_BUFFER_INPUT_DATA+3]) {
-			retval = CH_FATAL_ERROR_INVALID_CHECKSUM;
-			break;
-		}
-		EraseFlash(address, address + length);
-		WriteBytesFlash(address, length,
-				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA+4]);
-		break;
-	case CH_CMD_BOOT_FLASH:
-		/* only boot when USB stack is not busy */
-		idle_command = CH_CMD_BOOT_FLASH;
-		break;
 	case CH_CMD_SET_FLASH_SUCCESS:
-		if (RxBuffer[CH_BUFFER_INPUT_DATA] > 0x02) {
+		if (RxBuffer[CH_BUFFER_INPUT_DATA] != 0x01) {
 			retval = CH_FATAL_ERROR_INVALID_VALUE;
 			break;
 		}
@@ -825,24 +740,6 @@ BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 void
 main(void)
 {
-	UINT16 runcode_start = 0xffff;
-	UINT8 flash_success = 0xff;
-
-	/*
-	 * Boot into the flashed program if all of these are true:
-	 *  1. we didn't do soft-reset
-	 *  2. the flashed program exists
-	 *  3. the flash success is 0x01
-	 */
-	ReadFlash(CH_EEPROM_ADDR_RUNCODE, 2,
-		  (unsigned char *) &runcode_start);
-	ReadFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
-		  (unsigned char *) &flash_success);
-	if (RCONbits.NOT_RI &&
-	    runcode_start != 0xffff &&
-	    flash_success == 0x01)
-		CHugBootFlash();
-
 	InitializeSystem();
 
 	/* the watchdog saved us from our doom */
