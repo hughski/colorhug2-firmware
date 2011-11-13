@@ -262,6 +262,29 @@
  **/
 #define	CH_CMD_BOOT_FLASH			0x27
 
+/**
+ * CH_CMD_SET_FLASH_SUCCESS:
+ *
+ * Sets the result of the firmware flashing. The idea of this command
+ * is that the flashing interaction is thus:
+ *
+ * 1.	Reset()			device goes to bootloader mode
+ * 2.	SetFlashSuccess(FALSE)
+ * 3.	WriteFlash($data)
+ * 4.	ReadFlash($data)	to verify
+ * 5.	BootFlash()		switch to program mode
+ * 6.	SetFlashSuccess(TRUE)
+ *
+ * The idea is that we only set the success FALSE from the bootoloader
+ * to indicate that on booting we should not boot into the program.
+ * We can only set the success true from the *new* program code so as
+ * to verify that the new program boots, and can accept HID commands.
+ *
+ * IN:  [1:cmd][1:success]
+ * OUT: [1:retval][1:cmd]
+ **/
+#define	CH_CMD_SET_FLASH_SUCCESS		0x28
+
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
 
@@ -277,11 +300,12 @@
 
 /* EEPROM address offsets */
 #define	CH_EEPROM_ADDR				0xf000
-#define	CH_EEPROM_ADDR_SERIAL			CH_EEPROM_ADDR + 0x00 /* 4 bytes, LE */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_RED		CH_EEPROM_ADDR + 0x04 /* 2 bytes, LE */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_GREEN	CH_EEPROM_ADDR + 0x06 /* 2 bytes, LE */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		CH_EEPROM_ADDR + 0x08 /* 2 bytes, LE */
-#define	CH_EEPROM_ADDR_CALIBRATION_MATRIX	CH_EEPROM_ADDR + 0x0a /* 36 bytes, LE */
+#define	CH_EEPROM_ADDR_SERIAL			CH_EEPROM_ADDR + 0x00 /* 4 bytes */
+#define	CH_EEPROM_ADDR_DARK_OFFSET_RED		CH_EEPROM_ADDR + 0x04 /* 2 bytes */
+#define	CH_EEPROM_ADDR_DARK_OFFSET_GREEN	CH_EEPROM_ADDR + 0x06 /* 2 bytes */
+#define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		CH_EEPROM_ADDR + 0x08 /* 2 bytes */
+#define	CH_EEPROM_ADDR_CALIBRATION_MATRIX	CH_EEPROM_ADDR + 0x0a /* 36 bytes */
+#define	CH_EEPROM_ADDR_FLASH_SUCCESS		CH_EEPROM_ADDR + 0x2e /* 1 byte */
 
 #define CH_COLOR_OFFSET_RED			0x00
 #define CH_COLOR_OFFSET_GREEN			0x01
@@ -315,6 +339,7 @@ typedef enum {
 	CH_FATAL_ERROR_INVALID_ADDRESS,
 	CH_FATAL_ERROR_INVALID_LENGTH,
 	CH_FATAL_ERROR_INVALID_CHECKSUM,
+	CH_FATAL_ERROR_INVALID_VALUE,
 	CH_FATAL_ERROR_LAST
 } ChFatalError;
 

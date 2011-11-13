@@ -609,6 +609,14 @@ ProcessIO(void)
 		/* only boot when USB stack is not busy */
 		idle_command = CH_CMD_BOOT_FLASH;
 		break;
+	case CH_CMD_SET_FLASH_SUCCESS:
+		if (RxBuffer[CH_BUFFER_INPUT_DATA] > 0x02) {
+			retval = CH_FATAL_ERROR_INVALID_VALUE;
+			break;
+		}
+		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
+				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
+		break;
 	default:
 		retval = CH_FATAL_ERROR_UNKNOWN_CMD;
 		break;
@@ -809,12 +817,21 @@ void
 main(void)
 {
 	UINT16 runcode_start = 0xffff;
+	UINT8 flash_success = 0xff;
 
-	/* boot into the flashed program if we didn't do soft-reset
-	 * and the flashed program exists */
+	/*
+	 * Boot into the flashed program if all of these are true:
+	 *  1. we didn't do soft-reset
+	 *  2. the flashed program exists
+	 *  3. the flash success is 0x01
+	 */
 	ReadFlash(CH_EEPROM_ADDR_RUNCODE, 2,
 		  (unsigned char *) &runcode_start);
-	if (RCONbits.NOT_RI && runcode_start != 0xffff)
+	ReadFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
+		  (unsigned char *) &flash_success);
+	if (RCONbits.NOT_RI &&
+	    runcode_start != 0xffff &&
+	    flash_success == 0x01)
 		CHugBootFlash();
 
 	InitializeSystem();
