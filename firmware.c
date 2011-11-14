@@ -438,13 +438,13 @@ ProcessIO(void)
 	case CH_CMD_SET_MULTIPLIER:
 		CHugSetMultiplier(RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
-	case CH_CMD_GET_INTERGRAL_TIME:
+	case CH_CMD_GET_INTEGRAL_TIME:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(void *) &SensorIntegralTime,
 			2);
 		reply_len += 2;
 		break;
-	case CH_CMD_SET_INTERGRAL_TIME:
+	case CH_CMD_SET_INTEGRAL_TIME:
 		memcpy (&SensorIntegralTime,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			2);
