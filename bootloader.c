@@ -176,6 +176,14 @@ ProcessIO(void)
 		/* only reset when USB stack is not busy */
 		idle_command = CH_CMD_RESET;
 		break;
+	case CH_CMD_ERASE_FLASH:
+		/* allow to read any address */
+		memcpy (&address,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
+			2);
+		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
+		EraseFlash(address, address + length);
+		break;
 	case CH_CMD_READ_FLASH:
 		/* allow to read any address */
 		memcpy (&address,
@@ -213,7 +221,6 @@ ProcessIO(void)
 			retval = CH_FATAL_ERROR_INVALID_CHECKSUM;
 			break;
 		}
-		EraseFlash(address, address + length);
 		WriteBytesFlash(address, length,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA+4]);
 		break;
