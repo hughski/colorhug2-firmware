@@ -92,6 +92,30 @@ static UINT16 led_counter = 0x0;
 #define CHugBootFlash()		(((int(*)(void))(CH_EEPROM_ADDR_RUNCODE))())
 
 /**
+ * CHugFatalError:
+ **/
+static void
+CHugFatalError (ChFatalError fatal_error)
+{
+	char i;
+
+	/* turn off watchdog */
+	WDTCONbits.SWDTEN = 0;
+	TRISE = 0x3c;
+
+	while (1) {
+		for (i = 0; i < fatal_error + 2; i++) {
+			PORTE = 0x01;
+			Delay10KTCYx(0xff);
+			PORTE = 0x00;
+			Delay10KTCYx(0xff);
+		}
+		Delay10KTCYx(0xff);
+		Delay10KTCYx(0xff);
+	}
+}
+
+/**
  * CHugCalculateChecksum:
  **/
 static UINT8
@@ -397,19 +421,21 @@ main(void)
 	/*
 	 * Boot into the flashed program if all of these are true:
 	 *  1. we didn't do soft-reset
-	 *  2. we didn't have the watchdog save us
-	 *  3. the flashed program exists
-	 *  4. the flash success is 0x01
+	 *  2. the flashed program exists
+	 *  3. the flash success is 0x01
 	 */
 	ReadFlash(CH_EEPROM_ADDR_RUNCODE, 2,
 		  (unsigned char *) &runcode_start);
 	ReadFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
 		  (unsigned char *) &flash_success);
 	if (RCONbits.NOT_RI &&
-	    RCONbits.NOT_TO &&
 	    runcode_start != 0xffff &&
 	    flash_success == 0x01)
 		CHugBootFlash();
+
+	/* the watchdog saved us from our doom */
+	if (!RCONbits.NOT_TO)
+		CHugFatalError(CH_FATAL_ERROR_WATCHDOG);
 
 	InitializeSystem();
 
