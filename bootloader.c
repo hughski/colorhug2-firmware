@@ -89,16 +89,7 @@ static UINT16 led_counter = 0x0;
 
 #pragma code
 
-/**
- * CHugBootFlash:
- **/
-static void
-CHugBootFlash(void)
-{
-	_asm
-	goto CH_EEPROM_ADDR_RUNCODE
-	_endasm
-}
+#define CHugBootFlash()		(((int(*)(void))(CH_EEPROM_ADDR_RUNCODE))())
 
 /**
  * CHugCalculateChecksum:
