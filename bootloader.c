@@ -253,6 +253,9 @@ ProcessIO(void)
 			retval = CH_FATAL_ERROR_INVALID_VALUE;
 			break;
 		}
+		/* XXX: this blits the config data? */
+		EraseFlash(CH_EEPROM_ADDR_FLASH_SUCCESS,
+			   CH_EEPROM_ADDR_FLASH_SUCCESS + 1);
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
