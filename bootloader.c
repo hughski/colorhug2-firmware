@@ -126,6 +126,7 @@ CHugDeviceIdle(void)
 		CHugBootFlash();
 		break;
 	}
+	idle_command = 0x00;
 }
 
 /**
@@ -159,7 +160,8 @@ ProcessIO(void)
 
 	/* no data was received */
 	if(HIDRxHandleBusy(USBOutHandle)) {
-		if (idle_counter++ == 0xff)
+		if (idle_counter++ == 0xff &&
+		    idle_command != 0x00)
 			CHugDeviceIdle();
 		return;
 	}
