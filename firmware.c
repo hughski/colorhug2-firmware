@@ -98,10 +98,6 @@ static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 
 #pragma code
 
-/* suitable for TDSDB146J50 or TDSDB14550 demo board */
-#define LED0			PORTEbits.RE0
-#define LED1			PORTEbits.RE1
-
 /**
  * CHugGetLEDs:
  **/
@@ -169,16 +165,17 @@ CHugFatalError (ChFatalError fatal_error)
 
 	/* turn off watchdog */
 	WDTCONbits.SWDTEN = 0;
+	TRISE = 0x3c;
 
 	while (1) {
 		for (i = 0; i < fatal_error + 2; i++) {
-			LED0 = 1;
-			Delay10KTCYx(0xFF);
-			LED0 = 0;
-			Delay10KTCYx(0xFF);
+			PORTE = 0x01;
+			Delay10KTCYx(0xff);
+			PORTE = 0x00;
+			Delay10KTCYx(0xff);
 		}
-		Delay10KTCYx(0xFF);
-		Delay10KTCYx(0xFF);
+		Delay10KTCYx(0xff);
+		Delay10KTCYx(0xff);
 	}
 }
 
