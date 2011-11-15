@@ -38,6 +38,9 @@
 #include <USB/usb_device.h>
 #include <USB/usb_function_hid.h>
 
+/*** This doesn't work yet ***/
+//#define COLORHUG_USE_BOOTLOADER
+
 /* configuration */
 #if defined(COLORHUG)
 #pragma config XINST	= OFF		/* turn off extended instruction set */
@@ -68,6 +71,39 @@
 #endif
 
 #pragma rom
+
+#ifdef COLORHUG_USE_BOOTLOADER
+extern void _startup (void);
+void CHugHighPriorityISRCode();
+void CHugLowPriorityISRCode();
+
+#pragma code REMAPPED_RESET_VECTOR = CH_EEPROM_ADDR_RUNCODE
+void _reset (void)
+{
+    _asm goto _startup _endasm
+}
+#pragma code REMAPPED_HIGH_INTERRUPT_VECTOR = CH_EEPROM_ADDR_HIGH_INTERRUPT
+void Remapped_High_ISR (void)
+{
+     _asm goto CHugHighPriorityISRCode _endasm
+}
+#pragma code REMAPPED_LOW_INTERRUPT_VECTOR = CH_EEPROM_ADDR_LOW_INTERRUPT
+void Remapped_Low_ISR (void)
+{
+     _asm goto CHugLowPriorityISRCode _endasm
+}
+
+/* actual interupt handlers */
+#pragma interrupt CHugHighPriorityISRCode
+void CHugHighPriorityISRCode()
+{
+}
+
+#pragma interruptlow CHugLowPriorityISRCode
+void CHugLowPriorityISRCode()
+{
+}
+#endif
 
 /* ensure this is incremented on each released build */
 static UINT16	FirmwareVersion[3] = { 0, 0, 3 };

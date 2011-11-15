@@ -7,7 +7,7 @@ FILES c018i.o
 FILES clib.lib
 FILES p18f46j50.lib
 
-CODEPAGE   NAME=bootloader START=0x0            END=0x0fff          PROTECTED		   
+CODEPAGE   NAME=bootloader START=0x0            END=0x3fff          PROTECTED
 CODEPAGE   NAME=page       START=0x4000         END=0xFFF7
 CODEPAGE   NAME=config     START=0xFFF8            END=0xFFFF         PROTECTED
 CODEPAGE   NAME=devid      START=0x3FFFFE          END=0x3FFFFF       PROTECTED
