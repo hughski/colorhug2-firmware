@@ -112,11 +112,23 @@ sizeof(sd001),USB_DESCRIPTOR_STRING,
 {'H','u','g','h','s','k','i',' ','L','t','d','.',
 }};
 
+#ifdef COLORHUG_BOOTLOADER
+
+/* Product string descriptor (unicode) */
+ROM struct{BYTE bLength;BYTE bDscType;WORD string[21];}sd002={
+sizeof(sd002),USB_DESCRIPTOR_STRING,
+{'C','o','l','o','r','H','u','g',' ','(','b','o','o','t','l','o','a','d','e','r',')'
+}};
+
+#else
+
 /* Product string descriptor (unicode) */
 ROM struct{BYTE bLength;BYTE bDscType;WORD string[8];}sd002={
 sizeof(sd002),USB_DESCRIPTOR_STRING,
 {'C','o','l','o','r','H','u','g'
 }};
+
+#endif
 
 /* HID descriptor -- see http://www.usb.org/developers/hidpage#HID%20Descriptor%20Tool */
 ROM struct{BYTE report[HID_RPT01_SIZE];}hid_rpt01={
