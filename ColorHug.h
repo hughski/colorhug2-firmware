@@ -257,9 +257,10 @@
 /**
  * CH_CMD_WRITE_FLASH:
  *
- * Write raw data to the flash memory.
+ * Write raw data to the flash memory. You can only write aligned to
+ * a 32 byte boundary, and you must flush any incomplete 64 byte block.
  *
- * IN:  [1:cmd][2:address][1:length][1:checksum][1-59:data]
+ * IN:  [1:cmd][2:address][1:length][1:checksum][1-32:data]
  * OUT: [1:retval][1:cmd]
  **/
 #define	CH_CMD_WRITE_FLASH			0x26
@@ -322,6 +323,11 @@
 #define CH_COLOR_OFFSET_RED			0x00
 #define CH_COLOR_OFFSET_GREEN			0x01
 #define CH_COLOR_OFFSET_BLUE			0x02
+
+/* flash constants */
+#define	CH_FLASH_ERASE_BLOCK_SIZE		0x400
+#define	CH_FLASH_WRITE_BLOCK_SIZE		0x040
+#define	CH_FLASH_TRANSFER_BLOCK_SIZE		0x020
 
 /* which color to select */
 typedef enum {

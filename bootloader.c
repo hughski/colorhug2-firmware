@@ -78,6 +78,7 @@ static UINT8 idle_counter = 0x00;
 /* USB buffers */
 unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
 unsigned char TxBuffer[CH_USB_HID_EP_SIZE];
+unsigned char FlashBuffer[CH_FLASH_WRITE_BLOCK_SIZE];
 
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
@@ -213,7 +214,7 @@ ProcessIO(void)
 			break;
 		}
 		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
-		if (length > 59) {
+		if (length > CH_FLASH_TRANSFER_BLOCK_SIZE) {
 			retval = CH_FATAL_ERROR_INVALID_LENGTH;
 			break;
 		}
@@ -223,8 +224,25 @@ ProcessIO(void)
 			retval = CH_FATAL_ERROR_INVALID_CHECKSUM;
 			break;
 		}
-		WriteBytesFlash(address, length,
-				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA+4]);
+
+		/* copy low 32 bytes into flash buffer, and only write
+		 * in 64 byte chunks as this is a limitation of the
+		 * hardware */
+		if ((address & CH_FLASH_TRANSFER_BLOCK_SIZE) == 0) {
+			memset (FlashBuffer,
+				0xff,
+				CH_FLASH_WRITE_BLOCK_SIZE);
+			memcpy (FlashBuffer,
+				(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+4],
+				length);
+		} else {
+			memcpy (FlashBuffer + CH_FLASH_TRANSFER_BLOCK_SIZE,
+				(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+4],
+				length);
+			WriteBytesFlash(address - CH_FLASH_TRANSFER_BLOCK_SIZE,
+					CH_FLASH_WRITE_BLOCK_SIZE,
+					(unsigned char *) FlashBuffer);
+		}
 		break;
 	case CH_CMD_BOOT_FLASH:
 		/* only boot when USB stack is not busy */
