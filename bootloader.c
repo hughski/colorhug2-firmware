@@ -430,3 +430,16 @@ main(void)
 		ProcessIO();
 	}
 }
+
+/**
+ * CHugBootFlashTemplate:
+ *
+ * Placeholder incase the user uses BootFlash when there is no firmware
+ * image. The real firmware will overwrite this with the custom code.
+ **/
+#pragma code user_app_vector=CH_EEPROM_ADDR_RUNCODE
+void
+CHugBootFlashTemplate(void)
+{
+	CHugFatalError(CH_FATAL_ERROR_NOT_IMPLEMENTED);
+}
