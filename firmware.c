@@ -144,13 +144,42 @@ CHugGetLEDs(void)
 }
 
 /**
+ * CHugSetLEDsInternal:
+ **/
+static void
+CHugSetLEDsInternal(UINT8 leds)
+{
+	PORTEbits.RE0 = (leds & 0x01);
+	PORTEbits.RE1 = (leds & 0x02) >> 1;
+}
+
+/**
  * CHugSetLEDs:
  **/
-void
-CHugSetLEDs(unsigned char leds)
+static void
+CHugSetLEDs(UINT8 leds,
+	    UINT8 repeat,
+	    UINT8 on_time,
+	    UINT8 off_time)
 {
-	PORTEbits.RE0 = leds;
-	PORTEbits.RE1 = leds >> 1;
+	UINT8 i;
+
+	/* trivial case */
+	if (repeat == 0) {
+		CHugSetLEDsInternal (leds);
+		return;
+	}
+
+	/* run in a loop */
+	for (i = 0; i < repeat; i++) {
+		CHugSetLEDsInternal (leds);
+		Delay10KTCYx(on_time);
+		CHugSetLEDsInternal (0);
+		Delay10KTCYx(off_time);
+
+		/* clear watchdog */
+		ClrWdt();
+	}
 }
 
 /**
@@ -464,7 +493,10 @@ ProcessIO(void)
 		reply_len += 1;
 		break;
 	case CH_CMD_SET_LEDS:
-		CHugSetLEDs(RxBuffer[CH_BUFFER_INPUT_DATA]);
+		CHugSetLEDs(RxBuffer[CH_BUFFER_INPUT_DATA + 0],
+			    RxBuffer[CH_BUFFER_INPUT_DATA + 1],
+			    RxBuffer[CH_BUFFER_INPUT_DATA + 2],
+			    RxBuffer[CH_BUFFER_INPUT_DATA + 3]);
 		break;
 	case CH_CMD_GET_MULTIPLIER:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();
@@ -603,7 +635,7 @@ void
 UserInit(void)
 {
 	/* set some defaults to power down the sensor */
-	CHugSetLEDs(3);
+	CHugSetLEDs(3, 0, 0x00, 0x00);
 	CHugSetColorSelect(CH_COLOR_SELECT_WHITE);
 	CHugSetMultiplier(CH_FREQ_SCALE_0);
 
@@ -680,7 +712,7 @@ USBCBSuspend(void)
 	CHugSetMultiplier(CH_FREQ_SCALE_0);
 
 	/* power down LEDs */
-	CHugSetLEDs(0);
+	CHugSetLEDs(0, 0, 0x00, 0x00);
 }
 
 /**
