@@ -116,6 +116,7 @@ static INT16	SensorCalibration[9] = { 0xffff, 0x0000, 0x0000,
 					 0x0000, 0xffff, 0x0000,
 					 0x0000, 0x0000, 0xffff };
 static UINT16	SensorIntegralTime = 0xffff;
+static INT16	PostScale = 0xffff;
 
 /* USB idle support */
 static UINT8 idle_command = 0x00;
@@ -257,6 +258,8 @@ CHugReadEEprom(void)
 		  9 * 2, (unsigned char *) SensorCalibration);
 	ReadFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
 		  2 * 3, (unsigned char *) DarkCalibration);
+	ReadFlash(CH_EEPROM_ADDR_POST_SCALE,
+		  2, (unsigned char *) &PostScale);
 }
 
 /**
@@ -275,6 +278,8 @@ CHugWriteEEprom(void)
 			2 * 3, (unsigned char *) DarkCalibration);
 	WriteBytesFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
 			9 * 2, (unsigned char *) SensorCalibration);
+	WriteBytesFlash(CH_EEPROM_ADDR_POST_SCALE,
+			2, (unsigned char *) &PostScale);
 }
 
 /**
@@ -326,7 +331,9 @@ CHugTakeReading (void)
 		}
 	}
 
-	/* scale by the integral time */
+	/* scale by the integral time
+	 *  - for 0% intensity the value is now 0x0000
+	 *  - for 100% intensity the value is now 0x7fff */
 	CHugScaleByIntegral(&cnt);
 
 	return cnt;
@@ -411,22 +418,45 @@ CHugMultiplyInt16 (const INT16 cal,
 }
 
 /**
- * CHugVectorMultiply:
+ * CHugCalibrationMultiply:
+ * @cal: a signed 16 bit integer scaled from -1.0 to +1.0
+ * @device_rgb: the device integer scaled from 0.0 to 0.5
+ * @xyz: the output value
+ *
+ * Multiply the device vector by the calibration matrix.
  **/
 static void
-CHugVectorMultiply (const INT16 *cal,
-		    const INT16 *device_rgb,
-		    INT16 *xyz)
+CHugCalibrationMultiply (const INT16 *cal,
+			 const INT16 *device_rgb,
+			 INT16 *xyz)
 {
-	xyz[0] = CHugMultiplyInt16 (cal[0], device_rgb[0], CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[1], device_rgb[1], CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[2], device_rgb[2], CH_DIVISOR_CALIBRATION);
-	xyz[1] = CHugMultiplyInt16 (cal[3], device_rgb[0], CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[4], device_rgb[1], CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[5], device_rgb[2], CH_DIVISOR_CALIBRATION);
-	xyz[2] = CHugMultiplyInt16 (cal[6], device_rgb[0], CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[7], device_rgb[1], CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[8], device_rgb[2], CH_DIVISOR_CALIBRATION);
+	xyz[0] = CHugMultiplyInt16 (cal[0],
+				    device_rgb[0],
+				    CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[1],
+				    device_rgb[1],
+				    CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[2],
+				    device_rgb[2],
+				    CH_DIVISOR_CALIBRATION);
+	xyz[1] = CHugMultiplyInt16 (cal[3],
+				    device_rgb[0],
+				    CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[4],
+				    device_rgb[1],
+				    CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[5],
+				    device_rgb[2],
+				    CH_DIVISOR_CALIBRATION);
+	xyz[2] = CHugMultiplyInt16 (cal[6],
+				    device_rgb[0],
+				    CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[7],
+				    device_rgb[1],
+				    CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[8],
+				    device_rgb[2],
+				    CH_DIVISOR_CALIBRATION);
 }
 
 /**
@@ -447,10 +477,19 @@ CHugTakeReadingsXYZ (UINT16 *x, UINT16 *y, UINT16 *z)
 	if (retval != CH_FATAL_ERROR_NONE)
 		goto out;
 
-	/* convert to xyz */
-	CHugVectorMultiply(SensorCalibration,
-			   (INT16 *) readings,
-			   readings_xyz);
+	/* convert to xyz
+	 *  - for 0% intensity the value is now 0x0000
+	 *  - for 100% intensity the value is now 0x7fff */
+	CHugCalibrationMultiply(SensorCalibration,
+				(INT16 *) readings,
+				readings_xyz);
+
+	/* post scale */
+	for (i = 0; i < 3; i++) {
+		readings_xyz[i] = CHugMultiplyInt16(readings_xyz[i],
+						    PostScale,
+						    CH_DIVISOR_POST_SCALE);
+	}
 
 	/* copy values */
 	*x = readings_xyz[0];
@@ -560,6 +599,17 @@ ProcessIO(void)
 		memcpy ((void *) SensorCalibration,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			9 * 2);
+		break;
+	case CH_CMD_GET_POST_SCALE:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) &PostScale,
+			2);
+		reply_len += 2;
+		break;
+	case CH_CMD_SET_POST_SCALE:
+		memcpy ((void *) &PostScale,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			2);
 		break;
 	case CH_CMD_GET_DARK_OFFSETS:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
