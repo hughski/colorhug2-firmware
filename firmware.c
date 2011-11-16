@@ -185,7 +185,7 @@ CHugSetLEDs(UINT8 leds,
 /**
  * CHugGetColorSelect:
  **/
-ChColorSelect
+static ChColorSelect
 CHugGetColorSelect(void)
 {
 	return (PORTAbits.RA3 << 1) + PORTAbits.RA2;
@@ -194,7 +194,7 @@ CHugGetColorSelect(void)
 /**
  * CHugSetColorSelect:
  **/
-void
+static void
 CHugSetColorSelect(ChColorSelect color_select)
 {
 	PORTAbits.RA2 = (color_select & 0x01);
@@ -204,7 +204,7 @@ CHugSetColorSelect(ChColorSelect color_select)
 /**
  * CHugGetMultiplier:
  **/
-ChFreqScale
+static ChFreqScale
 CHugGetMultiplier(void)
 {
 	return (PORTAbits.RA1 << 1) + PORTAbits.RA0;
@@ -213,7 +213,7 @@ CHugGetMultiplier(void)
 /**
  * CHugSetMultiplier:
  **/
-void
+static void
 CHugSetMultiplier(ChFreqScale multiplier)
 {
 	PORTAbits.RA0 = (multiplier & 0x01);
@@ -247,7 +247,7 @@ CHugFatalError (ChFatalError fatal_error)
 /**
  * CHugReadEEprom:
  **/
-void
+static void
 CHugReadEEprom(void)
 {
 	/* read this into RAM so it can be changed */
@@ -262,7 +262,7 @@ CHugReadEEprom(void)
 /**
  * CHugWriteEEprom:
  **/
-void
+static void
 CHugWriteEEprom(void)
 {
 	/* we can't call this more than 10,000 times otherwise we'll
@@ -631,7 +631,7 @@ ProcessIO(void)
 /**
  * UserInit:
  **/
-void
+static void
 UserInit(void)
 {
 	/* set some defaults to power down the sensor */
@@ -646,7 +646,7 @@ UserInit(void)
 /**
  * InitializeSystem:
  **/
-void
+static void
 InitializeSystem(void)
 {
 #if defined(__18F46J50)
@@ -726,7 +726,7 @@ USBCBSuspend(void)
  * This call back is invoked when a wakeup from USB suspend
  * is detected.
  **/
-void
+static void
 USBCBWakeFromSuspend(void)
 {
 	/* restore full power mode */
@@ -738,7 +738,7 @@ USBCBWakeFromSuspend(void)
  *
  * Process the SETUP request and fulfill the request.
  **/
-void
+static void
 USBCBCheckOtherReq(void)
 {
 	USBCheckHIDRequest();
@@ -749,7 +749,7 @@ USBCBCheckOtherReq(void)
  *
  * Called when the host sends a SET_CONFIGURATION.
  **/
-void
+static void
 USBCBInitEP(void)
 {
 	/* enable the HID endpoint */
@@ -776,7 +776,8 @@ USBCBInitEP(void)
  * occured.  This callback is in interrupt context
  * when the USB_INTERRUPT option is selected.
  **/
-BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
+BOOL
+USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 {
 	switch(event) {
 	case EVENT_TRANSFER:
