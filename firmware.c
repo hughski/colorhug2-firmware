@@ -106,15 +106,15 @@ void CHugLowPriorityISRCode()
 #endif
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 0, 0, 3 };
+static UINT16	FirmwareVersion[3] = { 0, 0, 4 };
 
 #pragma udata
 
 static UINT32	SensorSerial = 0x00000000;
 static UINT16	DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
-static float	SensorCalibration[16] = { 1.0f, 0.0f, 0.0f,
-					  0.0f, 1.0f, 0.0f,
-					  0.0f, 0.0f, 1.0f };
+static INT16	SensorCalibration[9] = { 0xffff, 0x0000, 0x0000,
+					 0x0000, 0xffff, 0x0000,
+					 0x0000, 0x0000, 0xffff };
 static UINT16	SensorIntegralTime = 0xffff;
 
 /* USB idle support */
@@ -254,7 +254,7 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_SERIAL,
 		  4, (unsigned char *) &SensorSerial);
 	ReadFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
-		  9 * 4, (unsigned char *) SensorCalibration);
+		  9 * 2, (unsigned char *) SensorCalibration);
 	ReadFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
 		  2 * 3, (unsigned char *) DarkCalibration);
 }
@@ -274,7 +274,7 @@ CHugWriteEEprom(void)
 	WriteBytesFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
 			2 * 3, (unsigned char *) DarkCalibration);
 	WriteBytesFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
-			9 * sizeof(float), (unsigned char *) SensorCalibration);
+			9 * 2, (unsigned char *) SensorCalibration);
 }
 
 /**
@@ -339,7 +339,7 @@ static UINT8
 CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 {
 	UINT16 reading;
-	UINT8 retval = CH_FATAL_ERROR_UNDERFLOW;
+	UINT8 retval = CH_FATAL_ERROR_NONE;
 
 	/* check the device is sane */
 	if (SensorSerial == 0xffffffff) {
@@ -347,64 +347,95 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 		goto out;
 	}
 	if (DarkCalibration[CH_COLOR_OFFSET_RED] == 0xffff) {
-		retval = CH_FATAL_ERROR_NO_SERIAL;
+		retval = CH_FATAL_ERROR_NO_CALIBRATION;
 		goto out;
 	}
 
 	/* do red */
 	CHugSetColorSelect(CH_COLOR_SELECT_RED);
 	reading = CHugTakeReading();
-	if (reading < DarkCalibration[CH_COLOR_OFFSET_RED])
+	if (reading < DarkCalibration[CH_COLOR_OFFSET_RED]) {
+		retval = CH_FATAL_ERROR_UNDERFLOW;
 		goto out;
+	}
+	if (reading > 0x7fff) {
+		retval = CH_FATAL_ERROR_OVERFLOW;
+		goto out;
+	}
 	*red = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
 
 	/* do green */
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
 	reading = CHugTakeReading();
-	if (reading < DarkCalibration[CH_COLOR_OFFSET_GREEN])
+	if (reading < DarkCalibration[CH_COLOR_OFFSET_GREEN]) {
+		retval = CH_FATAL_ERROR_UNDERFLOW;
 		goto out;
+	}
+	if (reading > 0x7fff) {
+		retval = CH_FATAL_ERROR_OVERFLOW;
+		goto out;
+	}
 	*green = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
 
 	/* do blue */
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
 	reading = CHugTakeReading();
-	if (reading < DarkCalibration[CH_COLOR_OFFSET_BLUE])
+	if (reading < DarkCalibration[CH_COLOR_OFFSET_BLUE]) {
+		retval = CH_FATAL_ERROR_UNDERFLOW;
 		goto out;
+	}
+	if (reading > 0x7fff) {
+		retval = CH_FATAL_ERROR_OVERFLOW;
+		goto out;
+	}
 	*blue = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
-
-	/* success */
-	retval = CH_FATAL_ERROR_NONE;
 out:
 	return retval;
+}
+
+/**
+ * CHugMultiplyInt16:
+ * @cal: number as signed int fraction of the divisor
+ * @value: number as signed int absolute value
+ *
+ * Multiplies two numbers in a safe way to manage overflow.
+ **/
+static INT16
+CHugMultiplyInt16 (const INT16 cal,
+		   const INT16 value,
+		   INT16 divisor)
+{
+	INT32 tmp;
+	tmp = (INT32) cal * (INT32) value;
+	return tmp / divisor;
 }
 
 /**
  * CHugVectorMultiply:
  **/
 static void
-CHugVectorMultiply (const float *cal,
-		    const float *device_rgb,
-		    float *xyz)
+CHugVectorMultiply (const INT16 *cal,
+		    const INT16 *device_rgb,
+		    INT16 *xyz)
 {
-	xyz[0] = cal[0] * device_rgb[0] +
-		 cal[1] * device_rgb[1] +
-		 cal[2] * device_rgb[2];
-	xyz[1] = cal[3] * device_rgb[0] +
-		 cal[4] * device_rgb[1] +
-		 cal[5] * device_rgb[2];
-	xyz[2] = cal[6] * device_rgb[0] +
-		 cal[7] * device_rgb[1] +
-		 cal[8] * device_rgb[2];
+	xyz[0] = CHugMultiplyInt16 (cal[0], device_rgb[0], CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[1], device_rgb[1], CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[2], device_rgb[2], CH_DIVISOR_CALIBRATION);
+	xyz[1] = CHugMultiplyInt16 (cal[3], device_rgb[0], CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[4], device_rgb[1], CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[5], device_rgb[2], CH_DIVISOR_CALIBRATION);
+	xyz[2] = CHugMultiplyInt16 (cal[6], device_rgb[0], CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[7], device_rgb[1], CH_DIVISOR_CALIBRATION) +
+		 CHugMultiplyInt16 (cal[8], device_rgb[2], CH_DIVISOR_CALIBRATION);
 }
 
 /**
  * CHugTakeReadingsXYZ:
  **/
 static UINT8
-CHugTakeReadingsXYZ (float *red, float *green, float *blue)
+CHugTakeReadingsXYZ (UINT16 *x, UINT16 *y, UINT16 *z)
 {
-	float readings_f[3];
-	float readings_xyz[3];
+	INT16 readings_xyz[3];
 	UINT16 readings[3];
 	UINT8 i;
 	UINT8 retval;
@@ -413,21 +444,19 @@ CHugTakeReadingsXYZ (float *red, float *green, float *blue)
 	retval = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
 				  &readings[CH_COLOR_OFFSET_GREEN],
 				  &readings[CH_COLOR_OFFSET_BLUE]);
-
-	/* convert to floats */
-	for (i = 0; i < 3; i++)
-		readings_f[i] = (float) readings[i] / (float) 0xffff;
+	if (retval != CH_FATAL_ERROR_NONE)
+		goto out;
 
 	/* convert to xyz */
 	CHugVectorMultiply(SensorCalibration,
-			   readings_f,
+			   (INT16 *) readings,
 			   readings_xyz);
 
 	/* copy values */
-	*red = readings_xyz[CH_COLOR_OFFSET_RED];
-	*green = readings_xyz[CH_COLOR_OFFSET_GREEN];
-	*blue = readings_xyz[CH_COLOR_OFFSET_BLUE];
-
+	*x = readings_xyz[0];
+	*y = readings_xyz[1];
+	*z = readings_xyz[2];
+out:
 	return retval;
 }
 
@@ -451,7 +480,6 @@ CHugDeviceIdle(void)
 void
 ProcessIO(void)
 {
-	float readings_xyz[3];
 	UINT16 address;
 	UINT16 readings[3];
 	UINT8 length;
@@ -525,13 +553,13 @@ ProcessIO(void)
 	case CH_CMD_GET_CALIBRATION:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) SensorCalibration,
-			9 * sizeof(float));
-		reply_len += 9 * sizeof(float);
+			9 * 2);
+		reply_len += 9 * sizeof(UINT16);
 		break;
 	case CH_CMD_SET_CALIBRATION:
 		memcpy ((void *) SensorCalibration,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			9 * sizeof(float));
+			9 * 2);
 		break;
 	case CH_CMD_GET_DARK_OFFSETS:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
@@ -583,18 +611,18 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			2 * 3);
-		reply_len += 6;
+		reply_len += 2 * 3;
 		break;
 	case CH_CMD_TAKE_READING_XYZ:
 		/* take multiple readings and multiply with the
 		 * calibration matrix */
-		retval = CHugTakeReadingsXYZ(&readings_xyz[CH_COLOR_OFFSET_RED],
-					     &readings_xyz[CH_COLOR_OFFSET_GREEN],
-					     &readings_xyz[CH_COLOR_OFFSET_BLUE]);
+		retval = CHugTakeReadingsXYZ(&readings[CH_COLOR_OFFSET_RED],
+					     &readings[CH_COLOR_OFFSET_GREEN],
+					     &readings[CH_COLOR_OFFSET_BLUE]);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) readings_xyz,
-			4*3);
-		reply_len += 4*3;
+			(const void *) readings,
+			2 * 3);
+		reply_len += 2 * 3;
 		break;
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
