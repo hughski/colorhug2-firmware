@@ -391,33 +391,97 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
 	reading = CHugTakeReading();
 	if (reading < DarkCalibration[CH_COLOR_OFFSET_BLUE]) {
-		retval = CH_FATAL_ERROR_UNDERFLOW;
+		rc = CH_FATAL_ERROR_UNDERFLOW_SENSOR;
 		goto out;
 	}
 	if (reading > 0x7fff) {
-		retval = CH_FATAL_ERROR_OVERFLOW;
+		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
 	*blue = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
 out:
-	return retval;
+	return rc;
 }
+
+#define CH_MAXINT16		0x7fff
 
 /**
  * CHugMultiplyInt16:
  * @cal: number as signed int fraction of the divisor
  * @value: number as signed int absolute value
+ * @result: return value as signed int value ((@cal x @value) / @divisor)
  *
  * Multiplies two numbers in a safe way to manage overflow.
+ *
+ * Return value: the error code
  **/
 static INT16
 CHugMultiplyInt16 (const INT16 cal,
 		   const INT16 value,
-		   INT16 divisor)
+		   INT16 divisor,
+		   INT16 *result)
 {
 	INT32 tmp;
+	UINT8 rc;
+
+	/* be sure to use a 32 bit number to avoid clipping */
 	tmp = (INT32) cal * (INT32) value;
-	return tmp / divisor;
+	tmp /= divisor;
+	if (tmp > 0x7fff) {
+		rc = CH_FATAL_ERROR_OVERFLOW_MULTIPLY;
+	} else {
+		*result = tmp;
+		rc = CH_FATAL_ERROR_NONE;
+	}
+	return rc;
+}
+
+/**
+ * CHugDotProduct:
+ * @vec1: An input vector
+ * @vec2: Another input vector
+ * @scalar: the output value
+ *
+ * Find the dot product of two vectors
+ **/
+static UINT8
+CHugDotProduct(const INT16 *vec1,
+	       const INT16 *vec2,
+	       INT16 *scalar)
+{
+	INT16 tmp;
+	INT32 result;
+	UINT8 rc;
+
+	rc = CHugMultiplyInt16 (vec1[0],
+				vec2[0],
+				CH_DIVISOR_CALIBRATION, /* fixme? */
+				&tmp);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
+	result = tmp;
+	rc = CHugMultiplyInt16 (vec1[1],
+				vec2[1],
+				CH_DIVISOR_CALIBRATION,
+				&tmp);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
+	result += tmp;
+	rc = CHugMultiplyInt16 (vec1[2],
+				vec2[2],
+				CH_DIVISOR_CALIBRATION,
+				&tmp);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
+	result += tmp;
+	if (result > CH_MAXINT16) {
+		rc = CH_FATAL_ERROR_OVERFLOW_ADDITION;
+		goto out;
+	}
+	rc = CH_FATAL_ERROR_NONE;
+	*scalar = result;
+out:
+	return rc;
 }
 
 /**
@@ -428,38 +492,29 @@ CHugMultiplyInt16 (const INT16 cal,
  *
  * Multiply the device vector by the calibration matrix.
  **/
-static void
+static UINT8
 CHugCalibrationMultiply (const INT16 *cal,
 			 const INT16 *device_rgb,
 			 INT16 *xyz)
 {
-	xyz[0] = CHugMultiplyInt16 (cal[0],
-				    device_rgb[0],
-				    CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[1],
-				    device_rgb[1],
-				    CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[2],
-				    device_rgb[2],
-				    CH_DIVISOR_CALIBRATION);
-	xyz[1] = CHugMultiplyInt16 (cal[3],
-				    device_rgb[0],
-				    CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[4],
-				    device_rgb[1],
-				    CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[5],
-				    device_rgb[2],
-				    CH_DIVISOR_CALIBRATION);
-	xyz[2] = CHugMultiplyInt16 (cal[6],
-				    device_rgb[0],
-				    CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[7],
-				    device_rgb[1],
-				    CH_DIVISOR_CALIBRATION) +
-		 CHugMultiplyInt16 (cal[8],
-				    device_rgb[2],
-				    CH_DIVISOR_CALIBRATION);
+	UINT8 rc;
+
+	/* X */
+	rc = CHugDotProduct(cal + 0, device_rgb, &xyz[0]);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
+
+	/* Y */
+	rc = CHugDotProduct(cal + 3, device_rgb, &xyz[1]);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
+
+	/* Z */
+	rc = CHugDotProduct(cal + 6, device_rgb, &xyz[2]);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
+out:
+	return rc;
 }
 
 /**
@@ -471,27 +526,32 @@ CHugTakeReadingsXYZ (UINT16 *x, UINT16 *y, UINT16 *z)
 	INT16 readings_xyz[3];
 	UINT16 readings[3];
 	UINT8 i;
-	UINT8 retval;
+	UINT8 rc;
 
 	/* get integer readings */
-	retval = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
-				  &readings[CH_COLOR_OFFSET_GREEN],
-				  &readings[CH_COLOR_OFFSET_BLUE]);
-	if (retval != CH_FATAL_ERROR_NONE)
+	rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
+			      &readings[CH_COLOR_OFFSET_GREEN],
+			      &readings[CH_COLOR_OFFSET_BLUE]);
+	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
 
 	/* convert to xyz
 	 *  - for 0% intensity the value is now 0x0000
 	 *  - for 100% intensity the value is now 0x7fff */
-	CHugCalibrationMultiply(SensorCalibration,
-				(INT16 *) readings,
-				readings_xyz);
+	rc = CHugCalibrationMultiply(SensorCalibration,
+				     (INT16 *) readings,
+				     readings_xyz);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
 
 	/* post scale */
 	for (i = 0; i < 3; i++) {
-		readings_xyz[i] = CHugMultiplyInt16(readings_xyz[i],
-						    PostScale,
-						    CH_DIVISOR_POST_SCALE);
+		rc = CHugMultiplyInt16(readings_xyz[i],
+				       PostScale,
+				       CH_DIVISOR_POST_SCALE,
+				       &readings_xyz[i]);
+		if (rc != CH_FATAL_ERROR_NONE)
+			goto out;
 	}
 
 	/* copy values */
@@ -499,7 +559,7 @@ CHugTakeReadingsXYZ (UINT16 *x, UINT16 *y, UINT16 *z)
 	*y = readings_xyz[1];
 	*z = readings_xyz[2];
 out:
-	return retval;
+	return rc;
 }
 
 /**
