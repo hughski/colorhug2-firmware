@@ -341,20 +341,23 @@ CHugTakeReading (void)
 
 /**
  * CHugTakeReadings:
+ * @red: Value from 0x0000 to 0x7ffff
+ * @green: Value from 0x0000 to 0x7ffff
+ * @blue: Value from 0x0000 to 0x7ffff
  **/
 static UINT8
 CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 {
 	UINT16 reading;
-	UINT8 retval = CH_FATAL_ERROR_NONE;
+	UINT8 rc = CH_FATAL_ERROR_NONE;
 
 	/* check the device is sane */
 	if (SensorSerial == 0xffffffff) {
-		retval = CH_FATAL_ERROR_NO_SERIAL;
+		rc = CH_FATAL_ERROR_NO_SERIAL;
 		goto out;
 	}
 	if (DarkCalibration[CH_COLOR_OFFSET_RED] == 0xffff) {
-		retval = CH_FATAL_ERROR_NO_CALIBRATION;
+		rc = CH_FATAL_ERROR_NO_CALIBRATION;
 		goto out;
 	}
 
@@ -362,11 +365,11 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 	CHugSetColorSelect(CH_COLOR_SELECT_RED);
 	reading = CHugTakeReading();
 	if (reading < DarkCalibration[CH_COLOR_OFFSET_RED]) {
-		retval = CH_FATAL_ERROR_UNDERFLOW;
+		rc = CH_FATAL_ERROR_UNDERFLOW_SENSOR;
 		goto out;
 	}
 	if (reading > 0x7fff) {
-		retval = CH_FATAL_ERROR_OVERFLOW;
+		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
 	*red = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
@@ -375,11 +378,11 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
 	reading = CHugTakeReading();
 	if (reading < DarkCalibration[CH_COLOR_OFFSET_GREEN]) {
-		retval = CH_FATAL_ERROR_UNDERFLOW;
+		rc = CH_FATAL_ERROR_UNDERFLOW_SENSOR;
 		goto out;
 	}
 	if (reading > 0x7fff) {
-		retval = CH_FATAL_ERROR_OVERFLOW;
+		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
 	*green = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
@@ -525,7 +528,7 @@ ProcessIO(void)
 	UINT8 checksum;
 	unsigned char cmd;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
-	unsigned char retval = CH_FATAL_ERROR_NONE;
+	unsigned char rc = CH_FATAL_ERROR_NONE;
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
@@ -642,7 +645,7 @@ ProcessIO(void)
 			memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 				(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 				8);
-			retval = 1;
+			rc = 1;
 		}
 		break;
 	case CH_CMD_TAKE_READING_RAW:
@@ -655,9 +658,9 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings */
-		retval = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
-					  &readings[CH_COLOR_OFFSET_GREEN],
-					  &readings[CH_COLOR_OFFSET_BLUE]);
+		rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
+				      &readings[CH_COLOR_OFFSET_GREEN],
+				      &readings[CH_COLOR_OFFSET_BLUE]);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			2 * 3);
@@ -666,9 +669,9 @@ ProcessIO(void)
 	case CH_CMD_TAKE_READING_XYZ:
 		/* take multiple readings and multiply with the
 		 * calibration matrix */
-		retval = CHugTakeReadingsXYZ(&readings[CH_COLOR_OFFSET_RED],
-					     &readings[CH_COLOR_OFFSET_GREEN],
-					     &readings[CH_COLOR_OFFSET_BLUE]);
+		rc = CHugTakeReadingsXYZ(&readings[CH_COLOR_OFFSET_RED],
+					 &readings[CH_COLOR_OFFSET_GREEN],
+					 &readings[CH_COLOR_OFFSET_BLUE]);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			2 * 3);
@@ -680,20 +683,20 @@ ProcessIO(void)
 		break;
 	case CH_CMD_SET_FLASH_SUCCESS:
 		if (RxBuffer[CH_BUFFER_INPUT_DATA] != 0x01) {
-			retval = CH_FATAL_ERROR_INVALID_VALUE;
+			rc = CH_FATAL_ERROR_INVALID_VALUE;
 			break;
 		}
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	default:
-		retval = CH_FATAL_ERROR_UNKNOWN_CMD;
+		rc = CH_FATAL_ERROR_UNKNOWN_CMD;
 		break;
 	}
 
 	/* always send return code */
 	if(!HIDTxHandleBusy(USBInHandle)) {
-		TxBuffer[CH_BUFFER_OUTPUT_RETVAL] = retval;
+		TxBuffer[CH_BUFFER_OUTPUT_RETVAL] = rc;
 		TxBuffer[CH_BUFFER_OUTPUT_CMD] = cmd;
 		USBInHandle = HIDTxPacket(HID_EP,
 					  (BYTE*)&TxBuffer[0],
