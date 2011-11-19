@@ -335,10 +335,6 @@
  **/
 #define	CH_CMD_SET_POST_SCALE			0x2b
 
-/* magic numbers */
-#define	CH_DIVISOR_POST_SCALE			0x1fff
-#define	CH_DIVISOR_CALIBRATION			0x7fff
-
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
 
@@ -360,9 +356,9 @@
 #define	CH_EEPROM_ADDR_DARK_OFFSET_RED		CH_EEPROM_ADDR + 0x04 /* 2 bytes */
 #define	CH_EEPROM_ADDR_DARK_OFFSET_GREEN	CH_EEPROM_ADDR + 0x06 /* 2 bytes */
 #define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		CH_EEPROM_ADDR + 0x08 /* 2 bytes */
-#define	CH_EEPROM_ADDR_CALIBRATION_MATRIX	CH_EEPROM_ADDR + 0x0a /* 18 bytes */
-#define	CH_EEPROM_ADDR_POST_SCALE		CH_EEPROM_ADDR + 0x1c /* 2 bytes */
-#define	CH_EEPROM_ADDR_FLASH_SUCCESS		CH_EEPROM_ADDR + 0x1e /* 1 byte */
+#define	CH_EEPROM_ADDR_POST_SCALE		CH_EEPROM_ADDR + 0x0a /* 2 bytes */
+#define	CH_EEPROM_ADDR_FLASH_SUCCESS		CH_EEPROM_ADDR + 0x0c /* 1 byte */
+#define	CH_EEPROM_ADDR_CALIBRATION_MATRIX	CH_EEPROM_ADDR + 0x0d /* 36 bytes */
 
 #define CH_COLOR_OFFSET_RED			0x00
 #define CH_COLOR_OFFSET_GREEN			0x01

@@ -27,6 +27,7 @@
 #include "ColorHug.h"
 #include "HardwareProfile.h"
 #include "usb_config.h"
+#include "ch-math.h"
 
 #include <p18cxxx.h>
 #include <delays.h>
@@ -110,13 +111,13 @@ static UINT16	FirmwareVersion[3] = { 0, 0, 4 };
 
 #pragma udata
 
-static UINT32	SensorSerial = 0x00000000;
-static UINT16	DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
-static INT16	SensorCalibration[9] = { 0xffff, 0x0000, 0x0000,
-					 0x0000, 0xffff, 0x0000,
-					 0x0000, 0x0000, 0xffff };
-static UINT16	SensorIntegralTime = 0xffff;
-static INT16	PostScale = 0xffff;
+static UINT32		SensorSerial = 0x00000000;
+static UINT16		DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
+static CHugPackedFloat	SensorCalibration[9] = { 0x0000ffff, 0x00000000, 0x00000000,
+						 0x00000000, 0x0000ffff, 0x00000000,
+						 0x00000000, 0x00000000, 0x0000ffff };
+static UINT16		SensorIntegralTime = 0xffff;
+static CHugPackedFloat	PostScale;
 
 /* USB idle support */
 static UINT8 idle_command = 0x00;
@@ -253,13 +254,17 @@ CHugReadEEprom(void)
 {
 	/* read this into RAM so it can be changed */
 	ReadFlash(CH_EEPROM_ADDR_SERIAL,
-		  4, (unsigned char *) &SensorSerial);
-	ReadFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
-		  9 * 2, (unsigned char *) SensorCalibration);
+		  sizeof(UINT32),
+		  (unsigned char *) &SensorSerial);
 	ReadFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
-		  2 * 3, (unsigned char *) DarkCalibration);
+		  3 * sizeof(UINT16),
+		  (unsigned char *) DarkCalibration);
 	ReadFlash(CH_EEPROM_ADDR_POST_SCALE,
-		  2, (unsigned char *) &PostScale);
+		  sizeof(CHugPackedFloat),
+		  (unsigned char *) &PostScale);
+	ReadFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
+		  9 * sizeof(CHugPackedFloat),
+		  (unsigned char *) SensorCalibration);
 }
 
 /**
@@ -273,13 +278,17 @@ CHugWriteEEprom(void)
 	EraseFlash(CH_EEPROM_ADDR,
 		   CH_EEPROM_ADDR + 0x400);
 	WriteBytesFlash(CH_EEPROM_ADDR_SERIAL,
-			4, (unsigned char *) &SensorSerial);
+			sizeof(UINT32),
+			(unsigned char *) &SensorSerial);
 	WriteBytesFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
-			2 * 3, (unsigned char *) DarkCalibration);
-	WriteBytesFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
-			9 * 2, (unsigned char *) SensorCalibration);
+			3 * sizeof(UINT16),
+			(unsigned char *) DarkCalibration);
 	WriteBytesFlash(CH_EEPROM_ADDR_POST_SCALE,
-			2, (unsigned char *) &PostScale);
+			sizeof(CHugPackedFloat),
+			(unsigned char *) &PostScale);
+	WriteBytesFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
+			9 * sizeof(CHugPackedFloat),
+			(unsigned char *) SensorCalibration);
 }
 
 /**
@@ -346,7 +355,9 @@ CHugTakeReading (void)
  * @blue: Value from 0x0000 to 0x7ffff
  **/
 static UINT8
-CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
+CHugTakeReadings (CHugPackedFloat *red,
+		  CHugPackedFloat *green,
+		  CHugPackedFloat *blue)
 {
 	UINT16 reading;
 	UINT8 rc = CH_FATAL_ERROR_NONE;
@@ -372,7 +383,8 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
-	*red = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
+	red->offset = 0;
+	red->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
 
 	/* do green */
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
@@ -385,7 +397,8 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
-	*green = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
+	green->offset = 0;
+	green->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
 
 	/* do blue */
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
@@ -398,41 +411,9 @@ CHugTakeReadings (UINT16 *red, UINT16 *green, UINT16 *blue)
 		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
-	*blue = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
+	blue->offset = 0;
+	blue->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
 out:
-	return rc;
-}
-
-#define CH_MAXINT16		0x7fff
-
-/**
- * CHugMultiplyInt16:
- * @cal: number as signed int fraction of the divisor
- * @value: number as signed int absolute value
- * @result: return value as signed int value ((@cal x @value) / @divisor)
- *
- * Multiplies two numbers in a safe way to manage overflow.
- *
- * Return value: the error code
- **/
-static INT16
-CHugMultiplyInt16 (const INT16 cal,
-		   const INT16 value,
-		   INT16 divisor,
-		   INT16 *result)
-{
-	INT32 tmp;
-	UINT8 rc;
-
-	/* be sure to use a 32 bit number to avoid clipping */
-	tmp = (INT32) cal * (INT32) value;
-	tmp /= divisor;
-	if (tmp > 0x7fff) {
-		rc = CH_FATAL_ERROR_OVERFLOW_MULTIPLY;
-	} else {
-		*result = tmp;
-		rc = CH_FATAL_ERROR_NONE;
-	}
 	return rc;
 }
 
@@ -445,57 +426,59 @@ CHugMultiplyInt16 (const INT16 cal,
  * Find the dot product of two vectors
  **/
 static UINT8
-CHugDotProduct(const INT16 *vec1,
-	       const INT16 *vec2,
-	       INT16 *scalar)
+CHugDotProduct(const CHugPackedFloat *vec1,
+	       const CHugPackedFloat *vec2,
+	       CHugPackedFloat *scalar)
 {
-	INT16 tmp;
-	INT32 result;
+	CHugPackedFloat tmp;
 	UINT8 rc;
 
-	rc = CHugMultiplyInt16 (vec1[0],
-				vec2[0],
-				CH_DIVISOR_CALIBRATION, /* fixme? */
-				&tmp);
+	/* 1 */
+	rc = CHugPackedFloatMultiply (&vec1[0],
+				      &vec2[0],
+				      scalar);
 	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
-	result = tmp;
-	rc = CHugMultiplyInt16 (vec1[1],
-				vec2[1],
-				CH_DIVISOR_CALIBRATION,
-				&tmp);
+
+	/* 2 */
+	rc = CHugPackedFloatMultiply (&vec1[1],
+				      &vec2[1],
+				      &tmp);
 	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
-	result += tmp;
-	rc = CHugMultiplyInt16 (vec1[2],
-				vec2[2],
-				CH_DIVISOR_CALIBRATION,
-				&tmp);
+
+	/* add to result */
+	rc = CHugPackedFloatAdd(scalar, &tmp, scalar);
 	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
-	result += tmp;
-	if (result > CH_MAXINT16) {
-		rc = CH_FATAL_ERROR_OVERFLOW_ADDITION;
+
+	/* 3 */
+	rc = CHugPackedFloatMultiply (&vec1[2],
+				      &vec2[2],
+				      &tmp);
+	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
-	}
-	rc = CH_FATAL_ERROR_NONE;
-	*scalar = result;
+
+	/* add to result */
+	rc = CHugPackedFloatAdd(scalar, &tmp, scalar);
+	if (rc != CH_FATAL_ERROR_NONE)
+		goto out;
 out:
 	return rc;
 }
 
 /**
  * CHugCalibrationMultiply:
- * @cal: a signed 16 bit integer scaled from -1.0 to +1.0
- * @device_rgb: the device integer scaled from 0.0 to 0.5
+ * @cal: calibration matrix
+ * @device_rgb: device floating point values
  * @xyz: the output value
  *
  * Multiply the device vector by the calibration matrix.
  **/
 static UINT8
-CHugCalibrationMultiply (const INT16 *cal,
-			 const INT16 *device_rgb,
-			 INT16 *xyz)
+CHugCalibrationMultiply (const CHugPackedFloat *cal,
+			 const CHugPackedFloat *device_rgb,
+			 CHugPackedFloat *xyz)
 {
 	UINT8 rc;
 
@@ -521,10 +504,12 @@ out:
  * CHugTakeReadingsXYZ:
  **/
 static UINT8
-CHugTakeReadingsXYZ (UINT16 *x, UINT16 *y, UINT16 *z)
+CHugTakeReadingsXYZ (CHugPackedFloat *x,
+		     CHugPackedFloat *y,
+		     CHugPackedFloat *z)
 {
-	INT16 readings_xyz[3];
-	UINT16 readings[3];
+	CHugPackedFloat readings_xyz[3];
+	CHugPackedFloat readings[3];
 	UINT8 i;
 	UINT8 rc;
 
@@ -535,21 +520,18 @@ CHugTakeReadingsXYZ (UINT16 *x, UINT16 *y, UINT16 *z)
 	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
 
-	/* convert to xyz
-	 *  - for 0% intensity the value is now 0x0000
-	 *  - for 100% intensity the value is now 0x7fff */
+	/* convert to xyz */
 	rc = CHugCalibrationMultiply(SensorCalibration,
-				     (INT16 *) readings,
+				     readings,
 				     readings_xyz);
 	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
 
 	/* post scale */
 	for (i = 0; i < 3; i++) {
-		rc = CHugMultiplyInt16(readings_xyz[i],
-				       PostScale,
-				       CH_DIVISOR_POST_SCALE,
-				       &readings_xyz[i]);
+		rc = CHugPackedFloatMultiply(&readings_xyz[i],
+					     &PostScale,
+					     &readings_xyz[i]);
 		if (rc != CH_FATAL_ERROR_NONE)
 			goto out;
 	}
@@ -582,13 +564,14 @@ CHugDeviceIdle(void)
 void
 ProcessIO(void)
 {
+	CHugPackedFloat readings[3];
 	UINT16 address;
-	UINT16 readings[3];
-	UINT8 length;
+	UINT16 reading;
 	UINT8 checksum;
+	UINT8 length;
 	unsigned char cmd;
-	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	unsigned char rc = CH_FATAL_ERROR_NONE;
+	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
@@ -655,35 +638,35 @@ ProcessIO(void)
 	case CH_CMD_GET_CALIBRATION:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) SensorCalibration,
-			9 * 2);
-		reply_len += 9 * sizeof(UINT16);
+			9 * sizeof(CHugPackedFloat));
+		reply_len += 9 * sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_SET_CALIBRATION:
 		memcpy ((void *) SensorCalibration,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			9 * 2);
+			9 * sizeof(CHugPackedFloat));
 		break;
 	case CH_CMD_GET_POST_SCALE:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &PostScale,
-			2);
-		reply_len += 2;
+			sizeof(CHugPackedFloat));
+		reply_len += sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_SET_POST_SCALE:
 		memcpy ((void *) &PostScale,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			2);
+			sizeof(CHugPackedFloat));
 		break;
 	case CH_CMD_GET_DARK_OFFSETS:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&DarkCalibration,
-			2 * 3);
-		reply_len += 2 * 3;
+			3 * sizeof(UINT16));
+		reply_len += 3 * sizeof(UINT16);
 		break;
 	case CH_CMD_SET_DARK_OFFSETS:
 		memcpy ((void *) &DarkCalibration,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			2 * 3);
+			3 * sizeof(UINT16));
 		break;
 	case CH_CMD_GET_SERIAL_NUMBER:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
@@ -710,7 +693,7 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READING_RAW:
 		/* take a single reading */
-		readings[0] = CHugTakeReading();
+		reading = CHugTakeReading();
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &readings[0],
 			2);
@@ -723,8 +706,8 @@ ProcessIO(void)
 				      &readings[CH_COLOR_OFFSET_BLUE]);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
-			2 * 3);
-		reply_len += 2 * 3;
+			3 * sizeof(CHugPackedFloat));
+		reply_len += 3 * sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_TAKE_READING_XYZ:
 		/* take multiple readings and multiply with the
@@ -734,8 +717,8 @@ ProcessIO(void)
 					 &readings[CH_COLOR_OFFSET_BLUE]);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
-			2 * 3);
-		reply_len += 2 * 3;
+			3 * sizeof(CHugPackedFloat));
+		reply_len += 3 * sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
