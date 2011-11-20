@@ -695,9 +695,9 @@ ProcessIO(void)
 		/* take a single reading */
 		reading = CHugTakeReading();
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) &readings[0],
-			2);
-		reply_len += 2;
+			(const void *) &reading,
+			sizeof(UINT16));
+		reply_len += sizeof(UINT16);
 		break;
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings */
