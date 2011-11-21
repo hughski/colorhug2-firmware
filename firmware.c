@@ -113,9 +113,6 @@ static UINT16	FirmwareVersion[3] = { 0, 0, 4 };
 
 static UINT32		SensorSerial = 0x00000000;
 static UINT16		DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
-static CHugPackedFloat	SensorCalibration[9] = { 0x0000ffff, 0x00000000, 0x00000000,
-						 0x00000000, 0x0000ffff, 0x00000000,
-						 0x00000000, 0x00000000, 0x0000ffff };
 static UINT16		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 
@@ -126,6 +123,7 @@ static UINT8 idle_counter = 0x00;
 /* USB buffers */
 unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
 unsigned char TxBuffer[CH_USB_HID_EP_SIZE];
+unsigned char FlashBuffer[CH_FLASH_WRITE_BLOCK_SIZE];
 
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
@@ -262,9 +260,6 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_POST_SCALE,
 		  sizeof(CHugPackedFloat),
 		  (unsigned char *) &PostScale);
-	ReadFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
-		  9 * sizeof(CHugPackedFloat),
-		  (unsigned char *) SensorCalibration);
 }
 
 /**
@@ -286,9 +281,6 @@ CHugWriteEEprom(void)
 	WriteBytesFlash(CH_EEPROM_ADDR_POST_SCALE,
 			sizeof(CHugPackedFloat),
 			(unsigned char *) &PostScale);
-	WriteBytesFlash(CH_EEPROM_ADDR_CALIBRATION_MATRIX,
-			9 * sizeof(CHugPackedFloat),
-			(unsigned char *) SensorCalibration);
 }
 
 /**
@@ -504,7 +496,8 @@ out:
  * CHugTakeReadingsXYZ:
  **/
 static UINT8
-CHugTakeReadingsXYZ (CHugPackedFloat *x,
+CHugTakeReadingsXYZ (const CHugPackedFloat *calibration,
+		     CHugPackedFloat *x,
 		     CHugPackedFloat *y,
 		     CHugPackedFloat *z)
 {
@@ -521,7 +514,7 @@ CHugTakeReadingsXYZ (CHugPackedFloat *x,
 		goto out;
 
 	/* convert to xyz */
-	rc = CHugCalibrationMultiply(SensorCalibration,
+	rc = CHugCalibrationMultiply(calibration,
 				     readings,
 				     readings_tmp);
 	if (rc != CH_FATAL_ERROR_NONE)
@@ -559,6 +552,125 @@ CHugDeviceIdle(void)
 }
 
 /**
+ * CHugSwitchCalibrationMatrix:
+ **/
+static UINT8
+CHugSwitchCalibrationMatrix(UINT16 calibration_index,
+			    CHugPackedFloat *calibration)
+{
+	UINT32 addr;
+	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
+	ReadFlash(addr,
+		  9 * sizeof(CHugPackedFloat),
+		  (unsigned char *) calibration);
+	if (calibration[0].raw == 0xffffffff)
+		return CH_FATAL_ERROR_NO_CALIBRATION;
+	return CH_FATAL_ERROR_NONE;
+}
+
+/**
+ * CHugGetCalibrationMatrix:
+ **/
+static UINT8
+CHugGetCalibrationMatrix(UINT16 calibration_index,
+			 CHugPackedFloat *calibration,
+			 UINT8 *description)
+{
+	UINT32 addr;
+	UINT8 matrix_size;
+
+	matrix_size = 9 * sizeof(CHugPackedFloat);
+	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
+	ReadFlash(addr,
+		  matrix_size,
+		  (unsigned char *) calibration);
+	ReadFlash(addr + matrix_size,
+		  24,
+		  (unsigned char *) description);
+	if (description[0] == 0xff)
+		return CH_FATAL_ERROR_NO_CALIBRATION;
+	return CH_FATAL_ERROR_NONE;
+}
+
+/**
+ * CHugCopyFlash:
+ **/
+static void
+CHugCopyFlash(UINT32 src, UINT32 dest, UINT16 len)
+{
+	UINT32 addr;
+
+	/* nothing to do */
+	if (src == dest)
+		return;
+
+	/* copy in 64 byte chunks */
+	for (addr = 0; addr < len; addr += CH_FLASH_WRITE_BLOCK_SIZE) {
+		ReadFlash(src + addr,
+			  CH_FLASH_WRITE_BLOCK_SIZE,
+			  (unsigned char *) FlashBuffer);
+		WriteBytesFlash(dest + addr,
+				CH_FLASH_WRITE_BLOCK_SIZE,
+				(unsigned char *) FlashBuffer);
+	}
+}
+
+/**
+ * CHugSetCalibrationMatrix:
+ **/
+static UINT8
+CHugSetCalibrationMatrix(UINT16 calibration_index,
+			 CHugPackedFloat *calibration,
+			 UINT8 *description)
+{
+	UINT32 addr_block_start;
+	UINT32 offset;
+	UINT8 matrix_size;
+
+	/* calculate offsets */
+	addr_block_start = CH_CALIBRATION_ADDR +
+		((calibration_index / 16) * CH_FLASH_ERASE_BLOCK_SIZE);
+	offset = (calibration_index % 16) * 0x40;
+
+	/* erase the destination block */
+	EraseFlash(CH_CALIBRATION_ADDR_TMP,
+		   CH_CALIBRATION_ADDR_TMP + CH_FLASH_ERASE_BLOCK_SIZE);
+
+	/* copy the block to the temporary area */
+	CHugCopyFlash(addr_block_start,
+		      CH_CALIBRATION_ADDR_TMP,
+		      CH_FLASH_ERASE_BLOCK_SIZE);
+
+	/* erase the block */
+	EraseFlash(addr_block_start,
+		   addr_block_start + CH_FLASH_ERASE_BLOCK_SIZE);
+
+	/* write matrixes before the offset */
+	CHugCopyFlash(CH_CALIBRATION_ADDR_TMP,
+		      addr_block_start,
+		      offset);
+
+	/* write the current matrix in one chunk */
+	matrix_size = 9 * sizeof(CHugPackedFloat);
+	memcpy(FlashBuffer,
+	       (void *) calibration,
+	       matrix_size);
+	memcpy(FlashBuffer + matrix_size,
+	       (void *) description,
+	       24);
+	WriteBytesFlash(addr_block_start + offset,
+			CH_FLASH_WRITE_BLOCK_SIZE,
+			(unsigned char *) FlashBuffer);
+
+	/* write matrixes after the offset */
+	CHugCopyFlash(CH_CALIBRATION_ADDR_TMP + offset + 0x40,
+		      addr_block_start + offset + 0x40,
+		      CH_FLASH_ERASE_BLOCK_SIZE - (offset + 0x40));
+
+	return CH_FATAL_ERROR_NONE;
+}
+
+/**
  * ProcessIO:
  **/
 void
@@ -567,11 +679,13 @@ ProcessIO(void)
 	CHugPackedFloat readings[3];
 	UINT16 address;
 	UINT16 reading;
+	UINT16 calibration_index;
 	UINT8 checksum;
 	UINT8 length;
 	unsigned char cmd;
 	unsigned char rc = CH_FATAL_ERROR_NONE;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
+	CHugPackedFloat calibration[9];
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
@@ -636,15 +750,33 @@ ProcessIO(void)
 		reply_len += 2 * 3;
 		break;
 	case CH_CMD_GET_CALIBRATION:
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) SensorCalibration,
-			9 * sizeof(CHugPackedFloat));
-		reply_len += 9 * sizeof(CHugPackedFloat);
+		/* get the chosen calibration matrix */
+		memcpy (&calibration_index,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			sizeof(UINT16));
+		if (calibration_index > CH_CALIBRATION_MAX) {
+			rc = CH_FATAL_ERROR_INVALID_VALUE;
+			break;
+		}
+		rc = CHugGetCalibrationMatrix(calibration_index,
+					      (CHugPackedFloat *)&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+					      &TxBuffer[CH_BUFFER_OUTPUT_DATA] + 0x24);
+		if (rc != CH_FATAL_ERROR_NONE)
+			break;
+		reply_len += (9 * sizeof(CHugPackedFloat)) + 24;
 		break;
 	case CH_CMD_SET_CALIBRATION:
-		memcpy ((void *) SensorCalibration,
+		/* set the chosen calibration matrix */
+		memcpy (&calibration_index,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			9 * sizeof(CHugPackedFloat));
+			sizeof(UINT16));
+		if (calibration_index > CH_CALIBRATION_MAX) {
+			rc = CH_FATAL_ERROR_INVALID_VALUE;
+			break;
+		}
+		CHugSetCalibrationMatrix(calibration_index,
+					 (CHugPackedFloat *) &RxBuffer[CH_BUFFER_INPUT_DATA + 2],
+					 &RxBuffer[CH_BUFFER_INPUT_DATA + 2  + 0x24]);
 		break;
 	case CH_CMD_GET_POST_SCALE:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
@@ -704,6 +836,8 @@ ProcessIO(void)
 		rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
 				      &readings[CH_COLOR_OFFSET_GREEN],
 				      &readings[CH_COLOR_OFFSET_BLUE]);
+		if (rc != CH_FATAL_ERROR_NONE)
+			break;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));
@@ -712,9 +846,26 @@ ProcessIO(void)
 	case CH_CMD_TAKE_READING_XYZ:
 		/* take multiple readings and multiply with the
 		 * calibration matrix */
-		rc = CHugTakeReadingsXYZ(&readings[CH_COLOR_OFFSET_RED],
+		memcpy (&calibration_index,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			sizeof(UINT16));
+		if (calibration_index > CH_CALIBRATION_MAX) {
+			rc = CH_FATAL_ERROR_INVALID_VALUE;
+			break;
+		}
+
+		/* load in the chosen calibration matrix */
+		rc = CHugSwitchCalibrationMatrix(calibration_index,
+						 calibration);
+		if (rc != CH_FATAL_ERROR_NONE)
+			break;
+
+		rc = CHugTakeReadingsXYZ(calibration,
+					 &readings[CH_COLOR_OFFSET_RED],
 					 &readings[CH_COLOR_OFFSET_GREEN],
 					 &readings[CH_COLOR_OFFSET_BLUE]);
+		if (rc != CH_FATAL_ERROR_NONE)
+			break;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));

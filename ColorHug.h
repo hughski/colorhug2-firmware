@@ -105,10 +105,10 @@
 /**
  * CH_CMD_GET_CALIBRATION:
  *
- * Gets the calibration matrix.
+ * Gets the calibration matrix. The description does not have to be NULL terminated.
  *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][2*9:matrix_value]
+ * IN:  [1:cmd][2:index]
+ * OUT: [1:retval][1:cmd][2*9:matrix_value][24:description]
  **/
 #define	CH_CMD_GET_CALIBRATION			0x09
 
@@ -118,7 +118,7 @@
  * Sets the calibration matrix. The @matrix_value parameter is a 16 bit
  * _signed_ value that scales from -1.0 to +1.0.
  *
- * IN:  [1:cmd][2*9:matrix_value]
+ * IN:  [1:cmd][2:index][4*9:matrix_value][24:description]
  * OUT: [1:retval][1:cmd]
  **/
 #define	CH_CMD_SET_CALIBRATION			0x0a
@@ -229,7 +229,7 @@
  * All of @red, @green and @blue are _signed_ values
  * ranging from -1.0 to +1.0.
  *
- * IN:  [1:cmd]
+ * IN:  [1:cmd][2:calibration-index]
  * OUT: [1:retval][1:cmd][2:red][2:green][2:blue]
  **/
 #define	CH_CMD_TAKE_READING_XYZ			0x23
@@ -358,16 +358,21 @@
 #define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		CH_EEPROM_ADDR + 0x08 /* 2 bytes */
 #define	CH_EEPROM_ADDR_POST_SCALE		CH_EEPROM_ADDR + 0x0a /* 2 bytes */
 #define	CH_EEPROM_ADDR_FLASH_SUCCESS		CH_EEPROM_ADDR + 0x0c /* 1 byte */
-#define	CH_EEPROM_ADDR_CALIBRATION_MATRIX	CH_EEPROM_ADDR + 0x0d /* 36 bytes */
+
+/* although each calibration can be stored in 60 bytes,
+ * we use a full 64 byte block */
+#define	CH_CALIBRATION_ADDR_TMP			0xdc00	/* each is 64 bytes */
+#define	CH_CALIBRATION_ADDR			0xe000	/* each is 64 bytes */
+#define	CH_CALIBRATION_MAX			64	/* so finishes at device params */
 
 #define CH_COLOR_OFFSET_RED			0x00
 #define CH_COLOR_OFFSET_GREEN			0x01
 #define CH_COLOR_OFFSET_BLUE			0x02
 
 /* flash constants */
-#define	CH_FLASH_ERASE_BLOCK_SIZE		0x400
-#define	CH_FLASH_WRITE_BLOCK_SIZE		0x040
-#define	CH_FLASH_TRANSFER_BLOCK_SIZE		0x020
+#define	CH_FLASH_ERASE_BLOCK_SIZE		0x400	/* 1024 */
+#define	CH_FLASH_WRITE_BLOCK_SIZE		0x040	/* 64 */
+#define	CH_FLASH_TRANSFER_BLOCK_SIZE		0x020	/* 32 */
 
 /* which color to select */
 typedef enum {
