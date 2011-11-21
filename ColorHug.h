@@ -311,12 +311,29 @@
 #define	CH_CMD_SET_FLASH_SUCCESS		0x28
 
 /**
+ * CH_CMD_GET_PRE_SCALE:
+ *
+ * Get the pre XYZ scaling constant.
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd][2:scale]
+ **/
+#define	CH_CMD_GET_PRE_SCALE			0x2c
+
+/**
+ * CH_CMD_SET_PRE_SCALE:
+ *
+ * Set the pre XYZ scaling constant.
+ *
+ * IN:  [1:cmd][2:scale]
+ * OUT: [1:retval][1:cmd]
+ **/
+#define	CH_CMD_SET_PRE_SCALE			0x2d
+
+/**
  * CH_CMD_GET_POST_SCALE:
  *
  * Get the post XYZ scaling constant.
- *
- * @scale is a value scaled between -8.0 and +8.0f
- * (so the divisor is 0x06)
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:scale]
@@ -327,8 +344,6 @@
  * CH_CMD_SET_POST_SCALE:
  *
  * Set the post XYZ scaling constant.
- *
- * @scale is a value scaled between 0.0 and 8.0f
  *
  * IN:  [1:cmd][2:scale]
  * OUT: [1:retval][1:cmd]
@@ -356,8 +371,9 @@
 #define	CH_EEPROM_ADDR_DARK_OFFSET_RED		CH_EEPROM_ADDR + 0x04 /* 2 bytes */
 #define	CH_EEPROM_ADDR_DARK_OFFSET_GREEN	CH_EEPROM_ADDR + 0x06 /* 2 bytes */
 #define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		CH_EEPROM_ADDR + 0x08 /* 2 bytes */
-#define	CH_EEPROM_ADDR_POST_SCALE		CH_EEPROM_ADDR + 0x0a /* 2 bytes */
-#define	CH_EEPROM_ADDR_FLASH_SUCCESS		CH_EEPROM_ADDR + 0x0c /* 1 byte */
+#define	CH_EEPROM_ADDR_PRE_SCALE		CH_EEPROM_ADDR + 0x0a /* 2 bytes */
+#define	CH_EEPROM_ADDR_POST_SCALE		CH_EEPROM_ADDR + 0x0c /* 2 bytes */
+#define	CH_EEPROM_ADDR_FLASH_SUCCESS		CH_EEPROM_ADDR + 0x0d /* 1 byte */
 
 /* although each calibration can be stored in 60 bytes,
  * we use a full 64 byte block */

@@ -115,6 +115,7 @@ static UINT32		SensorSerial = 0x00000000;
 static UINT16		DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
 static UINT16		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
+static CHugPackedFloat	PreScale;
 
 /* USB idle support */
 static UINT8 idle_command = 0x00;
@@ -257,6 +258,9 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
 		  3 * sizeof(UINT16),
 		  (unsigned char *) DarkCalibration);
+	ReadFlash(CH_EEPROM_ADDR_PRE_SCALE,
+		  sizeof(CHugPackedFloat),
+		  (unsigned char *) &PreScale);
 	ReadFlash(CH_EEPROM_ADDR_POST_SCALE,
 		  sizeof(CHugPackedFloat),
 		  (unsigned char *) &PostScale);
@@ -278,6 +282,9 @@ CHugWriteEEprom(void)
 	WriteBytesFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
 			3 * sizeof(UINT16),
 			(unsigned char *) DarkCalibration);
+	WriteBytesFlash(CH_EEPROM_ADDR_PRE_SCALE,
+			sizeof(CHugPackedFloat),
+			(unsigned char *) &PreScale);
 	WriteBytesFlash(CH_EEPROM_ADDR_POST_SCALE,
 			sizeof(CHugPackedFloat),
 			(unsigned char *) &PostScale);
@@ -331,6 +338,9 @@ CHugTakeReading (void)
 			ra_tmp = PORTA;
 		}
 	}
+
+	/* pre-multiply so 100% intensity is near 1.0 */
+	cnt *= PreScale.offset;
 
 	/* scale by the integral time
 	 *  - for 0% intensity the value is now 0x0000
@@ -786,6 +796,17 @@ ProcessIO(void)
 		break;
 	case CH_CMD_SET_POST_SCALE:
 		memcpy ((void *) &PostScale,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			sizeof(CHugPackedFloat));
+		break;
+	case CH_CMD_GET_PRE_SCALE:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) &PreScale,
+			sizeof(CHugPackedFloat));
+		reply_len += sizeof(CHugPackedFloat);
+		break;
+	case CH_CMD_SET_PRE_SCALE:
+		memcpy ((void *) &PreScale,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(CHugPackedFloat));
 		break;
