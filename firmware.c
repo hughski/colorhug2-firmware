@@ -508,8 +508,8 @@ CHugTakeReadingsXYZ (CHugPackedFloat *x,
 		     CHugPackedFloat *y,
 		     CHugPackedFloat *z)
 {
-	CHugPackedFloat readings_xyz[3];
 	CHugPackedFloat readings[3];
+	CHugPackedFloat readings_tmp[3];
 	UINT8 i;
 	UINT8 rc;
 
@@ -523,23 +523,23 @@ CHugTakeReadingsXYZ (CHugPackedFloat *x,
 	/* convert to xyz */
 	rc = CHugCalibrationMultiply(SensorCalibration,
 				     readings,
-				     readings_xyz);
+				     readings_tmp);
 	if (rc != CH_FATAL_ERROR_NONE)
 		goto out;
 
 	/* post scale */
 	for (i = 0; i < 3; i++) {
-		rc = CHugPackedFloatMultiply(&readings_xyz[i],
+		rc = CHugPackedFloatMultiply(&readings_tmp[i],
 					     &PostScale,
-					     &readings_xyz[i]);
+					     &readings[i]);
 		if (rc != CH_FATAL_ERROR_NONE)
 			goto out;
 	}
 
 	/* copy values */
-	*x = readings_xyz[0];
-	*y = readings_xyz[1];
-	*z = readings_xyz[2];
+	*x = readings[0];
+	*y = readings[1];
+	*z = readings[2];
 out:
 	return rc;
 }
