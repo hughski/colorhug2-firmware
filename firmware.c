@@ -81,17 +81,17 @@ void CHugLowPriorityISRCode();
 #pragma code REMAPPED_RESET_VECTOR = CH_EEPROM_ADDR_RUNCODE
 void _reset (void)
 {
-    _asm goto _startup _endasm
+	_asm goto _startup_xxx _endasm
 }
 #pragma code REMAPPED_HIGH_INTERRUPT_VECTOR = CH_EEPROM_ADDR_HIGH_INTERRUPT
 void Remapped_High_ISR (void)
 {
-     _asm goto CHugHighPriorityISRCode _endasm
+	_asm goto CHugHighPriorityISRCode _endasm
 }
 #pragma code REMAPPED_LOW_INTERRUPT_VECTOR = CH_EEPROM_ADDR_LOW_INTERRUPT
 void Remapped_Low_ISR (void)
 {
-     _asm goto CHugLowPriorityISRCode _endasm
+	_asm goto CHugLowPriorityISRCode _endasm
 }
 
 /* actual interupt handlers */
@@ -103,6 +103,20 @@ void CHugHighPriorityISRCode()
 #pragma interruptlow CHugLowPriorityISRCode
 void CHugLowPriorityISRCode()
 {
+}
+
+/* If we program the firmware to the device without a bootloader then
+ * this sets up the interrupt vectors properly.
+ * The colorhug-inhx32-to-bin will ignore any code < 0x4000 */
+#pragma code HIGH_INTERRUPT_VECTOR = 0x08
+void CHugHighPriorityISRPlaceholder (void)
+{
+	_asm goto CH_EEPROM_ADDR_HIGH_INTERRUPT _endasm
+}
+#pragma code LOW_INTERRUPT_VECTOR = 0x18
+void CHugLowPriorityISRPlaceholder (void)
+{
+	_asm goto CH_EEPROM_ADDR_LOW_INTERRUPT _endasm
 }
 #endif
 
