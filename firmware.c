@@ -978,6 +978,14 @@ InitializeSystem(void)
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
 
+	/* The USB module will be enabled if the bootloader has booted,
+	 * so we soft-detach from the host. */
+	if(UCONbits.USBEN == 1) {
+		UCONbits.SUSPND = 0;
+		UCON = 0;
+		Delay10KTCYx(0xff);
+	}
+
 	/* only turn on the USB module when the device has power */
 #if defined(USE_USB_BUS_SENSE_IO)
 	tris_usb_bus_sense = INPUT_PIN;
