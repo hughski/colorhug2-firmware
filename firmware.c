@@ -239,7 +239,7 @@ CHugSetMultiplier(ChFreqScale multiplier)
  * CHugFatalError:
  **/
 static void
-CHugFatalError (ChFatalError fatal_error)
+CHugFatalError (ChError error)
 {
 	char i;
 
@@ -376,15 +376,15 @@ CHugTakeReadings (CHugPackedFloat *red,
 		  CHugPackedFloat *blue)
 {
 	UINT16 reading;
-	UINT8 rc = CH_FATAL_ERROR_NONE;
+	UINT8 rc = CH_ERROR_NONE;
 
 	/* check the device is sane */
 	if (SensorSerial == 0xffffffff) {
-		rc = CH_FATAL_ERROR_NO_SERIAL;
+		rc = CH_ERROR_NO_SERIAL;
 		goto out;
 	}
 	if (DarkCalibration[CH_COLOR_OFFSET_RED] == 0xffff) {
-		rc = CH_FATAL_ERROR_NO_CALIBRATION;
+		rc = CH_ERROR_NO_CALIBRATION;
 		goto out;
 	}
 
@@ -392,11 +392,11 @@ CHugTakeReadings (CHugPackedFloat *red,
 	CHugSetColorSelect(CH_COLOR_SELECT_RED);
 	reading = CHugTakeReading();
 	if (reading < DarkCalibration[CH_COLOR_OFFSET_RED]) {
-		rc = CH_FATAL_ERROR_UNDERFLOW_SENSOR;
+		rc = CH_ERROR_UNDERFLOW_SENSOR;
 		goto out;
 	}
 	if (reading > 0x7fff) {
-		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
+		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
 	red->offset = 0;
@@ -406,11 +406,11 @@ CHugTakeReadings (CHugPackedFloat *red,
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
 	reading = CHugTakeReading();
 	if (reading < DarkCalibration[CH_COLOR_OFFSET_GREEN]) {
-		rc = CH_FATAL_ERROR_UNDERFLOW_SENSOR;
+		rc = CH_ERROR_UNDERFLOW_SENSOR;
 		goto out;
 	}
 	if (reading > 0x7fff) {
-		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
+		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
 	green->offset = 0;
@@ -420,11 +420,11 @@ CHugTakeReadings (CHugPackedFloat *red,
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
 	reading = CHugTakeReading();
 	if (reading < DarkCalibration[CH_COLOR_OFFSET_BLUE]) {
-		rc = CH_FATAL_ERROR_UNDERFLOW_SENSOR;
+		rc = CH_ERROR_UNDERFLOW_SENSOR;
 		goto out;
 	}
 	if (reading > 0x7fff) {
-		rc = CH_FATAL_ERROR_OVERFLOW_SENSOR;
+		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
 	blue->offset = 0;
@@ -453,31 +453,31 @@ CHugDotProduct(const CHugPackedFloat *vec1,
 	rc = CHugPackedFloatMultiply (&vec1[0],
 				      &vec2[0],
 				      scalar);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* 2 */
 	rc = CHugPackedFloatMultiply (&vec1[1],
 				      &vec2[1],
 				      &tmp);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* add to result */
 	rc = CHugPackedFloatAdd(scalar, &tmp, scalar);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* 3 */
 	rc = CHugPackedFloatMultiply (&vec1[2],
 				      &vec2[2],
 				      &tmp);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* add to result */
 	rc = CHugPackedFloatAdd(scalar, &tmp, scalar);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 out:
 	return rc;
@@ -500,17 +500,17 @@ CHugCalibrationMultiply (const CHugPackedFloat *cal,
 
 	/* X */
 	rc = CHugDotProduct(cal + 0, device_rgb, &xyz[0]);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* Y */
 	rc = CHugDotProduct(cal + 3, device_rgb, &xyz[1]);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* Z */
 	rc = CHugDotProduct(cal + 6, device_rgb, &xyz[2]);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 out:
 	return rc;
@@ -534,14 +534,14 @@ CHugTakeReadingsXYZ (const CHugPackedFloat *calibration,
 	rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
 			      &readings[CH_COLOR_OFFSET_GREEN],
 			      &readings[CH_COLOR_OFFSET_BLUE]);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* convert to xyz */
 	rc = CHugCalibrationMultiply(calibration,
 				     readings,
 				     readings_tmp);
-	if (rc != CH_FATAL_ERROR_NONE)
+	if (rc != CH_ERROR_NONE)
 		goto out;
 
 	/* post scale */
@@ -549,7 +549,7 @@ CHugTakeReadingsXYZ (const CHugPackedFloat *calibration,
 		rc = CHugPackedFloatMultiply(&readings_tmp[i],
 					     &PostScale,
 					     &readings[i]);
-		if (rc != CH_FATAL_ERROR_NONE)
+		if (rc != CH_ERROR_NONE)
 			goto out;
 	}
 
@@ -588,8 +588,8 @@ CHugSwitchCalibrationMatrix(UINT16 calibration_index,
 		  9 * sizeof(CHugPackedFloat),
 		  (unsigned char *) calibration);
 	if (calibration[0].raw == 0xffffffff)
-		return CH_FATAL_ERROR_NO_CALIBRATION;
-	return CH_FATAL_ERROR_NONE;
+		return CH_ERROR_NO_CALIBRATION;
+	return CH_ERROR_NONE;
 }
 
 /**
@@ -612,8 +612,8 @@ CHugGetCalibrationMatrix(UINT16 calibration_index,
 		  24,
 		  (unsigned char *) description);
 	if (description[0] == 0xff)
-		return CH_FATAL_ERROR_NO_CALIBRATION;
-	return CH_FATAL_ERROR_NONE;
+		return CH_ERROR_NO_CALIBRATION;
+	return CH_ERROR_NONE;
 }
 
 /**
@@ -691,7 +691,7 @@ CHugSetCalibrationMatrix(UINT16 calibration_index,
 		      addr_block_start + offset + 0x40,
 		      CH_FLASH_ERASE_BLOCK_SIZE - (offset + 0x40));
 
-	return CH_FATAL_ERROR_NONE;
+	return CH_ERROR_NONE;
 }
 
 /**
@@ -707,7 +707,7 @@ ProcessIO(void)
 	UINT8 checksum;
 	UINT8 length;
 	unsigned char cmd;
-	unsigned char rc = CH_FATAL_ERROR_NONE;
+	unsigned char rc = CH_ERROR_NONE;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 	CHugPackedFloat calibration[9];
 
@@ -779,13 +779,13 @@ ProcessIO(void)
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(UINT16));
 		if (calibration_index > CH_CALIBRATION_MAX) {
-			rc = CH_FATAL_ERROR_INVALID_VALUE;
+			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
 		rc = CHugGetCalibrationMatrix(calibration_index,
 					      (CHugPackedFloat *)&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 					      &TxBuffer[CH_BUFFER_OUTPUT_DATA] + 0x24);
-		if (rc != CH_FATAL_ERROR_NONE)
+		if (rc != CH_ERROR_NONE)
 			break;
 		reply_len += (9 * sizeof(CHugPackedFloat)) + 24;
 		break;
@@ -795,7 +795,7 @@ ProcessIO(void)
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(UINT16));
 		if (calibration_index > CH_CALIBRATION_MAX) {
-			rc = CH_FATAL_ERROR_INVALID_VALUE;
+			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
 		CHugSetCalibrationMatrix(calibration_index,
@@ -871,7 +871,7 @@ ProcessIO(void)
 		rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
 				      &readings[CH_COLOR_OFFSET_GREEN],
 				      &readings[CH_COLOR_OFFSET_BLUE]);
-		if (rc != CH_FATAL_ERROR_NONE)
+		if (rc != CH_ERROR_NONE)
 			break;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
@@ -885,21 +885,21 @@ ProcessIO(void)
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(UINT16));
 		if (calibration_index > CH_CALIBRATION_MAX) {
-			rc = CH_FATAL_ERROR_INVALID_VALUE;
+			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
 
 		/* load in the chosen calibration matrix */
 		rc = CHugSwitchCalibrationMatrix(calibration_index,
 						 calibration);
-		if (rc != CH_FATAL_ERROR_NONE)
+		if (rc != CH_ERROR_NONE)
 			break;
 
 		rc = CHugTakeReadingsXYZ(calibration,
 					 &readings[CH_COLOR_OFFSET_RED],
 					 &readings[CH_COLOR_OFFSET_GREEN],
 					 &readings[CH_COLOR_OFFSET_BLUE]);
-		if (rc != CH_FATAL_ERROR_NONE)
+		if (rc != CH_ERROR_NONE)
 			break;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
@@ -912,14 +912,14 @@ ProcessIO(void)
 		break;
 	case CH_CMD_SET_FLASH_SUCCESS:
 		if (RxBuffer[CH_BUFFER_INPUT_DATA] != 0x01) {
-			rc = CH_FATAL_ERROR_INVALID_VALUE;
+			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	default:
-		rc = CH_FATAL_ERROR_UNKNOWN_CMD;
+		rc = CH_ERROR_UNKNOWN_CMD;
 		break;
 	}
 
@@ -1130,7 +1130,7 @@ main(void)
 
 	/* the watchdog saved us from our doom */
 	if (!RCONbits.NOT_TO)
-		CHugFatalError(CH_FATAL_ERROR_WATCHDOG);
+		CHugFatalError(CH_ERROR_WATCHDOG);
 
 	while(1) {
 

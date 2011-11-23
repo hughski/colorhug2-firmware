@@ -38,10 +38,10 @@ typedef union {
 	};
 } CHugPackedFloat;
 
-ChFatalError	 CHugPackedFloatAdd		(const CHugPackedFloat	*pf1,
+ChError	 CHugPackedFloatAdd		(const CHugPackedFloat	*pf1,
 						 const CHugPackedFloat	*pf2,
 						 CHugPackedFloat	*result);
-ChFatalError	 CHugPackedFloatMultiply	(const CHugPackedFloat	*pf1,
+ChError	 CHugPackedFloatMultiply	(const CHugPackedFloat	*pf1,
 						 const CHugPackedFloat	*pf2,
 						 CHugPackedFloat	*result);
 

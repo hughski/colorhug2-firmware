@@ -34,7 +34,7 @@
  *
  * @return: an error code
  **/
-ChFatalError
+ChError
 CHugPackedFloatAdd (const CHugPackedFloat *pf1,
 		    const CHugPackedFloat *pf2,
 		    CHugPackedFloat *result)
@@ -46,11 +46,11 @@ CHugPackedFloatAdd (const CHugPackedFloat *pf1,
 	pf1_tmp = pf1->raw / 0xffff;
 	pf2_tmp = pf2->raw / 0xffff;
 	if (pf1_tmp + pf2_tmp > 0xffff)
-		return CH_FATAL_ERROR_OVERFLOW_ADDITION;
+		return CH_ERROR_OVERFLOW_ADDITION;
 
 	/* do the proper result */
 	result->raw = pf1->raw + pf2->raw;
-	return CH_FATAL_ERROR_NONE;
+	return CH_ERROR_NONE;
 }
 
 /* not in stdlib.h */
@@ -67,7 +67,7 @@ CHugPackedFloatAdd (const CHugPackedFloat *pf1,
  *
  * @return: an error code
  **/
-ChFatalError
+ChError
 CHugPackedFloatMultiply (const CHugPackedFloat *pf1,
 			 const CHugPackedFloat *pf2,
 			 CHugPackedFloat *result)
@@ -96,8 +96,8 @@ CHugPackedFloatMultiply (const CHugPackedFloat *pf1,
 		/* calculate post-multiply divisor */
 		mult_divisor = 0x10000 / (i * i);
 		result->raw = mult_result / mult_divisor;
-		return CH_FATAL_ERROR_NONE;
+		return CH_ERROR_NONE;
 	}
 
-	return CH_FATAL_ERROR_OVERFLOW_MULTIPLY;
+	return CH_ERROR_OVERFLOW_MULTIPLY;
 }
