@@ -432,6 +432,14 @@ main(void)
 	UINT16 runcode_start = 0xffff;
 	UINT8 flash_success = 0xff;
 
+	/* stack overflow / underflow */
+	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF)
+		CHugFatalError(CH_ERROR_OVERFLOW_STACK);
+
+	/* the watchdog saved us from our doom */
+	if (!RCONbits.NOT_TO)
+		CHugFatalError(CH_ERROR_WATCHDOG);
+
 	/*
 	 * Boot into the flashed program if all of these are true:
 	 *  1. we didn't do soft-reset
@@ -446,10 +454,6 @@ main(void)
 	    runcode_start != 0xffff &&
 	    flash_success == 0x01)
 		CHugBootFlash();
-
-	/* the watchdog saved us from our doom */
-	if (!RCONbits.NOT_TO)
-		CHugFatalError(CH_ERROR_WATCHDOG);
 
 	InitializeSystem();
 
