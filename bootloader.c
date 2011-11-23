@@ -67,6 +67,20 @@
 #error No hardware board defined, see "HardwareProfile.h" and __FILE__
 #endif
 
+#pragma code High_ISR = 0x08
+void
+CHugHighPriorityISRCode (void)
+{
+	_asm goto CH_EEPROM_ADDR_HIGH_INTERRUPT _endasm
+}
+
+#pragma code Low_ISR = 0x18
+void
+CHugLowPriorityISRCode (void)
+{
+	_asm goto CH_EEPROM_ADDR_LOW_INTERRUPT _endasm
+}
+
 #pragma rom
 
 #pragma udata
