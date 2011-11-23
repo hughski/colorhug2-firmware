@@ -154,6 +154,7 @@ CHugDeviceIdle(void)
 		break;
 	case CH_CMD_BOOT_FLASH:
 		CHugBootFlash();
+		CHugFatalError(CH_ERROR_NOT_IMPLEMENTED);
 		break;
 	}
 	idle_command = 0x00;
