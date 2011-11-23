@@ -81,7 +81,7 @@ void CHugLowPriorityISRCode();
 #pragma code REMAPPED_RESET_VECTOR = CH_EEPROM_ADDR_RUNCODE
 void _reset (void)
 {
-	_asm goto _startup_xxx _endasm
+	_asm goto _startup _endasm
 }
 #pragma code REMAPPED_HIGH_INTERRUPT_VECTOR = CH_EEPROM_ADDR_HIGH_INTERRUPT
 void Remapped_High_ISR (void)
