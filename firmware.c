@@ -248,7 +248,7 @@ CHugFatalError (ChError error)
 	TRISE = 0x3c;
 
 	while (1) {
-		for (i = 0; i < fatal_error + 2; i++) {
+		for (i = 0; i < error + 2; i++) {
 			PORTE = 0x01;
 			Delay10KTCYx(0xff);
 			PORTE = 0x00;
