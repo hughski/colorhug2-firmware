@@ -166,14 +166,12 @@ CHugDeviceIdle(void)
 void
 ProcessIO(void)
 {
-	float readings_xyz[3];
 	UINT16 address;
-	UINT16 readings[3];
 	UINT8 length;
 	UINT8 checksum;
 	unsigned char cmd;
+	unsigned char rc = CH_ERROR_NONE;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
-	unsigned char retval = CH_ERROR_NONE;
 
 	/* reset the LED state */
 	if (PORTE != 0x01 && PORTE != 0x02)
@@ -224,7 +222,7 @@ ProcessIO(void)
 			2);
 		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
 		if (length > 60) {
-			retval = CH_ERROR_INVALID_LENGTH;
+			rc = CH_ERROR_INVALID_LENGTH;
 			break;
 		}
 		ReadFlash(address, length,
@@ -240,18 +238,18 @@ ProcessIO(void)
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
 			2);
 		if (address < CH_EEPROM_ADDR_RUNCODE) {
-			retval = CH_ERROR_INVALID_ADDRESS;
+			rc = CH_ERROR_INVALID_ADDRESS;
 			break;
 		}
 		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
 		if (length > CH_FLASH_TRANSFER_BLOCK_SIZE) {
-			retval = CH_ERROR_INVALID_LENGTH;
+			rc = CH_ERROR_INVALID_LENGTH;
 			break;
 		}
 		checksum = CHugCalculateChecksum(&RxBuffer[CH_BUFFER_INPUT_DATA+4],
 						 length);
 		if (checksum != RxBuffer[CH_BUFFER_INPUT_DATA+3]) {
-			retval = CH_ERROR_INVALID_CHECKSUM;
+			rc = CH_ERROR_INVALID_CHECKSUM;
 			break;
 		}
 
@@ -280,7 +278,7 @@ ProcessIO(void)
 		break;
 	case CH_CMD_SET_FLASH_SUCCESS:
 		if (RxBuffer[CH_BUFFER_INPUT_DATA] != 0x00) {
-			retval = CH_ERROR_INVALID_VALUE;
+			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
 		EraseFlash(CH_EEPROM_ADDR_FLASH_SUCCESS,
@@ -289,13 +287,13 @@ ProcessIO(void)
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	default:
-		retval = CH_ERROR_UNKNOWN_CMD_FOR_BOOTLOADER;
+		rc = CH_ERROR_UNKNOWN_CMD_FOR_BOOTLOADER;
 		break;
 	}
 
 	/* always send return code */
 	if(!HIDTxHandleBusy(USBInHandle)) {
-		TxBuffer[CH_BUFFER_OUTPUT_RETVAL] = retval;
+		TxBuffer[CH_BUFFER_OUTPUT_RETVAL] = rc;
 		TxBuffer[CH_BUFFER_OUTPUT_CMD] = cmd;
 		USBInHandle = HIDTxPacket(HID_EP,
 					  (BYTE*)&TxBuffer[0],
