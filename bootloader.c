@@ -81,6 +81,9 @@ CHugLowPriorityISRCode (void)
 	_asm goto CH_EEPROM_ADDR_LOW_INTERRUPT _endasm
 }
 
+/* ensure this is incremented on each released build */
+static UINT16	FirmwareVersion[3] = { 0, 1, 0 };
+
 #pragma rom
 
 #pragma udata
@@ -206,6 +209,12 @@ ProcessIO(void)
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
 		idle_command = CH_CMD_RESET;
+		break;
+	case CH_CMD_GET_FIRMWARE_VERSION:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			&FirmwareVersion,
+			2 * 3);
+		reply_len += 2 * 3;
 		break;
 	case CH_CMD_ERASE_FLASH:
 		/* allow to read any address */
