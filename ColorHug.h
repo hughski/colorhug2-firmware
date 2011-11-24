@@ -366,13 +366,13 @@
 #define CH_EEPROM_ADDR_LOW_INTERRUPT		0x4018
 
 /* EEPROM address offsets */
-#define	CH_EEPROM_ADDR				0xf000
-#define	CH_EEPROM_ADDR_SERIAL			CH_EEPROM_ADDR + 0x00 /* 4 bytes */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_RED		CH_EEPROM_ADDR + 0x04 /* 2 bytes */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_GREEN	CH_EEPROM_ADDR + 0x06 /* 2 bytes */
-#define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		CH_EEPROM_ADDR + 0x08 /* 2 bytes */
-#define	CH_EEPROM_ADDR_PRE_SCALE		CH_EEPROM_ADDR + 0x0a /* 2 bytes */
-#define	CH_EEPROM_ADDR_POST_SCALE		CH_EEPROM_ADDR + 0x0c /* 2 bytes */
+#define	CH_EEPROM_ADDR_CONFIG			0xf000
+#define	CH_EEPROM_OFFSET_SERIAL			0x00 /* 4 bytes */
+#define	CH_EEPROM_OFFSET_DARK_OFFSET_RED	0x04 /* 2 bytes */
+#define	CH_EEPROM_OFFSET_DARK_OFFSET_GREEN	0x06 /* 2 bytes */
+#define	CH_EEPROM_OFFSET_DARK_OFFSET_BLUE	0x08 /* 2 bytes */
+#define	CH_EEPROM_OFFSET_PRE_SCALE		0x0a /* 4 bytes */
+#define	CH_EEPROM_OFFSET_POST_SCALE		0x0e /* 4 bytes */
 
 /* although each calibration can be stored in 60 bytes,
  * we use a full 64 byte block */

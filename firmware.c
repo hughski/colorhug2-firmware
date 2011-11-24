@@ -261,16 +261,16 @@ static void
 CHugReadEEprom(void)
 {
 	/* read this into RAM so it can be changed */
-	ReadFlash(CH_EEPROM_ADDR_SERIAL,
+	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_SERIAL,
 		  sizeof(UINT32),
 		  (unsigned char *) &SensorSerial);
-	ReadFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
+	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_DARK_OFFSET_RED,
 		  3 * sizeof(UINT16),
 		  (unsigned char *) DarkCalibration);
-	ReadFlash(CH_EEPROM_ADDR_PRE_SCALE,
+	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PRE_SCALE,
 		  sizeof(CHugPackedFloat),
 		  (unsigned char *) &PreScale);
-	ReadFlash(CH_EEPROM_ADDR_POST_SCALE,
+	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_POST_SCALE,
 		  sizeof(CHugPackedFloat),
 		  (unsigned char *) &PostScale);
 }
@@ -283,20 +283,25 @@ CHugWriteEEprom(void)
 {
 	/* we can't call this more than 10,000 times otherwise we'll
 	 * burn out the device */
-	EraseFlash(CH_EEPROM_ADDR,
-		   CH_EEPROM_ADDR + 0x400);
-	WriteBytesFlash(CH_EEPROM_ADDR_SERIAL,
-			sizeof(UINT32),
-			(unsigned char *) &SensorSerial);
-	WriteBytesFlash(CH_EEPROM_ADDR_DARK_OFFSET_RED,
-			3 * sizeof(UINT16),
-			(unsigned char *) DarkCalibration);
-	WriteBytesFlash(CH_EEPROM_ADDR_PRE_SCALE,
-			sizeof(CHugPackedFloat),
-			(unsigned char *) &PreScale);
-	WriteBytesFlash(CH_EEPROM_ADDR_POST_SCALE,
-			sizeof(CHugPackedFloat),
-			(unsigned char *) &PostScale);
+	EraseFlash(CH_EEPROM_ADDR_CONFIG,
+		   CH_EEPROM_ADDR_CONFIG + CH_FLASH_WRITE_BLOCK_SIZE);
+
+	/* write this in one fell swoop */
+	memcpy(FlashBuffer + CH_EEPROM_OFFSET_SERIAL,
+	       (void *) &SensorSerial,
+	       sizeof(UINT32));
+	memcpy(FlashBuffer + CH_EEPROM_OFFSET_DARK_OFFSET_RED,
+	       (void *) DarkCalibration,
+	       3 * sizeof(UINT16));
+	memcpy(FlashBuffer + CH_EEPROM_OFFSET_PRE_SCALE,
+	       (void *) &PreScale,
+	       sizeof(CHugPackedFloat));
+	memcpy(FlashBuffer + CH_EEPROM_OFFSET_POST_SCALE,
+	       (void *) &PostScale,
+	       sizeof(CHugPackedFloat));
+	WriteBytesFlash(CH_EEPROM_ADDR_CONFIG,
+			CH_FLASH_WRITE_BLOCK_SIZE,
+			(unsigned char *) FlashBuffer);
 }
 
 /**
