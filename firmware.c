@@ -39,9 +39,6 @@
 #include <USB/usb_device.h>
 #include <USB/usb_function_hid.h>
 
-/*** This doesn't work yet ***/
-//#define COLORHUG_USE_BOOTLOADER
-
 /* configuration */
 #if defined(COLORHUG)
 #pragma config XINST	= OFF		/* turn off extended instruction set */
@@ -73,7 +70,6 @@
 
 #pragma rom
 
-#ifdef COLORHUG_USE_BOOTLOADER
 extern void _startup (void);
 void CHugHighPriorityISRCode();
 void CHugLowPriorityISRCode();
@@ -118,7 +114,6 @@ void CHugLowPriorityISRPlaceholder (void)
 {
 	_asm goto CH_EEPROM_ADDR_LOW_INTERRUPT _endasm
 }
-#endif
 
 /* ensure this is incremented on each released build */
 static UINT16	FirmwareVersion[3] = { 0, 0, 4 };
