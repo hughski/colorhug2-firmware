@@ -373,13 +373,16 @@
 #define	CH_EEPROM_ADDR_DARK_OFFSET_BLUE		CH_EEPROM_ADDR + 0x08 /* 2 bytes */
 #define	CH_EEPROM_ADDR_PRE_SCALE		CH_EEPROM_ADDR + 0x0a /* 2 bytes */
 #define	CH_EEPROM_ADDR_POST_SCALE		CH_EEPROM_ADDR + 0x0c /* 2 bytes */
-#define	CH_EEPROM_ADDR_FLASH_SUCCESS		CH_EEPROM_ADDR + 0x0d /* 1 byte */
 
 /* although each calibration can be stored in 60 bytes,
  * we use a full 64 byte block */
 #define	CH_CALIBRATION_ADDR_TMP			0xdc00	/* each is 64 bytes */
 #define	CH_CALIBRATION_ADDR			0xe000	/* each is 64 bytes */
 #define	CH_CALIBRATION_MAX			64	/* so finishes at device params */
+
+/* this is a whole seporate block, as we don't want to erase the
+ * calibration state when doing a firmware upgrade */
+#define	CH_EEPROM_ADDR_FLASH_SUCCESS		0xd800
 
 #define CH_COLOR_OFFSET_RED			0x00
 #define CH_COLOR_OFFSET_GREEN			0x01

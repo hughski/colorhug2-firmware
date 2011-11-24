@@ -915,6 +915,8 @@ ProcessIO(void)
 			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
+		EraseFlash(CH_EEPROM_ADDR_FLASH_SUCCESS,
+			   CH_EEPROM_ADDR_FLASH_SUCCESS + 1);
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
