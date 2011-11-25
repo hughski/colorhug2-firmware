@@ -908,7 +908,7 @@ ProcessIO(void)
 		}
 
 		/* need to remap the index to reality */
-		if (calibration_index > CH_CALIBRATION_MAX) {
+		if (calibration_index >= CH_CALIBRATION_MAX) {
 			calibration_index = CalibrationMap[calibration_index -
 							   CH_CALIBRATION_MAX];
 		}
