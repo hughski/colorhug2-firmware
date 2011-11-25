@@ -72,32 +72,30 @@ CHugPackedFloatMultiply (const CHugPackedFloat *pf1,
 			 const CHugPackedFloat *pf2,
 			 CHugPackedFloat *result)
 {
-	INT32 mult_result;
-	INT32 mult_divisor;
-	INT16 i;
+	CHugPackedFloat pf1_tmp;
+	CHugPackedFloat pf2_tmp;
 
-	/* trivial: two numbers < 1.0 can be safely handled
-	 * within 32 bits */
-	if (pf1->raw < 0x10000 && pf2->raw < 0x10000)
-		result->raw = (pf1->raw * pf2->raw) / 0x10000;
+	/* make positive */
+	pf1_tmp.raw = ABS(pf1->raw);
+	pf2_tmp.raw = ABS(pf2->raw);
 
-	/* find a divisor that can multiply these numbers with the
-	 * greatest precision and with the temporary result still
-	 * staying within 32 bits */
-	for (i = 2; i < 0xff; i *= 2) {
+	/* check for overflow */
+	if (pf1_tmp.offset > 0 &&
+	    0x8000 / pf1_tmp.offset < pf2_tmp.offset)
+		return CH_ERROR_OVERFLOW_MULTIPLY;
 
-		/* just do the multiplication */
-		mult_result = (pf1->raw / i) * (pf2->raw / i);
+	/* do long multiplication on each 16 bit part */
+	result->raw = ((UINT32) pf1_tmp.fraction *
+		       (UINT32) pf2_tmp.fraction) / 0x10000;
+	result->raw += ((UINT32) pf1_tmp.offset *
+			(UINT32) pf2_tmp.offset) * 0x10000;
+	result->raw += (UINT32) pf1_tmp.fraction *
+		       (UINT32) pf2_tmp.offset;
+	result->raw += (UINT32) pf1_tmp.offset *
+		       (UINT32) pf2_tmp.fraction;
 
-		/* detect overflow */
-		if (ABS((mult_result / pf1->raw) - (pf2->raw / (i * i))) > 1)
-			continue;
-
-		/* calculate post-multiply divisor */
-		mult_divisor = 0x10000 / (i * i);
-		result->raw = mult_result / mult_divisor;
-		return CH_ERROR_NONE;
-	}
-
-	return CH_ERROR_OVERFLOW_MULTIPLY;
+	/* correct sign bit */
+	if ((pf1->raw < 0) ^ (pf2->raw < 0))
+		result->raw = -result->raw;
+	return CH_ERROR_NONE;
 }
