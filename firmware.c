@@ -116,12 +116,13 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 1, 0, 0 };
+static UINT16	FirmwareVersion[3] = { 1, 0, 1 };
 
 #pragma udata
 
 static UINT32		SensorSerial = 0x00000000;
 static UINT16		DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
+static UINT16		CalibrationMap[6];
 static UINT16		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 static CHugPackedFloat	PreScale;
@@ -273,6 +274,9 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_POST_SCALE,
 		  sizeof(CHugPackedFloat),
 		  (unsigned char *) &PostScale);
+	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_CALIBRATION_MAP,
+		  6 * sizeof(UINT16),
+		  (unsigned char *) &CalibrationMap);
 }
 
 /**
@@ -299,6 +303,9 @@ CHugWriteEEprom(void)
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_POST_SCALE,
 	       (void *) &PostScale,
 	       sizeof(CHugPackedFloat));
+	memcpy(FlashBuffer + CH_EEPROM_OFFSET_CALIBRATION_MAP,
+	       (void *) &CalibrationMap,
+	       6 * sizeof(UINT16));
 	WriteBytesFlash(CH_EEPROM_ADDR_CONFIG,
 			CH_FLASH_WRITE_BLOCK_SIZE,
 			(unsigned char *) FlashBuffer);
@@ -835,6 +842,17 @@ ProcessIO(void)
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			3 * sizeof(UINT16));
 		break;
+	case CH_CMD_GET_CALIBRATION_MAP:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			&CalibrationMap,
+			6 * sizeof(UINT16));
+		reply_len += 6 * sizeof(UINT16);
+		break;
+	case CH_CMD_SET_CALIBRATION_MAP:
+		memcpy ((void *) &CalibrationMap,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			6 * sizeof(UINT16));
+		break;
 	case CH_CMD_GET_SERIAL_NUMBER:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &SensorSerial,
@@ -884,9 +902,15 @@ ProcessIO(void)
 		memcpy (&calibration_index,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(UINT16));
-		if (calibration_index > CH_CALIBRATION_MAX) {
+		if (calibration_index > CH_CALIBRATION_MAX + 6) {
 			rc = CH_ERROR_INVALID_VALUE;
 			break;
+		}
+
+		/* need to remap the index to reality */
+		if (calibration_index > CH_CALIBRATION_MAX) {
+			calibration_index = CalibrationMap[calibration_index -
+							   CH_CALIBRATION_MAX];
 		}
 
 		/* load in the chosen calibration matrix */

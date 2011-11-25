@@ -1,2 +1,5 @@
+1.0.1	2011-11-xx	colorhug-1.0.1.bin
+	Add calibration remapping functionality to be able to specify
+	default matrixes for LCD, CRT and projectors.
 1.0.0	2011-11-24	colorhug-1.0.0.bin
 	Initial firmware release
