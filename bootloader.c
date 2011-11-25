@@ -170,6 +170,7 @@ void
 ProcessIO(void)
 {
 	UINT16 address;
+	UINT16 erase_length;
 	UINT8 length;
 	UINT8 checksum;
 	unsigned char cmd;
@@ -221,8 +222,10 @@ ProcessIO(void)
 		memcpy (&address,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
 			2);
-		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
-		EraseFlash(address, address + length);
+		memcpy (&erase_length,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+2],
+			2);
+		EraseFlash(address, address + erase_length);
 		break;
 	case CH_CMD_READ_FLASH:
 		/* allow to read any address */
