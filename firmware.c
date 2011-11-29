@@ -337,6 +337,10 @@ CHugScaleByIntegral (UINT16 *pulses)
 {
 	UINT32 tmp;
 
+	/* no point, so optimize */
+	if (SensorIntegralTime == 0xffff)
+		return;
+
 	/* do this as integer math for speed */
 	tmp = (UINT32) *pulses * 0xffff;
 	*pulses = tmp / (UINT32) SensorIntegralTime;
