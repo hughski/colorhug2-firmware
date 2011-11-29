@@ -3,5 +3,8 @@
 	   default matrixes for LCD, CRT and projectors.
 	 * Use a better packed float multiplication algorithm to improve
 	   XYZ measurement accuracy.
+	 * Add a calibration matrix display type bitfield to each
+	   calibration record so the user can't match LCD matrices to
+	   projectors and vice versa.
 1.0.0	2011-11-24	colorhug-1.0.0.bin
 	 * Initial firmware release

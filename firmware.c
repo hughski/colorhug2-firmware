@@ -609,6 +609,7 @@ CHugSwitchCalibrationMatrix(UINT16 calibration_index,
 static UINT8
 CHugGetCalibrationMatrix(UINT16 calibration_index,
 			 CHugPackedFloat *calibration,
+			 UINT8 *types,
 			 UINT8 *description)
 {
 	UINT32 addr;
@@ -620,7 +621,10 @@ CHugGetCalibrationMatrix(UINT16 calibration_index,
 		  matrix_size,
 		  (unsigned char *) calibration);
 	ReadFlash(addr + matrix_size,
-		  24,
+		  sizeof(UINT8),
+		  (unsigned char *) types);
+	ReadFlash(addr + matrix_size + 1,
+		  CH_CALIBRATION_DESCRIPTION_LEN,
 		  (unsigned char *) description);
 	if (description[0] == 0xff)
 		return CH_ERROR_NO_CALIBRATION;
@@ -656,6 +660,7 @@ CHugCopyFlash(UINT32 src, UINT32 dest, UINT16 len)
 static UINT8
 CHugSetCalibrationMatrix(UINT16 calibration_index,
 			 CHugPackedFloat *calibration,
+			 UINT8 types,
 			 UINT8 *description)
 {
 	UINT32 addr_block_start;
@@ -691,8 +696,11 @@ CHugSetCalibrationMatrix(UINT16 calibration_index,
 	       (void *) calibration,
 	       matrix_size);
 	memcpy(FlashBuffer + matrix_size,
+	       (void *) &types,
+	       1);
+	memcpy(FlashBuffer + matrix_size + 1,
 	       (void *) description,
-	       24);
+	       CH_CALIBRATION_DESCRIPTION_LEN);
 	WriteBytesFlash(addr_block_start + offset,
 			CH_FLASH_WRITE_BLOCK_SIZE,
 			(unsigned char *) FlashBuffer);
@@ -795,10 +803,11 @@ ProcessIO(void)
 		}
 		rc = CHugGetCalibrationMatrix(calibration_index,
 					      (CHugPackedFloat *)&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-					      &TxBuffer[CH_BUFFER_OUTPUT_DATA] + 0x24);
+					      &TxBuffer[CH_BUFFER_OUTPUT_DATA] + 0x24,
+					      &TxBuffer[CH_BUFFER_OUTPUT_DATA] + 0x25);
 		if (rc != CH_ERROR_NONE)
 			break;
-		reply_len += (9 * sizeof(CHugPackedFloat)) + 24;
+		reply_len += (9 * sizeof(CHugPackedFloat)) + 1 + CH_CALIBRATION_DESCRIPTION_LEN;
 		break;
 	case CH_CMD_SET_CALIBRATION:
 		/* set the chosen calibration matrix */
@@ -811,7 +820,8 @@ ProcessIO(void)
 		}
 		CHugSetCalibrationMatrix(calibration_index,
 					 (CHugPackedFloat *) &RxBuffer[CH_BUFFER_INPUT_DATA + 2],
-					 &RxBuffer[CH_BUFFER_INPUT_DATA + 2  + 0x24]);
+					 RxBuffer[CH_BUFFER_INPUT_DATA + 2 + 0x24],
+					 &RxBuffer[CH_BUFFER_INPUT_DATA + 3 + 0x24]);
 		break;
 	case CH_CMD_GET_POST_SCALE:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
