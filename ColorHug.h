@@ -39,6 +39,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][1:color_select]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_COLOR_SELECT			0x01
 
@@ -49,6 +51,8 @@
  *
  * IN:  [1:cmd][1:color_select]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_COLOR_SELECT			0x02
 
@@ -59,6 +63,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][1:multiplier_value]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_MULTIPLIER			0x03
 
@@ -69,6 +75,8 @@
  *
  * IN:  [1:cmd][1:multiplier_value]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_MULTIPLIER			0x04
 
@@ -79,6 +87,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:integral_time]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_INTEGRAL_TIME		0x05
 
@@ -89,6 +99,8 @@
  *
  * IN:  [1:cmd][2:integral_time]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_INTEGRAL_TIME		0x06
 
@@ -99,6 +111,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:major][2:minor][2:micro]
+ *
+ * This command is available in bootloader and firmware mode.
  **/
 #define	CH_CMD_GET_FIRMWARE_VERSION		0x07
 
@@ -118,6 +132,8 @@
  *
  * IN:  [1:cmd][2:index]
  * OUT: [1:retval][1:cmd][2*9:matrix_value][1:types][23:description]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_CALIBRATION			0x09
 
@@ -128,6 +144,8 @@
  *
  * IN:  [1:cmd][2:index][4*9:matrix_value][1:types][23:description]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_CALIBRATION			0x0a
 
@@ -138,6 +156,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][4:serial_number]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_SERIAL_NUMBER		0x0b
 
@@ -148,6 +168,8 @@
  *
  * IN:  [1:cmd][4:serial_number]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_SERIAL_NUMBER		0x0c
 
@@ -158,6 +180,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][1:led_state]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_LEDS				0x0d
 
@@ -172,6 +196,8 @@
  *
  * IN:  [1:cmd][1:led_state][1:repeat][1:on-time][1:off-time]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_LEDS				0x0e
 
@@ -182,6 +208,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:red][2:green][2:blue]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_DARK_OFFSETS			0x0f
 
@@ -192,6 +220,8 @@
  *
  * IN:  [1:cmd][2:red][2:green][2:blue]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_DARK_OFFSETS			0x10
 
@@ -202,6 +232,8 @@
  *
  * IN:  [1:cmd][8:eeprom_magic]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_WRITE_EEPROM			0x20
 
@@ -212,6 +244,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:count]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_TAKE_READING_RAW			0x21
 
@@ -225,6 +259,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:red][2:green][2:blue]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_TAKE_READINGS			0x22
 
@@ -239,7 +275,9 @@
  * map is used to find the default calibration index to use.
  *
  * IN:  [1:cmd][2:calibration-index]
- * OUT: [1:retval][1:cmd][2:red][2:green][2:blue]
+ * OUT: [1:retval][1:cmd][4:red][4:green][4:blue]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_TAKE_READING_XYZ			0x23
 
@@ -250,6 +288,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd] (but with success the device will disconnect)
+ *
+ * This command is available in bootloader and firmware mode.
  **/
 #define	CH_CMD_RESET				0x24
 
@@ -260,6 +300,8 @@
  *
  * IN:  [1:cmd][2:address][1:length]
  * OUT: [1:retval][1:cmd][1:checksum][1-60:data]
+ *
+ * This command is only available in bootloader mode.
  **/
 #define	CH_CMD_READ_FLASH			0x25
 
@@ -272,6 +314,8 @@
  *
  * IN:  [1:cmd][2:address][2:length]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in bootloader mode.
  **/
 #define	CH_CMD_ERASE_FLASH			0x29
 
@@ -283,6 +327,8 @@
  *
  * IN:  [1:cmd][2:address][1:length][1:checksum][1-32:data]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in bootloader mode.
  **/
 #define	CH_CMD_WRITE_FLASH			0x26
 
@@ -293,6 +339,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in bootloader mode.
  **/
 #define	CH_CMD_BOOT_FLASH			0x27
 
@@ -316,6 +364,9 @@
  *
  * IN:  [1:cmd][1:success]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is available in bootloader and firmware mode, although
+ * different values of @success are permitted in each.
  **/
 #define	CH_CMD_SET_FLASH_SUCCESS		0x28
 
@@ -326,6 +377,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:scale]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_PRE_SCALE			0x2c
 
@@ -336,6 +389,8 @@
  *
  * IN:  [1:cmd][2:scale]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_PRE_SCALE			0x2d
 
@@ -346,6 +401,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][2:scale]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_POST_SCALE			0x2a
 
@@ -356,6 +413,8 @@
  *
  * IN:  [1:cmd][2:scale]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_POST_SCALE			0x2b
 
@@ -378,6 +437,8 @@
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][6*2:types]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_GET_CALIBRATION_MAP		0x2e
 
@@ -388,6 +449,8 @@
  *
  * IN:  [1:cmd][6*2:types]
  * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
  **/
 #define	CH_CMD_SET_CALIBRATION_MAP		0x2f
 
