@@ -1,0 +1,127 @@
+		ColorHug Firmware README
+
+Right, you're probably reading this file as you want to make a drvier
+for the ColorHug hardware. This is the basics:
+
+== General Device Information ==
+
+The device is a small USB peripheral that connects to the host computer
+and takes XYZ measurements of a specified accuracy. Longer measurements
+lead to a more accurate result, but take more time.
+
+The device has two LEDs that can either be switched on or off, or be
+programmed to do a repeated flashing with specified on and off durations.
+
+The device supports up to 64 calibration matrices, and by default 3 are
+provided which are mapped to lcd, crt and projector, with 3 additonal
+reserved types.
+
+== Communication Protocol ==
+
+The only way to contact the ColorHug is a HID 64 byte response-reply
+format. The ColorHug never initiates any kind of data exchange and so
+only needs one non-default endpoint.
+
+To connect to the ColorHug, do the following:
+
+ * Open USB device VID=0x04d8, PID=0xf8da
+ * Set configuration #1
+ * Claim interface #0 (unregister any kernel driver if present)
+
+The ColorHug now will accept commands from the host.
+
+To send a command you have to:
+
+ * Do an interrupt transfer on endpoint 0x01 with a buffer size of 64 bytes
+
+  - The buffer has to be in the following LE format:
+        [1:cmd][63:data]
+    ...where the cmd is a single byte that can be found in ColorHug.h
+
+  - The [63:data] format is different for each command, and these formats
+    can be found again in ColorHug.h. If less data is specified than 63
+    bytes, then the remaining data is ignored by the device.
+
+ * Then immediately do another interrupt transfer on endpoint 0x81, but
+   this time the buffer size has to be the exact number of bytes you are
+   expecting from the command.
+
+  - The returned buffer will be in the following LE format:
+        [1:retval][1:cmd][62:data]
+    where the command is a single byte command that was used to get the
+    data and the retval is set to 0 for success, or any other error
+    constant found in ColorHug.h
+
+  - The [62:data] format is different for each command, and these formats
+    can be found again in ColorHug.h.
+    If the error is non-zero, then the data will only be two bytes long.
+
+== Getting XYZ readings from the device ==
+
+ * Set the multiplier to 100%
+ * Set the integral time to 0xffff
+ * Take reading #1 with matrix m
+ * Take reading #2 with matrix m
+ * Take reading #n with matrix m
+ * Set the multiplier to 0%
+
+The multiplier enables the color sensor in the device and by setting it
+to 100% enables all the inputs in the device. This uses power, and so
+the multiplier is set back to 0% (sensor off) after all the samples have
+been taken.
+
+The integral time has been set to 0xffff here, which is the maximum
+precision available (up to 98302 pulses counted per sample). A maximum
+precision reading takes about 500ms, although accurate readings can be
+still obtained using an integral time of 1/4 of this value.
+
+The integral time and the time to take a reading is approximately linear,
+although care should be taken when using the smaller integral times that
+the display refresh has happened and that the new color is actually
+showing on the monitor.
+
+The matrix 'm' is specified at sample time. Different values of 'm'
+specify different calibration matrices in the device, of which there are
+three default matrices available. By specifying a value of 'm' < 64 an
+explicit matrix is used, but by specifying a map index the default matrix
+for that type will be chosen.
+
+The map index values are as follows:
+    m=64        LCD
+    m=65        CRT
+    m=66        Projector
+    m=67-69     Reserved for future use
+
+The user can change the default LCD, CRT and projector mappings and also
+load on new CCMX matrices using the provided colorhug-ccmx GUI tool.
+
+== Floating point format ==
+
+The device returns non-trivial numbers as packed floats. This means the
+number is returned as a 64 bit signed number, with the offset set at
+32 bits. This leads to the largest and smallest number being acceptable
+as being +/-32768 with a precision of at least 0.0001.
+
+To convert a number to a packed float, simply multiply it by 0x10000
+ensuring the temporary and final result has sufficient clearance for a
+64 bit number.
+
+== Firmware versions ==
+
+The user can easily load on new firmware images using the colorhug-flash
+GUI program, or the 'colorhug' command line tool located in /usr/libexec.
+
+The firmware version will be 0.x.x for the bootloader, and 1.x.x for the
+firmware. The device will enter a bootloader if programming the device
+failed or was interrupted, or if the device is soft-reset at runtime.
+
+When the device is in bootloader mode the LEDs will flash in an
+alternate pattern to advise the user that it is not fully functional.
+When the device is in the bootloader some commands are available that
+are not available to the firmware (for instance, ERASH_FLASH) and also
+vice-versa, in that the bootloader cannot enable the color sensor and
+take readings. Similarly, the SET_FLASH_SUCCESS command will accept
+different values in bootloader and firmware modes.
+
+In normal operation the device will not need to access the bootloader
+mode and no other commands are required to get an XYZ reading.
