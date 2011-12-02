@@ -887,11 +887,7 @@ ProcessIO(void)
 		if (CHugIsMagicUnicorn ((const char *) &RxBuffer[CH_BUFFER_INPUT_DATA])) {
 			CHugWriteEEprom();
 		} else {
-			/* copy the magic for debugging */
-			memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-				(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-				8);
-			rc = 1;
+			rc = CH_ERROR_WRONG_UNLOCK_CODE;
 		}
 		break;
 	case CH_CMD_TAKE_READING_RAW:
