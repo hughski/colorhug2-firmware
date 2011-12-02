@@ -166,7 +166,7 @@ CHugDeviceIdle(void)
 /**
  * ProcessIO:
  **/
-void
+static void
 ProcessIO(void)
 {
 	UINT16 address;
@@ -321,7 +321,7 @@ ProcessIO(void)
 /**
  * InitializeSystem:
  **/
-void
+static void
 InitializeSystem(void)
 {
 #if defined(__18F46J50)
@@ -376,7 +376,7 @@ InitializeSystem(void)
  *
  * Process the SETUP request and fulfill the request.
  **/
-void
+static void
 USBCBCheckOtherReq(void)
 {
 	USBCheckHIDRequest();
@@ -387,7 +387,7 @@ USBCBCheckOtherReq(void)
  *
  * Called when the host sends a SET_CONFIGURATION.
  **/
-void
+static void
 USBCBInitEP(void)
 {
 	/* enable the HID endpoint */
@@ -414,7 +414,8 @@ USBCBInitEP(void)
  * occured.  This callback is in interrupt context
  * when the USB_INTERRUPT option is selected.
  **/
-BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
+BOOL
+USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 {
 	switch(event) {
 	case EVENT_TRANSFER:

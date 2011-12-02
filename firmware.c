@@ -716,7 +716,7 @@ CHugSetCalibrationMatrix(UINT16 calibration_index,
 /**
  * ProcessIO:
  **/
-void
+static void
 ProcessIO(void)
 {
 	CHugPackedFloat readings[3];
