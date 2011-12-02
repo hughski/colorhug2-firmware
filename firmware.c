@@ -751,6 +751,10 @@ ProcessIO(void)
 
 	cmd = RxBuffer[CH_BUFFER_INPUT_CMD];
 	switch(cmd) {
+	case CH_CMD_GET_HARDWARE_VERSION:
+		TxBuffer[CH_BUFFER_OUTPUT_DATA] = PORTB & 0x0f;
+		reply_len += 1;
+		break;
 	case CH_CMD_GET_COLOR_SELECT:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetColorSelect();
 		reply_len += 1;
@@ -1020,7 +1024,7 @@ InitializeSystem(void)
 	 * set RA5 to input (unused) */
 	TRISA = 0xf0;
 
-	/* set RB2, RB3 to input (switches) others input (unused) */
+	/* set RB0 to RB3 to input (h/w revision) others input (unused) */
 	TRISB = 0xff;
 
 	/* set RC0 to RC2 to input (unused) */

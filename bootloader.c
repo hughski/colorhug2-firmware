@@ -82,7 +82,7 @@ CHugLowPriorityISRCode (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 0, 1, 0 };
+static UINT16	FirmwareVersion[3] = { 0, 1, 1 };
 
 #pragma rom
 
@@ -207,6 +207,10 @@ ProcessIO(void)
 
 	cmd = RxBuffer[CH_BUFFER_INPUT_CMD];
 	switch(cmd) {
+	case CH_CMD_GET_HARDWARE_VERSION:
+		TxBuffer[CH_BUFFER_OUTPUT_DATA] = PORTB & 0x0f;
+		reply_len += 1;
+		break;
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
 		idle_command = CH_CMD_RESET;
@@ -345,7 +349,7 @@ InitializeSystem(void)
 	 * set RA5 to input (unused) */
 	TRISA = 0xf0;
 
-	/* set RB2, RB3 to input (switches) others input (unused) */
+	/* set RB0 to RB3 to input (h/w revision) others input (unused) */
 	TRISB = 0xff;
 
 	/* set RC0 to RC2 to input (unused) */
