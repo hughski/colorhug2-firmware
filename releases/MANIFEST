@@ -1,3 +1,9 @@
+1.0.2	2011-12-xx	colorhug-1.0.2.bin
+	 * Return the correct error if the EEPROM unlock code was
+	   incorrect.
+	 * Add a new command GetHardwareVersion.
+	 * Multiply the dRGB values by the post-scale before using the
+	   calibration matrix.
 1.0.1	2011-11-30	colorhug-1.0.1.bin
 	 * Add calibration remapping functionality to be able to specify
 	   default matrixes for LCD, CRT and projectors.

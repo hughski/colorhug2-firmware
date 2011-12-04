@@ -548,21 +548,21 @@ CHugTakeReadingsXYZ (const CHugPackedFloat *calibration,
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
-	/* convert to xyz */
-	rc = CHugCalibrationMultiply(calibration,
-				     readings,
-				     readings_tmp);
-	if (rc != CH_ERROR_NONE)
-		goto out;
-
 	/* post scale */
 	for (i = 0; i < 3; i++) {
-		rc = CHugPackedFloatMultiply(&readings_tmp[i],
+		rc = CHugPackedFloatMultiply(&readings[i],
 					     &PostScale,
-					     &readings[i]);
+					     &readings_tmp[i]);
 		if (rc != CH_ERROR_NONE)
 			goto out;
 	}
+
+	/* convert to xyz */
+	rc = CHugCalibrationMultiply(calibration,
+				     readings_tmp,
+				     readings);
+	if (rc != CH_ERROR_NONE)
+		goto out;
 
 	/* copy values */
 	*x = readings[0];
