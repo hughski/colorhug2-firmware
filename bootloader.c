@@ -104,6 +104,9 @@ USB_HANDLE	USBInHandle = 0;
 #define	BOOTLOADER_FLASH_INTERVAL	0x2fff
 static UINT16 led_counter = 0x0;
 
+/* protect against having a bad flash */
+static UINT8 flash_success = 0xff;
+
 #pragma code
 
 #define CHugBootFlash()		(((int(*)(void))(CH_EEPROM_ADDR_RUNCODE))())
@@ -222,6 +225,11 @@ ProcessIO(void)
 		reply_len += 2 * 3;
 		break;
 	case CH_CMD_ERASE_FLASH:
+		/* are we lost or stolen */
+		if (flash_success == 0xff) {
+			rc = CH_ERROR_DEVICE_DEACTIVATED;
+			break;
+		}
 		/* allow to erase any address but not the bootloader */
 		if (address < CH_EEPROM_ADDR_RUNCODE) {
 			rc = CH_ERROR_INVALID_ADDRESS;
@@ -236,6 +244,11 @@ ProcessIO(void)
 		EraseFlash(address, address + erase_length);
 		break;
 	case CH_CMD_READ_FLASH:
+		/* are we lost or stolen */
+		if (flash_success == 0xff) {
+			rc = CH_ERROR_DEVICE_DEACTIVATED;
+			break;
+		}
 		/* allow to read any address */
 		memcpy (&address,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
@@ -253,6 +266,11 @@ ProcessIO(void)
 		reply_len += length + 1;
 		break;
 	case CH_CMD_WRITE_FLASH:
+		/* are we lost or stolen */
+		if (flash_success == 0xff) {
+			rc = CH_ERROR_DEVICE_DEACTIVATED;
+			break;
+		}
 		/* write to flash that's not the bootloader */
 		memcpy (&address,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
@@ -293,6 +311,11 @@ ProcessIO(void)
 		}
 		break;
 	case CH_CMD_BOOT_FLASH:
+		/* are we lost or stolen */
+		if (flash_success == 0xff) {
+			rc = CH_ERROR_DEVICE_DEACTIVATED;
+			break;
+		}
 		/* only boot when USB stack is not busy */
 		idle_command = CH_CMD_BOOT_FLASH;
 		break;
@@ -449,7 +472,6 @@ void
 main(void)
 {
 	UINT16 runcode_start = 0xffff;
-	UINT8 flash_success = 0xff;
 
 	/* stack overflow / underflow */
 	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF)
