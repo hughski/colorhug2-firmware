@@ -949,7 +949,8 @@ ProcessIO(void)
 		idle_command = CH_CMD_RESET;
 		break;
 	case CH_CMD_SET_FLASH_SUCCESS:
-		if (RxBuffer[CH_BUFFER_INPUT_DATA] != 0x01) {
+		if (RxBuffer[CH_BUFFER_INPUT_DATA] != 0x01 &&
+		    RxBuffer[CH_BUFFER_INPUT_DATA] != 0xff) {
 			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
