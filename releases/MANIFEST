@@ -1,4 +1,6 @@
 1.0.3	2011-xx-xx	colorhug-1.0.3.bin
+	 * Always use the factory XYZ calibration as well as the ccmx
+	   matrix when getting readings.
 	 * Allow setting the lost-or-stolen flag when in firmware mode.
 1.0.2	2011-12-09	colorhug-1.0.2.bin
 	 * Return the correct error if the EEPROM unlock code was

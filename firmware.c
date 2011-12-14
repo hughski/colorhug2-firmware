@@ -528,14 +528,32 @@ out:
 }
 
 /**
+ * CHugSwitchCalibrationMatrix:
+ **/
+static UINT8
+CHugSwitchCalibrationMatrix(UINT16 calibration_index,
+			    CHugPackedFloat *calibration)
+{
+	UINT32 addr;
+	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
+	ReadFlash(addr,
+		  9 * sizeof(CHugPackedFloat),
+		  (unsigned char *) calibration);
+	if (calibration[0].raw == 0xffffffff)
+		return CH_ERROR_NO_CALIBRATION;
+	return CH_ERROR_NONE;
+}
+
+/**
  * CHugTakeReadingsXYZ:
  **/
 static UINT8
-CHugTakeReadingsXYZ (const CHugPackedFloat *calibration,
+CHugTakeReadingsXYZ (UINT8 calibration_index,
 		     CHugPackedFloat *x,
 		     CHugPackedFloat *y,
 		     CHugPackedFloat *z)
 {
+	CHugPackedFloat calibration[9];
 	CHugPackedFloat readings[3];
 	CHugPackedFloat readings_tmp[3];
 	UINT8 i;
@@ -557,17 +575,37 @@ CHugTakeReadingsXYZ (const CHugPackedFloat *calibration,
 			goto out;
 	}
 
-	/* convert to xyz */
+	/* convert to xyz using the factory calibration */
+	rc = CHugSwitchCalibrationMatrix(0, calibration);
+	if (rc != CH_ERROR_NONE)
+		goto out;
 	rc = CHugCalibrationMultiply(calibration,
 				     readings_tmp,
 				     readings);
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
+	/* use the specified correction matrix */
+	if (calibration_index != 0) {
+		rc = CHugSwitchCalibrationMatrix(calibration_index,
+						 calibration);
+		if (rc != CH_ERROR_NONE)
+			goto out;
+		rc = CHugCalibrationMultiply(calibration,
+					     readings,
+					     readings_tmp);
+		if (rc != CH_ERROR_NONE)
+			goto out;
+	} else {
+		memcpy(readings_tmp,
+		       (void *) readings,
+		       sizeof(readings));
+	}
+
 	/* copy values */
-	*x = readings[0];
-	*y = readings[1];
-	*z = readings[2];
+	*x = readings_tmp[0];
+	*y = readings_tmp[1];
+	*z = readings_tmp[2];
 out:
 	return rc;
 }
@@ -584,23 +622,6 @@ CHugDeviceIdle(void)
 		break;
 	}
 	idle_command = 0x00;
-}
-
-/**
- * CHugSwitchCalibrationMatrix:
- **/
-static UINT8
-CHugSwitchCalibrationMatrix(UINT16 calibration_index,
-			    CHugPackedFloat *calibration)
-{
-	UINT32 addr;
-	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
-	ReadFlash(addr,
-		  9 * sizeof(CHugPackedFloat),
-		  (unsigned char *) calibration);
-	if (calibration[0].raw == 0xffffffff)
-		return CH_ERROR_NO_CALIBRATION;
-	return CH_ERROR_NONE;
 }
 
 /**
@@ -728,7 +749,6 @@ ProcessIO(void)
 	unsigned char cmd;
 	unsigned char rc = CH_ERROR_NONE;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
-	CHugPackedFloat calibration[9];
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
@@ -926,14 +946,7 @@ ProcessIO(void)
 			calibration_index = CalibrationMap[calibration_index -
 							   CH_CALIBRATION_MAX];
 		}
-
-		/* load in the chosen calibration matrix */
-		rc = CHugSwitchCalibrationMatrix(calibration_index,
-						 calibration);
-		if (rc != CH_ERROR_NONE)
-			break;
-
-		rc = CHugTakeReadingsXYZ(calibration,
+		rc = CHugTakeReadingsXYZ(calibration_index,
 					 &readings[CH_COLOR_OFFSET_RED],
 					 &readings[CH_COLOR_OFFSET_GREEN],
 					 &readings[CH_COLOR_OFFSET_BLUE]);
