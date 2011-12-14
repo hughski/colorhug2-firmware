@@ -230,14 +230,14 @@ ProcessIO(void)
 			rc = CH_ERROR_DEVICE_DEACTIVATED;
 			break;
 		}
+		memcpy (&address,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
+			2);
 		/* allow to erase any address but not the bootloader */
 		if (address < CH_EEPROM_ADDR_RUNCODE) {
 			rc = CH_ERROR_INVALID_ADDRESS;
 			break;
 		}
-		memcpy (&address,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
-			2);
 		memcpy (&erase_length,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+2],
 			2);
