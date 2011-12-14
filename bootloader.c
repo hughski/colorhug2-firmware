@@ -222,7 +222,11 @@ ProcessIO(void)
 		reply_len += 2 * 3;
 		break;
 	case CH_CMD_ERASE_FLASH:
-		/* allow to read any address */
+		/* allow to erase any address but not the bootloader */
+		if (address < CH_EEPROM_ADDR_RUNCODE) {
+			rc = CH_ERROR_INVALID_ADDRESS;
+			break;
+		}
 		memcpy (&address,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
 			2);
