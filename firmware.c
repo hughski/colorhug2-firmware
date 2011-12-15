@@ -143,6 +143,9 @@ USB_HANDLE	USBInHandle = 0;
  * back up in the same mode */
 static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
 
+/* protect against a deactivated device changing its serial number */
+static UINT8 flash_success = 0xff;
+
 #pragma code
 
 /**
@@ -769,6 +772,12 @@ ProcessIO(void)
 	/* clear for debugging */
 	memset (TxBuffer, 0xff, sizeof (TxBuffer));
 
+	/* are we lost or stolen */
+	if (flash_success == 0xff) {
+		rc = CH_ERROR_DEVICE_DEACTIVATED;
+		goto out;
+	}
+
 	cmd = RxBuffer[CH_BUFFER_INPUT_CMD];
 	switch(cmd) {
 	case CH_CMD_GET_HARDWARE_VERSION:
@@ -967,6 +976,7 @@ ProcessIO(void)
 			rc = CH_ERROR_INVALID_VALUE;
 			break;
 		}
+		flash_success = RxBuffer[CH_BUFFER_INPUT_DATA];
 		EraseFlash(CH_EEPROM_ADDR_FLASH_SUCCESS,
 			   CH_EEPROM_ADDR_FLASH_SUCCESS + 1);
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
@@ -976,7 +986,7 @@ ProcessIO(void)
 		rc = CH_ERROR_UNKNOWN_CMD;
 		break;
 	}
-
+out:
 	/* always send return code */
 	if(!HIDTxHandleBusy(USBInHandle)) {
 		TxBuffer[CH_BUFFER_OUTPUT_RETVAL] = rc;
@@ -1181,6 +1191,10 @@ void
 main(void)
 {
 	InitializeSystem();
+
+	/* read the flash success */
+	ReadFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
+		  (unsigned char *) &flash_success);
 
 	/* the watchdog saved us from our doom */
 	if (!RCONbits.NOT_TO)
