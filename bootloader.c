@@ -125,7 +125,7 @@ CHugFatalError (ChError error)
 
 	while (1) {
 		for (i = 0; i < error; i++) {
-			PORTE = 0x01;
+			PORTE = CH_STATUS_LED_RED;
 			Delay10KTCYx(0xff);
 			PORTE = 0x00;
 			Delay10KTCYx(0xff);
@@ -181,8 +181,10 @@ ProcessIO(void)
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 
 	/* reset the LED state */
-	if (PORTE != 0x01 && PORTE != 0x02)
-		PORTE = 0x01;
+	if (PORTE != CH_STATUS_LED_RED &&
+	    PORTE != CH_STATUS_LED_GREEN) {
+		PORTE = CH_STATUS_LED_RED;
+	}
 	led_counter--;
 	if (led_counter == 0) {
 		PORTE ^= 0x03;

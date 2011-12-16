@@ -163,8 +163,8 @@ CHugGetLEDs(void)
 static void
 CHugSetLEDsInternal(UINT8 leds)
 {
-	PORTEbits.RE0 = (leds & 0x01);
-	PORTEbits.RE1 = (leds & 0x02) >> 1;
+	PORTEbits.RE0 = (leds & CH_STATUS_LED_GREEN);
+	PORTEbits.RE1 = (leds & CH_STATUS_LED_RED) >> 1;
 }
 
 /**
@@ -248,7 +248,7 @@ CHugFatalError (ChError error)
 
 	while (1) {
 		for (i = 0; i < error; i++) {
-			PORTE = 0x01;
+			PORTE = CH_STATUS_LED_RED;
 			Delay10KTCYx(0xff);
 			PORTE = 0x00;
 			Delay10KTCYx(0xff);
@@ -1009,7 +1009,8 @@ static void
 UserInit(void)
 {
 	/* set some defaults to power down the sensor */
-	CHugSetLEDs(3, 0, 0x00, 0x00);
+	CHugSetLEDs(CH_STATUS_LED_RED | CH_STATUS_LED_GREEN,
+		    0, 0x00, 0x00);
 	CHugSetColorSelect(CH_COLOR_SELECT_WHITE);
 	CHugSetMultiplier(CH_FREQ_SCALE_0);
 
