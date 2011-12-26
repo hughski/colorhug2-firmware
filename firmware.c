@@ -116,7 +116,7 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 1, 0, 3 };
+static UINT16	FirmwareVersion[3] = { 1, 0, 4 };
 
 #pragma udata
 
