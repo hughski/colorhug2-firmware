@@ -537,8 +537,8 @@ typedef enum {
 
 /* which color to select */
 typedef enum {
-	CH_STATUS_LED_GREEN	= 1 << 0,
-	CH_STATUS_LED_RED	= 1 << 1
+	CH_STATUS_LED_GREEN	= 1,
+	CH_STATUS_LED_RED	= 2
 } ChStatusLed;
 
 /* what frequency divider to use */
