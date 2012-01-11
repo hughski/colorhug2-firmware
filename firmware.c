@@ -130,6 +130,7 @@ static CHugPackedFloat	PreScale;
 /* USB idle support */
 static UINT8 idle_command = 0x00;
 static UINT8 idle_counter = 0x00;
+static UINT16 tx_handle_busy = 0x0000;
 
 /* USB buffers */
 unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
@@ -738,6 +739,18 @@ CHugSetCalibrationMatrix(UINT16 calibration_index,
 }
 
 /**
+ * CHugReplugUsb:
+ **/
+static void
+CHugReplugUsb(void)
+{
+	UCONbits.SUSPND = 0;
+	UCON = 0;
+	Delay10KTCYx(0xff);
+	USBDeviceInit();
+}
+
+/**
  * ProcessIO:
  **/
 static void
@@ -757,6 +770,14 @@ ProcessIO(void)
 	if ((USBDeviceState < CONFIGURED_STATE) ||
 	    (USBSuspendControl == 1))
 		return;
+
+	/* we're waiting for a read from the host */
+	if(HIDTxHandleBusy(USBInHandle)) {
+		if (tx_handle_busy++ < 0x7fff)
+			return;
+		CHugReplugUsb();
+	}
+	tx_handle_busy = 0;
 
 	/* no data was received */
 	if(HIDRxHandleBusy(USBOutHandle)) {

@@ -56,6 +56,9 @@ To send a command you have to:
     can be found again in ColorHug.h.
     If the error is non-zero, then the data will only be two bytes long.
 
+The host has 400ms to read the interrupt transfer on endpoint 0x81
+before the device re-enumerates on the USB bus.
+
 == Getting XYZ readings from the device ==
 
  * Set the multiplier to 100%
