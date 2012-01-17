@@ -360,7 +360,27 @@ CHugTakeReading (void)
 	UINT16 cnt = 0;
 	unsigned char ra_tmp = PORTA;
 
+	/* wait for the output to change so we start on a new pulse
+	 * rising edge, which means more accurate black readings */
+	for (i = 0; i < SensorIntegralTime; i++) {
+		if (ra_tmp != PORTA) {
+			/* ___      ____
+			 *    |____|    |___
+			 *
+			 *         ^- START HERE
+			 */
+			if (PORTAbits.RA5 == 1)
+				break;
+			ra_tmp = PORTA;
+		}
+	}
+
+	/* we got no change */
+	if (i == SensorIntegralTime)
+		goto out;
+
 	/* count how many times the output state changes */
+	ra_tmp = PORTA;
 	for (i = 0; i < SensorIntegralTime; i++) {
 		if (ra_tmp != PORTA) {
 			cnt++;
@@ -375,7 +395,7 @@ CHugTakeReading (void)
 	 *  - for 0% intensity the value is now 0x0000
 	 *  - for 100% intensity the value is now 0x7fff */
 	CHugScaleByIntegral(&cnt);
-
+out:
 	return cnt;
 }
 

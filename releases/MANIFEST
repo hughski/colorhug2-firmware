@@ -2,6 +2,9 @@
 	 * Do not lock up the device if the host crashes mid-read. This
 	   should also fix using the device in HID mode which is needed
 	   for driver-less operation in Windows and OSX.
+	 * Make the black readings more precise by waiting for the first
+	   pulse before starting the timing loop. This should remove
+	   the small color tints for very low light readings.
 1.0.3	2011-12-26	colorhug-1.0.3.bin
 	 * Always use the factory XYZ calibration as well as the ccmx
 	   matrix when getting readings.
