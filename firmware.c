@@ -337,27 +337,45 @@ CHugIsMagicUnicorn(const char *text)
  * CHugScaleByIntegral:
  **/
 static void
-CHugScaleByIntegral (UINT16 *pulses)
+CHugScaleByIntegral (UINT16 *pulses, UINT16 actual_integral_time)
 {
 	UINT32 tmp;
 
 	/* no point, so optimize */
-	if (SensorIntegralTime == 0xffff)
+	if (actual_integral_time == 0xffff)
 		return;
 
 	/* do this as integer math for speed */
 	tmp = (UINT32) *pulses * 0xffff;
-	*pulses = tmp / (UINT32) SensorIntegralTime;
+	*pulses = tmp / (UINT32) actual_integral_time;
 }
 
 /**
  * CHugTakeReading:
+ *
+ * The TAOS3200 sensor with the external IR filter and in the rubber
+ * aperture gives the following rough outputs with red selected at 100%:
+ *
+ *   Frequency   |   Condition
+ * --------------|-------------------
+ *    10Hz       | Aperture covered
+ *    160Hz      | TFT backlight on, but masked to black
+ *    1.24KHz    | 100 white at 170cd/m2
+ *
+ * So when we sample for 100ms at ~160Hz we actually need to care about
+ * starting and stopping the sample at the same point in the waveform,
+ * otherwise we could be counting 15, 16 or 17 pulses.
+ *
+ * By triggering and stopping on the rising edge, we can improve the
+ * accuracy by 12.5% for low light readings, at the slight expense of
+ * making the calibration duration 6.25ms longer.
  **/
 static UINT16
 CHugTakeReading (void)
 {
 	UINT16 i;
-	UINT16 cnt = 0;
+	UINT16 last_rising_edge = 0;
+	UINT16 number_edges = 0;
 	unsigned char ra_tmp = PORTA;
 
 	/* wait for the output to change so we start on a new pulse
@@ -379,24 +397,37 @@ CHugTakeReading (void)
 	if (i == SensorIntegralTime)
 		goto out;
 
-	/* count how many times the output state changes */
-	ra_tmp = PORTA;
+	/* count how many times we get a rising edge */
 	for (i = 0; i < SensorIntegralTime; i++) {
 		if (ra_tmp != PORTA) {
-			cnt++;
+			if (PORTAbits.RA5 == 1) {
+				number_edges++;
+				/* _      ____
+				 *  |____|    |_
+				 *
+				 *       ^- SAVE LOOP COUNTER
+				 */
+				last_rising_edge = i;
+			}
 			ra_tmp = PORTA;
 		}
 	}
 
 	/* pre-multiply so 100% intensity is near 1.0 */
-	cnt *= PreScale.offset;
+	number_edges *= PreScale.offset;
 
-	/* scale by the integral time
-	 *  - for 0% intensity the value is now 0x0000
-	 *  - for 100% intensity the value is now 0x7fff */
-	CHugScaleByIntegral(&cnt);
+	/* double, as we're only counting rising edges, and not both
+	 * edges like we did for fireware versions < 1.1.0 */
+	number_edges *= 2;
+
+	/* no second edge found */
+	if (last_rising_edge == 0)
+		goto out;
+
+	/* scale by the integral time */
+	CHugScaleByIntegral(&number_edges, last_rising_edge);
 out:
-	return cnt;
+	return number_edges;
 }
 
 /**
