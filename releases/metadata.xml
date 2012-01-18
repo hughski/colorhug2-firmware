@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<updates>
+  <format_revision>1</format_revision>
+
+  <update>
+    <state>stable</state>
+    <version>1.1.0</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1">721c3f0ab96cf71b132304b2433381594e88ab70</checksum>
+    <timestamp>1326907982</timestamp>
+    <filename>colorhug-1.1.0.bin</filename>
+    <size>16248</size>
+    <changelog>
+     <item>
+      Do not lock up the device if the host crashes mid-read.
+      This should also fix using the device in HID mode which is needed
+      for driver-less operation in Windows and OSX.
+     </item>
+     <item>
+      Make the black readings more precise by waiting for the first
+      pulse before starting the timing loop and use the integral
+      period up until the last rising edge. This should remove
+      the small color tints for very low light readings.
+     </item>
+    </changelog>
+  </update>
+
+  <update>
+    <state>stable</state>
+    <version>1.0.3</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1">7cc7d64dd3ccc07ec31e0b3a39c37a2536a23d86</checksum>
+    <timestamp>1324901896</timestamp>
+    <filename>colorhug-1.0.3.bin</filename>
+    <size>16016</size>
+    <changelog>
+     <item>
+      Always use the factory XYZ calibration as well as the ccmx matrix
+      when getting readings.
+     </item>
+     <item>
+      Allow setting the lost-or-stolen flag when in firmware mode.
+     </item>
+    </changelog>
+  </update>
+
+  <update>
+    <state>stable</state>
+    <version>1.0.2</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1">270cfd1bcc0463aa094a87a41bc76deb6ae2c23e</checksum>
+    <timestamp>1323019015</timestamp>
+    <filename>colorhug-1.0.2.bin</filename>
+    <size>15791</size>
+    <changelog>
+     <item>
+      Return the correct error if the EEPROM unlock code was incorrect.
+     </item>
+     <item>
+      Add a new command GetHardwareVersion.
+     </item>
+     <item>
+      Multiply the dRGB values by the post-scale before using the
+      calibration matrix.
+     </item>
+    </changelog>
+  </update>
+
+  <update>
+    <state>stable</state>
+    <version>1.0.1</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1">21f258e99aca3569627429a31f16733df3aae6b9</checksum>
+    <timestamp>1322597458</timestamp>
+    <filename>colorhug-1.0.1.bin</filename>
+    <size>15805</size>
+    <changelog>
+     <item>
+      Add calibration remapping functionality to be able to specify
+      default matrixes for LCD, CRT and projectors.
+     </item>
+     <item>
+      Use a better packed float multiplication algorithm to improve XYZ
+      measurement accuracy.
+     </item>
+     <item>
+      Add a calibration matrix display type bitfield to each calibration
+      record so the user can't match LCD matrices to projectors and vice
+      versa.
+     </item>
+    </changelog>
+  </update>
+
+  <update>
+    <state>stable</state>
+    <version>1.0.0</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1">dec27b2656c6c5806cc22b3019225492d31e63fd</checksum>
+    <timestamp>1322159173</timestamp>
+    <filename>colorhug-1.0.0.bin</filename>
+    <size>16039</size>
+    <changelog>
+     <item>
+      Initial firmware release
+     </item>
+    </changelog>
+  </update>
+
+</updates>
