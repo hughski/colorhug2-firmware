@@ -11,17 +11,17 @@
     <filename>colorhug-1.1.0.bin</filename>
     <size>16248</size>
     <changelog>
-     <item>
+     <info>
       Do not lock up the device if the host crashes mid-read.
       This should also fix using the device in HID mode which is needed
       for driver-less operation in Windows and OSX.
-     </item>
-     <item>
+     </info>
+     <info>
       Make the black readings more precise by waiting for the first
       pulse before starting the timing loop and use the integral
       period up until the last rising edge. This should remove
       the small color tints for very low light readings.
-     </item>
+     </info>
     </changelog>
   </update>
 
@@ -34,13 +34,13 @@
     <filename>colorhug-1.0.3.bin</filename>
     <size>16016</size>
     <changelog>
-     <item>
+     <info>
       Always use the factory XYZ calibration as well as the ccmx matrix
       when getting readings.
-     </item>
-     <item>
+     </info>
+     <info>
       Allow setting the lost-or-stolen flag when in firmware mode.
-     </item>
+     </info>
     </changelog>
   </update>
 
@@ -53,16 +53,16 @@
     <filename>colorhug-1.0.2.bin</filename>
     <size>15791</size>
     <changelog>
-     <item>
+     <info>
       Return the correct error if the EEPROM unlock code was incorrect.
-     </item>
-     <item>
+     </info>
+     <info>
       Add a new command GetHardwareVersion.
-     </item>
-     <item>
+     </info>
+     <info>
       Multiply the dRGB values by the post-scale before using the
       calibration matrix.
-     </item>
+     </info>
     </changelog>
   </update>
 
@@ -75,19 +75,19 @@
     <filename>colorhug-1.0.1.bin</filename>
     <size>15805</size>
     <changelog>
-     <item>
+     <info>
       Add calibration remapping functionality to be able to specify
       default matrixes for LCD, CRT and projectors.
-     </item>
-     <item>
+     </info>
+     <info>
       Use a better packed float multiplication algorithm to improve XYZ
       measurement accuracy.
-     </item>
-     <item>
+     </info>
+     <info>
       Add a calibration matrix display type bitfield to each calibration
       record so the user can't match LCD matrices to projectors and vice
       versa.
-     </item>
+     </info>
     </changelog>
   </update>
 
@@ -100,9 +100,9 @@
     <filename>colorhug-1.0.0.bin</filename>
     <size>16039</size>
     <changelog>
-     <item>
+     <info>
       Initial firmware release
-     </item>
+     </info>
     </changelog>
   </update>
 
