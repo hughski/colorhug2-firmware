@@ -1,3 +1,6 @@
+1.1.1	2012-xx-xx	colorhug-1.1.1.bin
+	 * You need to update to colorhug-client >= 0.1.5 to read the
+	   new style metadata information.
 1.1.0	2012-01-18	colorhug-1.1.0.bin
 	 * Do not lock up the device if the host crashes mid-read. This
 	   should also fix using the device in HID mode which is needed

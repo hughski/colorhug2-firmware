@@ -116,7 +116,7 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 1, 1, 0 };
+static UINT16	FirmwareVersion[3] = { 1, 1, 1 };
 
 #pragma udata
 
@@ -337,7 +337,7 @@ CHugIsMagicUnicorn(const char *text)
  * CHugScaleByIntegral:
  **/
 static void
-CHugScaleByIntegral (UINT16 *pulses, UINT16 actual_integral_time)
+CHugScaleByIntegral (UINT16 *pulses, UINT32 actual_integral_time)
 {
 	UINT32 tmp;
 
@@ -347,11 +347,14 @@ CHugScaleByIntegral (UINT16 *pulses, UINT16 actual_integral_time)
 
 	/* do this as integer math for speed */
 	tmp = (UINT32) *pulses * 0xffff;
-	*pulses = tmp / (UINT32) actual_integral_time;
+	*pulses = tmp / actual_integral_time;
 }
 
 /**
- * CHugTakeReading:
+ * CHugTakeReadingPulses:
+ * @integral_time: The integral time of the sample
+ * @last_rising_edge: (out): The last rising edge value, or %NULL
+ * Return value: the number of detected edges for the sample
  *
  * The TAOS3200 sensor with the external IR filter and in the rubber
  * aperture gives the following rough outputs with red selected at 100%:
@@ -371,16 +374,16 @@ CHugScaleByIntegral (UINT16 *pulses, UINT16 actual_integral_time)
  * making the calibration duration 6.25ms longer.
  **/
 static UINT16
-CHugTakeReading (void)
+CHugTakeReadingPulses (UINT32 integral_time, UINT32 *last_rising_edge)
 {
-	UINT16 i;
-	UINT16 last_rising_edge = 0;
+	UINT32 i;
+	UINT32 last_rising_edge_tmp = 0;
 	UINT16 number_edges = 0;
 	unsigned char ra_tmp = PORTA;
 
 	/* wait for the output to change so we start on a new pulse
 	 * rising edge, which means more accurate black readings */
-	for (i = 0; i < SensorIntegralTime; i++) {
+	for (i = 0; i < integral_time; i++) {
 		if (ra_tmp != PORTA) {
 			/* ___      ____
 			 *    |____|    |___
@@ -394,11 +397,11 @@ CHugTakeReading (void)
 	}
 
 	/* we got no change */
-	if (i == SensorIntegralTime)
+	if (i == integral_time)
 		goto out;
 
 	/* count how many times we get a rising edge */
-	for (i = 0; i < SensorIntegralTime; i++) {
+	for (i = 0; i < integral_time; i++) {
 		if (ra_tmp != PORTA) {
 			if (PORTAbits.RA5 == 1) {
 				number_edges++;
@@ -407,22 +410,75 @@ CHugTakeReading (void)
 				 *
 				 *       ^- SAVE LOOP COUNTER
 				 */
-				last_rising_edge = i;
+				last_rising_edge_tmp = i;
 			}
 			ra_tmp = PORTA;
 		}
 	}
 
+	/* no second edge found */
+	if (last_rising_edge_tmp == 0)
+		goto out;
+
+	/* return last rising edge */
+	if (last_rising_edge != NULL)
+		*last_rising_edge = last_rising_edge_tmp;
+out:
+	return number_edges;
+}
+
+/**
+ * CHugTakeReading:
+ *
+ * Take a reading from the sensor. For bright readings we use the
+ * SensorIntegralTime taken from the user, but for dark readings we
+ * multiply this by a constant to get a more accurate reading.
+ **/
+static UINT16
+CHugTakeReading (void)
+{
+	const UINT32 edges_min = 10; /* this is a dim CRT screen */
+	UINT16 number_edges;
+	UINT32 integral;
+	UINT32 integral_max;
+	UINT32 last_rising_edge;
+
+	/* set the maximum permitted reading time
+	 * FIXME: make this configurable? */
+	integral_max = (UINT32) SensorIntegralTime * 4;
+
+	/* get a 10% test reading */
+	integral = SensorIntegralTime / 10;
+	number_edges = CHugTakeReadingPulses(integral, NULL);
+
+	/* if we got any reading, scale the integral time to get at
+	 * least the minimum number of edges */
+	if (number_edges == 0) {
+		/* perfect black, so try the hardest we can to get an
+		 * accurate reading */
+		integral = integral_max;
+	} else {
+		integral = (edges_min * (UINT32) SensorIntegralTime) / (UINT32) number_edges;
+
+		/* we're expected to read for this much time, so for
+		 * white light get the best precision available */
+		if (integral < SensorIntegralTime)
+			integral = SensorIntegralTime;
+
+		/* we can't go higher than this or we'll time out the
+		 * USB read */
+		else if (integral > integral_max)
+			integral = integral_max;
+	}
+
+	/* get the number of pulses with the new threshold */
+	number_edges = CHugTakeReadingPulses(integral,
+					     &last_rising_edge);
+	if (number_edges == 0)
+		goto out;
+
 	/* pre-multiply so 100% intensity is near 1.0 */
 	number_edges *= PreScale.offset;
-
-	/* double, as we're only counting rising edges, and not both
-	 * edges like we did for fireware versions < 1.1.0 */
-	number_edges *= 2;
-
-	/* no second edge found */
-	if (last_rising_edge == 0)
-		goto out;
 
 	/* scale by the integral time */
 	CHugScaleByIntegral(&number_edges, last_rising_edge);

@@ -4,6 +4,28 @@
 
   <update>
     <state>stable</state>
+    <version>1.1.1</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1"></checksum>
+    <timestamp></timestamp>
+    <filename>colorhug-1.1.1.bin</filename>
+    <size></size>
+    <changelog>
+     <info>
+      Take multiple pulse counts from the sensor and increase the
+      integral time by up to a factor of 4 for very black samples.
+      This improves the accuracy of the readings when measuring dark
+      patches without slowing down bright patches.
+     </info>
+     <warning>
+      You need to use colorhug-client newer than 0.1.5 otherwise timeout
+      errors may cause the calibration to fail when reading black.
+     </warning>
+    </changelog>
+  </update>
+
+  <update>
+    <state>stable</state>
     <version>1.1.0</version>
     <supported_hardware>1</supported_hardware>
     <checksum type="sha1">721c3f0ab96cf71b132304b2433381594e88ab70</checksum>
