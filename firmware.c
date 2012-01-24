@@ -116,7 +116,7 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 1, 1, 1 };
+static UINT16	FirmwareVersion[3] = { 1, 1, 2 };
 
 #pragma udata
 
@@ -127,6 +127,11 @@ static UINT16		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 static CHugPackedFloat	PreScale;
 
+#pragma udata udata1
+char OwnerName[CH_OWNER_LENGTH_MAX];
+char OwnerEmail[CH_OWNER_LENGTH_MAX];
+
+#pragma udata
 /* USB idle support */
 static UINT8 idle_command = 0x00;
 static UINT8 idle_counter = 0x00;
@@ -281,6 +286,19 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 		  6 * sizeof(UINT16),
 		  (unsigned char *) &CalibrationMap);
+	ReadFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_NAME,
+		  CH_OWNER_LENGTH_MAX * sizeof(char),
+		  (unsigned char *) OwnerName);
+	ReadFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_EMAIL,
+		  CH_OWNER_LENGTH_MAX * sizeof(char),
+		  (unsigned char *) OwnerEmail);
+
+	/* the default value in flash is 0xff, so manually make an empty
+	 * string by default */
+	if (OwnerName[0] == 0xff)
+		OwnerName[0] = '\0';
+	if (OwnerEmail[0] == 0xff)
+		OwnerEmail[0] = '\0';
 }
 
 /**
@@ -313,6 +331,15 @@ CHugWriteEEprom(void)
 	WriteBytesFlash(CH_EEPROM_ADDR_CONFIG,
 			CH_FLASH_WRITE_BLOCK_SIZE,
 			(unsigned char *) FlashBuffer);
+
+	EraseFlash(CH_EEPROM_ADDR_OWNER,
+		   CH_EEPROM_ADDR_OWNER + 2 * CH_FLASH_WRITE_BLOCK_SIZE);
+	WriteBytesFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_NAME,
+			CH_FLASH_WRITE_BLOCK_SIZE,
+			(unsigned char *) OwnerName);
+	WriteBytesFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_EMAIL,
+			CH_FLASH_WRITE_BLOCK_SIZE,
+			(unsigned char *) OwnerEmail);
 }
 
 /**
@@ -1109,6 +1136,28 @@ ProcessIO(void)
 			   CH_EEPROM_ADDR_FLASH_SUCCESS + 1);
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
+		break;
+	case CH_CMD_GET_OWNER_NAME:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) OwnerName,
+			CH_OWNER_LENGTH_MAX);
+		reply_len += CH_OWNER_LENGTH_MAX;
+		break;
+	case CH_CMD_GET_OWNER_EMAIL:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) OwnerEmail,
+			CH_OWNER_LENGTH_MAX);
+		reply_len += CH_OWNER_LENGTH_MAX;
+		break;
+	case CH_CMD_SET_OWNER_NAME:
+		memcpy ((void *) OwnerName,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			CH_OWNER_LENGTH_MAX);
+		break;
+	case CH_CMD_SET_OWNER_EMAIL:
+		memcpy ((void *) OwnerEmail,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			CH_OWNER_LENGTH_MAX);
 		break;
 	default:
 		rc = CH_ERROR_UNKNOWN_CMD;

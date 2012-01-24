@@ -226,6 +226,54 @@
 #define	CH_CMD_SET_DARK_OFFSETS			0x10
 
 /**
+ * CH_CMD_GET_OWNER_NAME:
+ *
+ * Get User's Name
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd][60:owner-name]
+ *
+ * This command is only available in firmware mode.
+ **/
+#define	CH_CMD_GET_OWNER_NAME			0x11
+
+/**
+ * CH_CMD_SET_OWNER_NAME:
+ *
+ * Set User's Name
+ *
+ * IN:  [1:cmd][60:owner-name]
+ * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
+ **/
+#define	CH_CMD_SET_OWNER_NAME			0x12
+
+/**
+ * CH_CMD_GET_OWNER_EMAIL:
+ *
+ * Get User's Email Address
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd][60:owner-email]
+ *
+ * This command is only available in firmware mode.
+ **/
+#define	CH_CMD_GET_OWNER_EMAIL			0x13
+
+/**
+ * CH_CMD_SET_OWNER_NAME:
+ *
+ * Set User's Email Address
+ *
+ * IN:  [1:cmd][60:owner-email]
+ * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
+ **/
+#define	CH_CMD_SET_OWNER_EMAIL			0x14
+
+/**
  * CH_CMD_WRITE_EEPROM:
  *
  * Write values to EEPROM.
@@ -235,6 +283,7 @@
  *
  * This command is only available in firmware mode.
  **/
+
 #define	CH_CMD_WRITE_EEPROM			0x20
 
 /**
@@ -496,6 +545,11 @@
 #define	CH_EEPROM_OFFSET_POST_SCALE		0x0e /* 4 bytes */
 #define	CH_EEPROM_OFFSET_CALIBRATION_MAP	0x12 /* 12 bytes */
 
+/* EEPROM owner offsets */
+#define	CH_EEPROM_ADDR_OWNER			0xf040
+#define	CH_EEPROM_OFFSET_NAME			0x00 /* 64 bytes */
+#define	CH_EEPROM_OFFSET_EMAIL			0x40 /* 64 bytes */
+
 /* although each calibration can be stored in 60 bytes,
  * we use a full 64 byte block */
 #define	CH_CALIBRATION_ADDR_TMP			0xdc00	/* each is 64 bytes */
@@ -526,6 +580,9 @@
 #define	CH_CALIBRATION_INDEX_LCD		(CH_CALIBRATION_MAX + 0)
 #define	CH_CALIBRATION_INDEX_CRT		(CH_CALIBRATION_MAX + 1)
 #define	CH_CALIBRATION_INDEX_PROJECTOR		(CH_CALIBRATION_MAX + 2)
+
+/* constants for ownership tags */
+#define CH_OWNER_LENGTH_MAX			60
 
 /* which color to select */
 typedef enum {
