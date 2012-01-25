@@ -283,7 +283,6 @@
  *
  * This command is only available in firmware mode.
  **/
-
 #define	CH_CMD_WRITE_EEPROM			0x20
 
 /**

@@ -527,6 +527,11 @@ CHugTakeReadings (CHugPackedFloat *red,
 	UINT16 reading;
 	UINT8 rc = CH_ERROR_NONE;
 
+	/* set to zero */
+	red->raw = 0;
+	green->raw = 0;
+	blue->raw = 0;
+
 	/* check the device is sane */
 	if (SensorSerial == 0xffffffff) {
 		rc = CH_ERROR_NO_SERIAL;
@@ -540,44 +545,32 @@ CHugTakeReadings (CHugPackedFloat *red,
 	/* do red */
 	CHugSetColorSelect(CH_COLOR_SELECT_RED);
 	reading = CHugTakeReading();
-	if (reading < DarkCalibration[CH_COLOR_OFFSET_RED]) {
-		rc = CH_ERROR_UNDERFLOW_SENSOR;
-		goto out;
-	}
 	if (reading > 0x7fff) {
 		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
-	red->offset = 0;
-	red->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
+	if (reading > DarkCalibration[CH_COLOR_OFFSET_RED])
+		red->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
 
 	/* do green */
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
 	reading = CHugTakeReading();
-	if (reading < DarkCalibration[CH_COLOR_OFFSET_GREEN]) {
-		rc = CH_ERROR_UNDERFLOW_SENSOR;
-		goto out;
-	}
 	if (reading > 0x7fff) {
 		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
-	green->offset = 0;
-	green->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
+	if (reading > DarkCalibration[CH_COLOR_OFFSET_GREEN])
+		green->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
 
 	/* do blue */
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
 	reading = CHugTakeReading();
-	if (reading < DarkCalibration[CH_COLOR_OFFSET_BLUE]) {
-		rc = CH_ERROR_UNDERFLOW_SENSOR;
-		goto out;
-	}
 	if (reading > 0x7fff) {
 		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
-	blue->offset = 0;
-	blue->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
+	if (reading > DarkCalibration[CH_COLOR_OFFSET_BLUE])
+		blue->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
 out:
 	return rc;
 }
