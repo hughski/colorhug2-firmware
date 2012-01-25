@@ -1076,7 +1076,7 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READING_RAW:
 		/* take a single reading */
-		reading = CHugTakeReading();
+		reading = CHugTakeReadingPulses(SensorIntegralTime, NULL);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &reading,
 			sizeof(UINT16));
