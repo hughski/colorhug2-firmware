@@ -169,8 +169,15 @@ CHugGetLEDs(void)
 static void
 CHugSetLEDsInternal(UINT8 leds)
 {
-	PORTEbits.RE0 = (leds & CH_STATUS_LED_GREEN);
-	PORTEbits.RE1 = (leds & CH_STATUS_LED_RED) >> 1;
+	/* the first few boards on the P&P machines had the
+	 * LEDs soldered the wrong way around */
+	if (SensorSerial == 82) {
+		PORTEbits.RE0 = (leds & CH_STATUS_LED_GREEN);
+		PORTEbits.RE1 = (leds & CH_STATUS_LED_RED) >> 1;
+	} else {
+		PORTEbits.RE0 = (leds & CH_STATUS_LED_RED) >> 1;
+		PORTEbits.RE1 = (leds & CH_STATUS_LED_GREEN);
+	}
 }
 
 /**
