@@ -6,10 +6,10 @@
     <state>stable</state>
     <version>1.1.2</version>
     <supported_hardware>1</supported_hardware>
-    <checksum type="sha1"></checksum>
-    <timestamp></timestamp>
+    <checksum type="sha1">e56f68eda77ad30f90bec8d41f1fb6c7279cf390</checksum>
+    <timestamp>1327599988</timestamp>
     <filename>colorhug-1.1.2.bin</filename>
-    <size></size>
+    <size>17600</size>
     <changelog>
      <info>
       Take multiple pulse counts from the sensor and increase the
@@ -21,8 +21,10 @@
       Add commands to get and set an optional owner name and email.
      </info>
      <warning>
-      You need to use colorhug-client newer than 0.1.5 otherwise timeout
-      errors may cause the calibration to fail when reading black.
+      You need to check that any client accessing the hardware has
+      colorhug-client 0.1.5 or newer installed.
+      If older versions are used then timeout errors may cause the
+      calibration to fail when reading very dark patches.
      </warning>
     </changelog>
   </update>
