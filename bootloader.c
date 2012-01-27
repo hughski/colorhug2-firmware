@@ -82,7 +82,7 @@ CHugLowPriorityISRCode (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 0, 1, 1 };
+static UINT16	FirmwareVersion[3] = { 0, 1, 2 };
 
 #pragma rom
 
@@ -181,10 +181,6 @@ ProcessIO(void)
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 
 	/* reset the LED state */
-	if (PORTE != CH_STATUS_LED_RED &&
-	    PORTE != CH_STATUS_LED_GREEN) {
-		PORTE = CH_STATUS_LED_RED;
-	}
 	led_counter--;
 	if (led_counter == 0) {
 		PORTE ^= 0x03;
@@ -390,6 +386,9 @@ InitializeSystem(void)
 
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
+
+	/* set the LED state initially */
+	PORTE = CH_STATUS_LED_RED;
 
 	/* only turn on the USB module when the device has power */
 #if defined(USE_USB_BUS_SENSE_IO)
