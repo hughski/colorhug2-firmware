@@ -93,7 +93,8 @@ The map index values are as follows:
     m=64        LCD
     m=65        CRT
     m=66        Projector
-    m=67-69     Reserved for future use
+    m=67        LED
+    m=68-69     Reserved for future use
 
 The user can change the default LCD, CRT and projector mappings and also
 load on new CCMX matrices using the provided colorhug-ccmx GUI tool.

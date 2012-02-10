@@ -128,7 +128,8 @@
  *  0     Can be used with LCD panels
  *  1     Can be used with CRT monitors
  *  2     Can be used with projectors
- *  3-7   Reserved for future use
+ *  3     Can be used with LED panels
+ *  4-7   Reserved for future use
  *
  * IN:  [1:cmd][2:index]
  * OUT: [1:retval][1:cmd][2*9:matrix_value][1:types][23:description]
@@ -476,12 +477,12 @@
  * LCD		= 0
  * CRT		= 1
  * Projector	= 2
- * Custom1	= 3
- * Custom2	= 4
- * Custom3	= 5
+ * LED		= 3
+ * Custom1	= 4
+ * Custom2	= 5
  *
  * In the future CustomX may be renamed to another display technology,
- * e.g. LED or e-ink.
+ * e.g. e-ink.
  *
  * IN:  [1:cmd]
  * OUT: [1:retval][1:cmd][6*2:types]
@@ -560,6 +561,7 @@
 #define	CH_CALIBRATION_TYPE_LCD			0x01
 #define	CH_CALIBRATION_TYPE_CRT			0x02
 #define	CH_CALIBRATION_TYPE_PROJECTOR		0x04
+#define	CH_CALIBRATION_TYPE_LED			0x08
 #define	CH_CALIBRATION_TYPE_ALL			0xff
 
 /* this is a whole seporate block, as we don't want to erase the
@@ -579,6 +581,7 @@
 #define	CH_CALIBRATION_INDEX_LCD		(CH_CALIBRATION_MAX + 0)
 #define	CH_CALIBRATION_INDEX_CRT		(CH_CALIBRATION_MAX + 1)
 #define	CH_CALIBRATION_INDEX_PROJECTOR		(CH_CALIBRATION_MAX + 2)
+#define	CH_CALIBRATION_INDEX_LED		(CH_CALIBRATION_MAX + 3)
 
 /* constants for ownership tags */
 #define CH_OWNER_LENGTH_MAX			60
