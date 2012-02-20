@@ -878,6 +878,42 @@ CHugReplugUsb(void)
 }
 
 /**
+ * CHugTakeReadingArray:
+ **/
+static UINT8
+CHugTakeReadingArray(UINT8 *data)
+{
+	UINT32 i;
+	UINT32 integral_time = SensorIntegralTime;
+	UINT8 idx;
+	UINT8 rc;
+	UINT32 chunk;
+	unsigned char ra_tmp = PORTA;
+
+	/* set all buckets to zero */
+	memset(data, 0x00, 30);
+
+	/* do a long integral time to pick up multiple refreshes */
+	integral_time *= 10;
+	chunk = integral_time / 30;
+	for (i = 0; i < integral_time; i++) {
+		if (ra_tmp == PORTA)
+			continue;
+		if (PORTAbits.RA5 != 1)
+			continue;
+		idx = i / chunk;
+		if (data[idx] < 0xff)
+			data[idx]++;
+		ra_tmp = PORTA;
+	}
+
+	/* success */
+	rc = CH_ERROR_NONE;
+out:
+	return rc;
+}
+
+/**
  * ProcessIO:
  **/
 static void
@@ -1151,6 +1187,10 @@ ProcessIO(void)
 		memcpy ((void *) OwnerEmail,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			CH_OWNER_LENGTH_MAX);
+		break;
+	case CH_CMD_TAKE_READING_ARRAY:
+		rc = CHugTakeReadingArray(&TxBuffer[CH_BUFFER_OUTPUT_DATA]);
+		reply_len += 30;
 		break;
 	default:
 		rc = CH_ERROR_UNKNOWN_CMD;

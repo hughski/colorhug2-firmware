@@ -4,6 +4,23 @@
 
   <update>
     <state>stable</state>
+    <version>1.1.3</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1"></checksum>
+    <timestamp></timestamp>
+    <filename>colorhug-1.1.3.bin</filename>
+    <size></size>
+    <changelog>
+     <info>
+      Add a new command to take 30 sequential measurements to allow the
+      client tools to work out the device stability over a short
+      amount of time.
+     </info>
+    </changelog>
+  </update>
+
+  <update>
+    <state>stable</state>
     <version>1.1.2</version>
     <supported_hardware>1</supported_hardware>
     <checksum type="sha1">e56f68eda77ad30f90bec8d41f1fb6c7279cf390</checksum>

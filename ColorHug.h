@@ -520,6 +520,26 @@
  **/
 #define	CH_CMD_GET_HARDWARE_VERSION		0x30
 
+/**
+ * CH_CMD_TAKE_READING_ARRAY:
+ *
+ * Takes 30 raw samples and returns them in an array.
+ *
+ * This command can be used to find the optimum delay between patches
+ * by showing a black sample area, then white, and then using this
+ * command to find out how long the actual hardware delay is.
+ *
+ * It can also be used to find out how stable the device or output is
+ * over a small amount of time, typically ~2.5 seconds for the maximum
+ * integral time.
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd][30:reading_array]
+ *
+ * This command is available in firmware mode.
+ **/
+#define	CH_CMD_TAKE_READING_ARRAY		0x31
+
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
 
