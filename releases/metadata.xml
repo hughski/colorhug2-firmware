@@ -17,8 +17,8 @@
       amount of time.
      </info>
      <info>
-      Add firmware errata to fix any ColorHug devices that have got
-      swapped LEDs.
+      Add firmware errata functionality to fix any ColorHug devices that
+      have got swapped LEDs.
      </info>
     </changelog>
   </update>

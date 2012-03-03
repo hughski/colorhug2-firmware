@@ -126,6 +126,7 @@ static UINT16		CalibrationMap[6];
 static UINT16		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 static CHugPackedFloat	PreScale;
+static UINT16		PcbErrata = CH_PCB_ERRATA_NONE;
 
 #pragma udata udata1
 char OwnerName[CH_OWNER_LENGTH_MAX];
@@ -171,12 +172,12 @@ CHugSetLEDsInternal(UINT8 leds)
 {
 	/* the first few boards on the P&P machines had the
 	 * LEDs soldered the wrong way around */
-	if (SensorSerial == 82) {
-		PORTEbits.RE0 = (leds & CH_STATUS_LED_GREEN);
-		PORTEbits.RE1 = (leds & CH_STATUS_LED_RED) >> 1;
-	} else {
+	if ((PcbErrata & CH_PCB_ERRATA_SWAPPED_LEDS) > 0) {
 		PORTEbits.RE0 = (leds & CH_STATUS_LED_RED) >> 1;
 		PORTEbits.RE1 = (leds & CH_STATUS_LED_GREEN);
+	} else {
+		PORTEbits.RE0 = (leds & CH_STATUS_LED_GREEN);
+		PORTEbits.RE1 = (leds & CH_STATUS_LED_RED) >> 1;
 	}
 }
 
@@ -293,6 +294,9 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 		  6 * sizeof(UINT16),
 		  (unsigned char *) &CalibrationMap);
+	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PCB_ERRATA,
+		  1 * sizeof(UINT16),
+		  (unsigned char *) &PcbErrata);
 	ReadFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_NAME,
 		  CH_OWNER_LENGTH_MAX * sizeof(char),
 		  (unsigned char *) OwnerName);
@@ -300,12 +304,24 @@ CHugReadEEprom(void)
 		  CH_OWNER_LENGTH_MAX * sizeof(char),
 		  (unsigned char *) OwnerEmail);
 
-	/* the default value in flash is 0xff, so manually make an empty
-	 * string by default */
+	/* the default value in flash is 0xff */
 	if (OwnerName[0] == 0xff)
 		OwnerName[0] = '\0';
 	if (OwnerEmail[0] == 0xff)
 		OwnerEmail[0] = '\0';
+	if (PcbErrata == 0xffff)
+		PcbErrata = CH_PCB_ERRATA_NONE;
+
+	/* fix up some PCBs we know about */
+	if (PcbErrata == CH_PCB_ERRATA_NONE) {
+		if (SensorSerial == 15 ||
+		    SensorSerial == 72 ||
+		    SensorSerial == 76 ||
+		    SensorSerial == 82 ||
+		    SensorSerial == 104) {
+			PcbErrata &= CH_PCB_ERRATA_SWAPPED_LEDS;
+		}
+	}
 }
 
 /**
@@ -335,6 +351,9 @@ CHugWriteEEprom(void)
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 	       (void *) &CalibrationMap,
 	       6 * sizeof(UINT16));
+	memcpy(FlashBuffer + CH_EEPROM_OFFSET_PCB_ERRATA,
+	       (void *) &PcbErrata,
+	       1 * sizeof(UINT16));
 	WriteBytesFlash(CH_EEPROM_ADDR_CONFIG,
 			CH_FLASH_WRITE_BLOCK_SIZE,
 			(unsigned char *) FlashBuffer);
@@ -991,6 +1010,17 @@ ProcessIO(void)
 			    RxBuffer[CH_BUFFER_INPUT_DATA + 1],
 			    RxBuffer[CH_BUFFER_INPUT_DATA + 2],
 			    RxBuffer[CH_BUFFER_INPUT_DATA + 3]);
+		break;
+	case CH_CMD_GET_PCB_ERRATA:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(void *) &PcbErrata,
+			2);
+		reply_len += sizeof(UINT16);
+		break;
+	case CH_CMD_SET_PCB_ERRATA:
+		memcpy (&PcbErrata,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			sizeof(UINT16));
 		break;
 	case CH_CMD_GET_MULTIPLIER:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();

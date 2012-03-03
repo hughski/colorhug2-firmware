@@ -540,6 +540,37 @@
  **/
 #define	CH_CMD_TAKE_READING_ARRAY		0x31
 
+/**
+ * CH_CMD_SET_PCB_ERRATA:
+ *
+ * Sets the board errata value. Board errata is used to correct swapped
+ * LEDs and any future problems discovered that only affect some batches
+ * of hardware version 1.
+ *
+ * The errata bitmask is as follows:
+ * 0x00		= No errata for this PCB
+ * 0x01		= Leds are swapped
+ * 0x02-0xffff	= Reserved for future use
+ *
+ * IN:  [1:cmd][2:pcb_errata]
+ * OUT: [1:retval][1:cmd]
+ *
+ * This command is available in firmware mode.
+ **/
+#define	CH_CMD_SET_PCB_ERRATA			0x32
+
+/**
+ * CH_CMD_GET_PCB_ERRATA:
+ *
+ * Gets the board errata value.
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd][2:pcb_errata]
+ *
+ * This command is available in firmware mode.
+ **/
+#define	CH_CMD_GET_PCB_ERRATA			0x33
+
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
 
@@ -564,6 +595,7 @@
 #define	CH_EEPROM_OFFSET_PRE_SCALE		0x0a /* 4 bytes */
 #define	CH_EEPROM_OFFSET_POST_SCALE		0x0e /* 4 bytes */
 #define	CH_EEPROM_OFFSET_CALIBRATION_MAP	0x12 /* 12 bytes */
+#define	CH_EEPROM_OFFSET_PCB_ERRATA		0x1e /* 2 bytes */
 
 /* EEPROM owner offsets */
 #define	CH_EEPROM_ADDR_OWNER			0xf040
@@ -650,5 +682,12 @@ typedef enum {
 	CH_ERROR_DEVICE_DEACTIVATED,
 	CH_ERROR_LAST
 } ChError;
+
+/* any problems with the PCB */
+typedef enum {
+	CH_PCB_ERRATA_NONE		= 0,
+	CH_PCB_ERRATA_SWAPPED_LEDS	= 1,
+	CH_PCB_ERRATA_LAST
+} ChPcbErrata;
 
 #endif
