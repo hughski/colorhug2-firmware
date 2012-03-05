@@ -116,7 +116,7 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 1, 1, 3 };
+static UINT16	FirmwareVersion[3] = { 1, 1, 4 };
 
 #pragma udata
 
@@ -136,7 +136,6 @@ char OwnerEmail[CH_OWNER_LENGTH_MAX];
 /* USB idle support */
 static UINT8 idle_command = 0x00;
 static UINT8 idle_counter = 0x00;
-static UINT16 tx_handle_busy = 0x0000;
 
 /* USB buffers */
 unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
@@ -892,18 +891,6 @@ CHugSetCalibrationMatrix(UINT16 calibration_index,
 }
 
 /**
- * CHugReplugUsb:
- **/
-static void
-CHugReplugUsb(void)
-{
-	UCONbits.SUSPND = 0;
-	UCON = 0;
-	Delay10KTCYx(0xff);
-	USBDeviceInit();
-}
-
-/**
  * CHugTakeReadingArray:
  **/
 static UINT8
@@ -960,20 +947,19 @@ ProcessIO(void)
 	    (USBSuspendControl == 1))
 		return;
 
-	/* we're waiting for a read from the host */
-	if(HIDTxHandleBusy(USBInHandle)) {
-		if (tx_handle_busy++ < 0x7fff)
-			return;
-		CHugReplugUsb();
-	}
-	tx_handle_busy = 0;
-
 	/* no data was received */
-	if(HIDRxHandleBusy(USBOutHandle)) {
+	if (HIDRxHandleBusy(USBOutHandle)) {
 		if (idle_counter++ == 0xff &&
 		    idle_command != 0x00)
 			CHugDeviceIdle();
 		return;
+	}
+
+	/* we're waiting for a read from the host */
+	if (HIDTxHandleBusy(USBInHandle)) {
+		/* hijack the pending read with the new error */
+		TxBuffer[CH_BUFFER_OUTPUT_RETVAL] = CH_ERROR_INCOMPLETE_REQUEST;
+		goto re_arm_rx;
 	}
 
 	/* got data, reset idle counter */
@@ -1242,7 +1228,7 @@ out:
 					  (BYTE*)&TxBuffer[0],
 					  reply_len);
 	}
-
+re_arm_rx:
 	/* re-arm the OUT endpoint for the next packet */
 	USBOutHandle = HIDRxPacket(HID_EP,
 				   (BYTE*)&RxBuffer,
