@@ -317,6 +317,9 @@ CHugReadEEprom(void)
 		    SensorSerial == 72 ||
 		    SensorSerial == 76 ||
 		    SensorSerial == 82 ||
+		    SensorSerial == 114 ||
+		    SensorSerial == 120 ||
+		    SensorSerial == 103 ||
 		    SensorSerial == 104) {
 			PcbErrata &= CH_PCB_ERRATA_SWAPPED_LEDS;
 		}
