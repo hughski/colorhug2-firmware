@@ -16,6 +16,12 @@
       incomplete request, just return the original command with an error
       set. Resetting the bus does not allow us to debug the failure.
      </info>
+     <info>
+      Add commands to get and set the remote profile hash on the device.
+      This allows calibration clients to save the profile to a RESTful
+      web service and then easily retrieve the profile on another
+      system, either Linux, Apple OS X or Microsoft Windows.
+     </info>
     </changelog>
   </update>
 

@@ -22,6 +22,8 @@
 #ifndef COLOR_HUG_H
 #define COLOR_HUG_H
 
+#include <GenericTypeDefs.h>
+
 /* device constants */
 #define	CH_USB_VID				0x04d8
 #define	CH_USB_PID				0xf8da
@@ -571,6 +573,33 @@
  **/
 #define	CH_CMD_GET_PCB_ERRATA			0x33
 
+/**
+ * CH_CMD_SET_REMOTE_HASH:
+ *
+ * Sets the remote SHA1 hash of the profile. This is designed to
+ * be used by the calibration program to indicate the key which allows
+ * the completed profile to be found from a public web service.
+ *
+ * IN:  [1:cmd][20:sha1_hash]
+ * OUT: [1:retval][1:cmd]
+ *
+ * This command is available in firmware mode.
+ **/
+#define	CH_CMD_SET_REMOTE_HASH			0x34
+
+/**
+ * CH_CMD_GET_REMOTE_HASH:
+ *
+ * Gets the remote hash which is used to get the last profile saved
+ * to a public web service.
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd][20:sha1_hash]
+ *
+ * This command is available in firmware mode.
+ **/
+#define	CH_CMD_GET_REMOTE_HASH			0x35
+
 /* secret code */
 #define	CH_WRITE_EEPROM_MAGIC			"Un1c0rn2"
 
@@ -596,6 +625,7 @@
 #define	CH_EEPROM_OFFSET_POST_SCALE		0x0e /* 4 bytes */
 #define	CH_EEPROM_OFFSET_CALIBRATION_MAP	0x12 /* 12 bytes */
 #define	CH_EEPROM_OFFSET_PCB_ERRATA		0x1e /* 2 bytes */
+#define	CH_EEPROM_OFFSET_REMOTE_HASH		0x20 /* 20 bytes */
 
 /* EEPROM owner offsets */
 #define	CH_EEPROM_ADDR_OWNER			0xf040
@@ -690,5 +720,10 @@ typedef enum {
 	CH_PCB_ERRATA_SWAPPED_LEDS	= 1,
 	CH_PCB_ERRATA_LAST
 } ChPcbErrata;
+
+/* SHA1 hash */
+typedef struct {
+	UINT8		bytes[20];
+} ChSha1;
 
 #endif

@@ -127,6 +127,7 @@ static UINT16		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 static CHugPackedFloat	PreScale;
 static UINT16		PcbErrata = CH_PCB_ERRATA_NONE;
+static ChSha1		remote_hash;
 
 #pragma udata udata1
 char OwnerName[CH_OWNER_LENGTH_MAX];
@@ -296,6 +297,9 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PCB_ERRATA,
 		  1 * sizeof(UINT16),
 		  (unsigned char *) &PcbErrata);
+	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_REMOTE_HASH,
+		  1 * sizeof(ChSha1),
+		  (unsigned char *) &remote_hash);
 	ReadFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_NAME,
 		  CH_OWNER_LENGTH_MAX * sizeof(char),
 		  (unsigned char *) OwnerName);
@@ -356,6 +360,9 @@ CHugWriteEEprom(void)
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_PCB_ERRATA,
 	       (void *) &PcbErrata,
 	       1 * sizeof(UINT16));
+	memcpy(FlashBuffer + CH_EEPROM_OFFSET_REMOTE_HASH,
+	       (void *) &remote_hash,
+	       1 * sizeof(ChSha1));
 	WriteBytesFlash(CH_EEPROM_ADDR_CONFIG,
 			CH_FLASH_WRITE_BLOCK_SIZE,
 			(unsigned char *) FlashBuffer);
@@ -930,6 +937,23 @@ out:
 }
 
 /**
+ * ChSha1Valid:
+ *
+ * A hash is only valid when it is first set. It is invalid when all
+ * bytes of the hash are 0xff.
+ **/
+static UINT8
+ChSha1Valid(ChSha1 *sha1)
+{
+	UINT8 i;
+	for (i = 0; i < 20; i++) {
+		if (sha1->bytes[i] != 0xff)
+			return CH_ERROR_NONE;
+	}
+	return CH_ERROR_INVALID_VALUE;
+}
+
+/**
  * ProcessIO:
  **/
 static void
@@ -1010,6 +1034,22 @@ ProcessIO(void)
 		memcpy (&PcbErrata,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(UINT16));
+		break;
+	case CH_CMD_GET_REMOTE_HASH:
+
+		/* check is valid */
+		rc = ChSha1Valid(&remote_hash);
+		if (rc != CH_ERROR_NONE)
+			break;
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(void *) &remote_hash,
+			sizeof(ChSha1));
+		reply_len += sizeof(ChSha1);
+		break;
+	case CH_CMD_SET_REMOTE_HASH:
+		memcpy (&remote_hash,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			sizeof(ChSha1));
 		break;
 	case CH_CMD_GET_MULTIPLIER:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();
