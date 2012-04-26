@@ -116,7 +116,7 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 1, 1, 4 };
+static UINT16	FirmwareVersion[3] = { 1, 1, 5 };
 
 #pragma udata
 
@@ -179,6 +179,45 @@ CHugSetLEDsInternal(UINT8 leds)
 		PORTEbits.RE0 = (leds & CH_STATUS_LED_GREEN);
 		PORTEbits.RE1 = (leds & CH_STATUS_LED_RED) >> 1;
 	}
+}
+
+/**
+ * CHugSetLEDsDutyCycle:
+ **/
+static void
+CHugSetLEDsDutyCycle(UINT8 leds, UINT8 length, UINT8 duty)
+{
+	UINT8 i, j;
+	for (j = 0; j < length; j++) {
+		ClrWdt();
+		CHugSetLEDsInternal(leds);
+		for (i = 0; i < duty; i++);
+		CHugSetLEDsInternal(0);
+		for (i = 0; i < 0xff - duty; i++);
+	}
+}
+
+/**
+ * CHugWelcomeFlash:
+ **/
+static void
+CHugWelcomeFlash(void)
+{
+	UINT8 i;
+
+	/* do not to the startup flash */
+	if ((PcbErrata & CH_PCB_ERRATA_NO_WELCOME) > 0)
+		return;
+
+	for (i = 0; i < 0xff; i++)
+		CHugSetLEDsDutyCycle(CH_STATUS_LED_RED, 0x05, i);
+	for (i = 0; i < 0xff; i++)
+		CHugSetLEDsDutyCycle(CH_STATUS_LED_RED, 0x05, 0xff-i);
+	for (i = 0; i < 0xff; i++)
+		CHugSetLEDsDutyCycle(CH_STATUS_LED_GREEN, 0x05, i);
+	for (i = 0; i < 0xff; i++)
+		CHugSetLEDsDutyCycle(CH_STATUS_LED_GREEN, 0x05, 0xff-i);
+	CHugSetLEDsInternal(0);
 }
 
 /**
@@ -1476,6 +1515,9 @@ main(void)
 	/* the watchdog saved us from our doom */
 	if (!RCONbits.NOT_TO)
 		CHugFatalError(CH_ERROR_WATCHDOG);
+
+	/* do the welcome flash */
+	CHugWelcomeFlash();
 
 	while(1) {
 
