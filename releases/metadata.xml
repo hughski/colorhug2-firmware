@@ -6,13 +6,16 @@
     <state>testing</state>
     <version>1.1.5</version>
     <supported_hardware>1</supported_hardware>
-    <checksum type="sha1"></checksum>
-    <timestamp></timestamp>
+    <checksum type="sha1">e2f24694681632b852f2312b427c38aeede1bc04</checksum>
+    <timestamp>1335804097</timestamp>
     <filename>colorhug-1.1.5.bin</filename>
     <size></size>
     <changelog>
      <info>
       When the device starts up, show the leds fading in and out.
+     </info>
+     <info>
+      Upgrade the embedded MCHPFSUSB library from 2.9a to 2.9e.
      </info>
     </changelog>
   </update>
