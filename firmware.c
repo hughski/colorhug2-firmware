@@ -999,10 +999,12 @@ static void
 ProcessIO(void)
 {
 	CHugPackedFloat readings[3];
+	CHugPackedFloat readings_tmp[3];
 	UINT16 address;
-	UINT16 reading;
 	UINT16 calibration_index;
+	UINT16 reading;
 	UINT8 checksum;
+	UINT8 i;
 	UINT8 length;
 	unsigned char cmd;
 	unsigned char rc = CH_ERROR_NONE;
@@ -1217,14 +1219,22 @@ ProcessIO(void)
 		reply_len += sizeof(UINT16);
 		break;
 	case CH_CMD_TAKE_READINGS:
-		/* take multiple readings */
+		/* take multiple readings without using the factory
+		 * calibration matrix but using post scaling */
 		rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
 				      &readings[CH_COLOR_OFFSET_GREEN],
 				      &readings[CH_COLOR_OFFSET_BLUE]);
 		if (rc != CH_ERROR_NONE)
 			break;
+		for (i = 0; i < 3; i++) {
+			rc = CHugPackedFloatMultiply(&readings[i],
+						     &PostScale,
+						     &readings_tmp[i]);
+			if (rc != CH_ERROR_NONE)
+				goto out;
+		}
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) readings,
+			(const void *) readings_tmp,
 			3 * sizeof(CHugPackedFloat));
 		reply_len += 3 * sizeof(CHugPackedFloat);
 		break;
