@@ -3,17 +3,18 @@
   <format_revision>1</format_revision>
 
   <update>
-    <state>testing</state>
+    <state>stable</state>
     <version>1.1.6</version>
     <supported_hardware>1</supported_hardware>
-    <checksum type="sha1"></checksum>
-    <timestamp></timestamp>
+    <checksum type="sha1">955386767a0108faf104f74985ccbefcd2f6050c</checksum>
+    <timestamp>1336598520</timestamp>
     <filename>colorhug-1.1.6.bin</filename>
-    <size></size>
+    <size>19200</size>
     <changelog>
      <info>
       Apply the postscale when doing TakeReadings so that we can use
       it for profiling without using the unity matrix trick.
+      This allows dispread -yR to work correctly.
      </info>
     </changelog>
   </update>
@@ -25,7 +26,7 @@
     <checksum type="sha1">e2f24694681632b852f2312b427c38aeede1bc04</checksum>
     <timestamp>1335804097</timestamp>
     <filename>colorhug-1.1.5.bin</filename>
-    <size></size>
+    <size>19072</size>
     <changelog>
      <info>
       When the device starts up, show the leds fading in and out.
