@@ -251,30 +251,6 @@ CHugSetLEDs(UINT8 leds,
 }
 
 /**
- * CHugFatalError:
- **/
-static void
-CHugFatalError (ChError error)
-{
-	char i;
-
-	/* turn off watchdog */
-	WDTCONbits.SWDTEN = 0;
-	TRISE = 0x3c;
-
-	while (1) {
-		for (i = 0; i < error; i++) {
-			PORTE = CH_STATUS_LED_RED;
-			Delay10KTCYx(0xff);
-			PORTE = 0x00;
-			Delay10KTCYx(0xff);
-		}
-		Delay10KTCYx(0xff);
-		Delay10KTCYx(0xff);
-	}
-}
-
-/**
  * CHugReadEEprom:
  **/
 static void

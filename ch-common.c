@@ -20,6 +20,7 @@
  */
 
 #include <p18cxxx.h>
+#include <delays.h>
 
 #include "ColorHug.h"
 
@@ -61,4 +62,28 @@ CHugSetMultiplier(ChFreqScale multiplier)
 {
 	PORTAbits.RA0 = (multiplier & 0x01);
 	PORTAbits.RA1 = (multiplier & 0x02) >> 1;
+}
+
+/**
+ * CHugFatalError:
+ **/
+void
+CHugFatalError (ChError error)
+{
+	char i;
+
+	/* turn off watchdog */
+	WDTCONbits.SWDTEN = 0;
+	TRISE = 0x3c;
+
+	while (1) {
+		for (i = 0; i < error; i++) {
+			PORTE = CH_STATUS_LED_RED;
+			Delay10KTCYx(0xff);
+			PORTE = 0x00;
+			Delay10KTCYx(0xff);
+		}
+		Delay10KTCYx(0xff);
+		Delay10KTCYx(0xff);
+	}
 }

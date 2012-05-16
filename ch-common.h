@@ -30,5 +30,6 @@ ChColorSelect	 CHugGetColorSelect	(void);
 void		 CHugSetColorSelect	(ChColorSelect	 color_select);
 ChFreqScale	 CHugGetMultiplier	(void);
 void		 CHugSetMultiplier	(ChFreqScale	 multiplier);
+void		 CHugFatalError		(ChError	 error);
 
 #endif /* __CH_COMMON_H */

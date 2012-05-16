@@ -27,6 +27,7 @@
 #include "ColorHug.h"
 #include "HardwareProfile.h"
 #include "usb_config.h"
+#include "ch-common.h"
 
 #include <p18cxxx.h>
 #include <delays.h>
@@ -110,30 +111,6 @@ static UINT8 flash_success = 0xff;
 #pragma code
 
 #define CHugBootFlash()		(((int(*)(void))(CH_EEPROM_ADDR_RUNCODE))())
-
-/**
- * CHugFatalError:
- **/
-static void
-CHugFatalError (ChError error)
-{
-	char i;
-
-	/* turn off watchdog */
-	WDTCONbits.SWDTEN = 0;
-	TRISE = 0x3c;
-
-	while (1) {
-		for (i = 0; i < error; i++) {
-			PORTE = CH_STATUS_LED_RED;
-			Delay10KTCYx(0xff);
-			PORTE = 0x00;
-			Delay10KTCYx(0xff);
-		}
-		Delay10KTCYx(0xff);
-		Delay10KTCYx(0xff);
-	}
-}
 
 /**
  * CHugCalculateChecksum:
