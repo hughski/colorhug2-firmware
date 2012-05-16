@@ -28,6 +28,7 @@
 #include "HardwareProfile.h"
 #include "usb_config.h"
 #include "ch-math.h"
+#include "ch-common.h"
 
 #include <p18cxxx.h>
 #include <delays.h>
@@ -247,44 +248,6 @@ CHugSetLEDs(UINT8 leds,
 		/* clear watchdog */
 		ClrWdt();
 	}
-}
-
-/**
- * CHugGetColorSelect:
- **/
-static ChColorSelect
-CHugGetColorSelect(void)
-{
-	return (PORTAbits.RA3 << 1) + PORTAbits.RA2;
-}
-
-/**
- * CHugSetColorSelect:
- **/
-static void
-CHugSetColorSelect(ChColorSelect color_select)
-{
-	PORTAbits.RA2 = (color_select & 0x01);
-	PORTAbits.RA3 = (color_select & 0x02) >> 1;
-}
-
-/**
- * CHugGetMultiplier:
- **/
-static ChFreqScale
-CHugGetMultiplier(void)
-{
-	return (PORTAbits.RA1 << 1) + PORTAbits.RA0;
-}
-
-/**
- * CHugSetMultiplier:
- **/
-static void
-CHugSetMultiplier(ChFreqScale multiplier)
-{
-	PORTAbits.RA0 = (multiplier & 0x01);
-	PORTAbits.RA1 = (multiplier & 0x02) >> 1;
 }
 
 /**
