@@ -305,6 +305,9 @@ ProcessIO(void)
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
 				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
+	case CH_CMD_SELF_TEST:
+		rc = CHugSelfTest();
+		break;
 	default:
 		rc = CH_ERROR_UNKNOWN_CMD_FOR_BOOTLOADER;
 		break;

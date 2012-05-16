@@ -1246,6 +1246,9 @@ ProcessIO(void)
 		rc = CHugTakeReadingArray(&TxBuffer[CH_BUFFER_OUTPUT_DATA]);
 		reply_len += 30;
 		break;
+	case CH_CMD_SELF_TEST:
+		rc = CHugSelfTest();
+		break;
 	default:
 		rc = CH_ERROR_UNKNOWN_CMD;
 		break;

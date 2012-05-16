@@ -87,3 +87,96 @@ CHugFatalError (ChError error)
 		Delay10KTCYx(0xff);
 	}
 }
+
+/**
+ * CHugSelfTestSensor:
+ **/
+static UINT8
+CHugSelfTestSensor(UINT8 min_pulses)
+{
+	UINT16 i;
+	UINT8 pulses = 0;
+	unsigned char ra_tmp = PORTA;
+
+	/* check sensor reports some values */
+	for (i = 0; i < 0xffff && pulses < min_pulses; i++) {
+		if (ra_tmp != PORTA)
+			pulses++;
+	}
+	return pulses;
+}
+
+/**
+ * CHugSelfTest:
+ *
+ * Tests the device in the following ways:
+ *  - Tests the RED sensor
+ *  - Tests the GREEN sensor
+ *  - Tests the BLUE sensor
+ **/
+UINT8
+CHugSelfTest(void)
+{
+	const UINT8 min_pulses = 3;
+	UINT8 pulses[3];
+	UINT8 rc;
+
+	/* check multiplier can be set and read */
+	CHugSetMultiplier(CH_FREQ_SCALE_0);
+	if (CHugGetMultiplier() != CH_FREQ_SCALE_0) {
+		rc = CH_ERROR_SELF_TEST_MULTIPLIER;
+		goto out;
+	}
+	CHugSetMultiplier(CH_FREQ_SCALE_100);
+	if (CHugGetMultiplier() != CH_FREQ_SCALE_100) {
+		rc = CH_ERROR_SELF_TEST_MULTIPLIER;
+		goto out;
+	}
+
+	/* check color select can be set and read */
+	CHugSetColorSelect(CH_COLOR_SELECT_RED);
+	if (CHugGetColorSelect() != CH_COLOR_SELECT_RED) {
+		rc = CH_ERROR_SELF_TEST_COLOR_SELECT;
+		goto out;
+	}
+	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
+	if (CHugGetColorSelect() != CH_COLOR_SELECT_GREEN) {
+		rc = CH_ERROR_SELF_TEST_COLOR_SELECT;
+		goto out;
+	}
+
+	/* check red, green and blue */
+	CHugSetColorSelect(CH_COLOR_SELECT_RED);
+	pulses[CH_COLOR_OFFSET_RED] = CHugSelfTestSensor(min_pulses);
+	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
+	pulses[CH_COLOR_OFFSET_GREEN] = CHugSelfTestSensor(min_pulses);
+	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
+	pulses[CH_COLOR_OFFSET_BLUE] = CHugSelfTestSensor(min_pulses);
+
+	/* are all the results invalid? */
+	if (pulses[CH_COLOR_OFFSET_RED] != min_pulses &&
+	    pulses[CH_COLOR_OFFSET_GREEN] != min_pulses &&
+	    pulses[CH_COLOR_OFFSET_BLUE] != min_pulses) {
+		rc = CH_ERROR_SELF_TEST_SENSOR;
+		goto out;
+	}
+
+	/* one sensor color invalid */
+	if (pulses[CH_COLOR_OFFSET_RED] != min_pulses) {
+		rc = CH_ERROR_SELF_TEST_RED;
+		goto out;
+	}
+	if (pulses[CH_COLOR_OFFSET_GREEN] != min_pulses) {
+		rc = CH_ERROR_SELF_TEST_GREEN;
+		goto out;
+	}
+	if (pulses[CH_COLOR_OFFSET_BLUE] != min_pulses) {
+		rc = CH_ERROR_SELF_TEST_BLUE;
+		goto out;
+	}
+
+	/* success */
+	rc = CH_ERROR_NONE;
+out:
+	return rc;
+}
