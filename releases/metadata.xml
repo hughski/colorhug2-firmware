@@ -3,6 +3,22 @@
   <format_revision>1</format_revision>
 
   <update>
+    <state>testing</state>
+    <version>1.1.7</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1">9b7dbb24dbcae85fbbf045e7ff401fb3f57ddf31</checksum>
+    <timestamp>1337189919</timestamp>
+    <filename>colorhug-1.1.7.bin</filename>
+    <size>19712</size>
+    <changelog>
+     <item>
+      Add a self test device command that can be used to check the
+      ColorHug PCB automatically at manufacture time.
+     </item>
+    </changelog>
+  </update>
+
+  <update>
     <state>stable</state>
     <version>1.1.6</version>
     <supported_hardware>1</supported_hardware>
