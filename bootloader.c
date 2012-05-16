@@ -83,7 +83,7 @@ CHugLowPriorityISRCode (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 0, 1, 2 };
+static UINT16	FirmwareVersion[3] = { 0, 1, 3 };
 
 #pragma rom
 
