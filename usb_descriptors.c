@@ -44,7 +44,11 @@ ROM USB_DEVICE_DESCRIPTOR device_dsc=
 	0x00,				/* Protocol */
 	USB_EP0_BUFF_SIZE,		/* Max packet size for EP0, see usb_config.h */
 	CH_USB_VID,			/* Vendor ID */
-	CH_USB_PID,			/* Product ID */
+#ifdef COLORHUG_BOOTLOADER
+	CH_USB_PID_BOOTLADER,		/* Product ID */
+#else
+	CH_USB_PID_FIRMWARE,		/* Product ID */
+#endif
 	0x0002,				/* Device release number (BCD format) */
 	0x01,				/* Manufacturer string index */
 	0x02,				/* Product string index */

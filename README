@@ -24,7 +24,7 @@ only needs one non-default endpoint.
 
 To connect to the ColorHug, do the following:
 
- * Open USB device VID=0x04d8, PID=0xf8da
+ * Open USB device VID=0x273f, PID=0x1001                            [1]
  * Set configuration #1
  * Claim interface #0 (unregister any kernel driver if present)
 
@@ -129,3 +129,16 @@ different values in bootloader and firmware modes.
 
 In normal operation the device will not need to access the bootloader
 mode and no other commands are required to get an XYZ reading.
+
+---
+
+[1] Before 18th May 2012, the ColorHug used VID:0x04d8, PID:0xf8da
+    for both firmware and bootloader modes. This is was an allocated
+    number from Microchip Inc which was valid for 5000 devices.
+    Devices with firmware newer than 1.1.xx use the new VID and PID
+    allocated to Hughski Limited, which is VID:0x273f and PID:0x1000 for
+    bootloader mode, and VID:0x273f and PID:0x1001 for firmware mode.
+    The bootloader code is never updated which means there are ~450
+    devices in the wild that have a bootloader with the old VID and PID.
+    This means, if you write a program to flash devices, please also
+    accept the old VID/PID numbers too.

@@ -3,6 +3,22 @@
   <format_revision>1</format_revision>
 
   <update>
+    <state>unstable</state>
+    <version>1.2.0</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1"></checksum>
+    <timestamp></timestamp>
+    <filename>colorhug-1.2.0.bin</filename>
+    <size></size>
+    <changelog>
+     <item>
+      Use the new USB vendor and product IDs assigned to Hughski Limited
+      by the USB Implementers Forum, Inc.
+     </item>
+    </changelog>
+  </update>
+
+  <update>
     <state>testing</state>
     <version>1.1.7</version>
     <supported_hardware>1</supported_hardware>

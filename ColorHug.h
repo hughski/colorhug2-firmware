@@ -25,8 +25,9 @@
 #include <GenericTypeDefs.h>
 
 /* device constants */
-#define	CH_USB_VID				0x04d8
-#define	CH_USB_PID				0xf8da
+#define	CH_USB_VID				0x273f
+#define	CH_USB_PID_BOOTLADER			0x1000
+#define	CH_USB_PID_FIRMWARE			0x1001
 #define	CH_USB_CONFIG				0x0001
 #define	CH_USB_INTERFACE			0x0000
 #define	CH_USB_HID_EP				0x0001
