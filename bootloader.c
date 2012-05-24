@@ -351,8 +351,9 @@ InitializeSystem(void)
 
 	/* set RA0, RA1 to output (freq scaling),
 	 * set RA2, RA3 to output (color select),
-	 * set RA4 to input (frequency counter),
-	 * set RA5 to input (unused) */
+	 * set RA5 to input (frequency counter),
+	 * (RA6 is "don't care" in OSC2 mode)
+	 * set RA7 to input (OSC1, HSPLL in) */
 	TRISA = 0xf0;
 
 	/* set RB0 to RB3 to input (h/w revision) others input (unused) */
