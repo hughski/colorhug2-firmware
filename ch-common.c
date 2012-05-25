@@ -67,7 +67,7 @@ CHugSetMultiplier(ChFreqScale multiplier)
 void
 CHugFatalError (ChError error)
 {
-	char i;
+	uint8_t i;
 
 	/* turn off watchdog */
 	WDTCONbits.SWDTEN = 0;
