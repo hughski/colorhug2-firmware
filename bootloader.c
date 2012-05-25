@@ -29,10 +29,7 @@
 #include "usb_config.h"
 #include "ch-common.h"
 
-#include <p18cxxx.h>
-#include <delays.h>
 #include <flash.h>
-#include <GenericTypeDefs.h>
 
 #include <USB/usb.h>
 #include <USB/usb_common.h>
@@ -83,15 +80,15 @@ CHugLowPriorityISRCode (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 0, 2, 0 };
+static uint16_t	FirmwareVersion[3] = { 0, 2, 0 };
 
 #pragma rom
 
 #pragma udata
 
 /* USB idle support */
-static UINT8 idle_command = 0x00;
-static UINT8 idle_counter = 0x00;
+static uint8_t idle_command = 0x00;
+static uint8_t idle_counter = 0x00;
 
 /* USB buffers */
 unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
@@ -103,10 +100,10 @@ USB_HANDLE	USBInHandle = 0;
 
 /* flash the LEDs when in bootloader mode */
 #define	BOOTLOADER_FLASH_INTERVAL	0x2fff
-static UINT16 led_counter = 0x0;
+static uint16_t led_counter = 0x0;
 
 /* protect against having a bad flash */
-static UINT8 flash_success = 0xff;
+static uint8_t flash_success = 0xff;
 
 #pragma code
 
@@ -115,11 +112,11 @@ static UINT8 flash_success = 0xff;
 /**
  * CHugCalculateChecksum:
  **/
-static UINT8
-CHugCalculateChecksum(UINT8 *data, UINT8 length)
+static uint8_t
+CHugCalculateChecksum(uint8_t *data, uint8_t length)
 {
 	int i;
-	UINT8 checksum = 0xff;
+	uint8_t checksum = 0xff;
 	for (i = 0; i < length; i++)
 		checksum ^= data[i];
 	return checksum;
@@ -149,10 +146,10 @@ CHugDeviceIdle(void)
 static void
 ProcessIO(void)
 {
-	UINT16 address;
-	UINT16 erase_length;
-	UINT8 length;
-	UINT8 checksum;
+	uint16_t address;
+	uint16_t erase_length;
+	uint8_t length;
+	uint8_t checksum;
 	unsigned char cmd;
 	unsigned char rc = CH_ERROR_NONE;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
@@ -454,7 +451,7 @@ USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 void
 main(void)
 {
-	UINT16 runcode_start = 0xffff;
+	uint16_t runcode_start = 0xffff;
 
 	/* stack overflow / underflow */
 	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF)

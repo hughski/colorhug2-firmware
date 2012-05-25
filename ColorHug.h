@@ -22,7 +22,22 @@
 #ifndef COLOR_HUG_H
 #define COLOR_HUG_H
 
-#include <GenericTypeDefs.h>
+#ifdef __SDCC
+ #include <stdint.h>
+ #include <delay.h>
+ #include <pic16/pic18f46j50.h>
+#else
+ #include <GenericTypeDefs.h>
+ #include <delays.h>
+ #include <p18cxxx.h>
+ #define uint8_t	UINT8
+ #define uint16_t	UINT16
+ #define uint32_t	UINT32
+ #define int8_t		INT8
+ #define int16_t	INT16
+ #define int32_t	INT32
+ #define delay10ktcy	Delay10KTCYx
+#endif
 
 /* device constants */
 #define	CH_USB_VID				0x273f
@@ -744,7 +759,7 @@ typedef enum {
 
 /* SHA1 hash */
 typedef struct {
-	UINT8		bytes[20];
+	uint8_t		bytes[20];
 } ChSha1;
 
 #endif

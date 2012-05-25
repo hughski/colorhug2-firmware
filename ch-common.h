@@ -22,8 +22,6 @@
 #ifndef __CH_COMMON_H
 #define __CH_COMMON_H
 
-#include <GenericTypeDefs.h>
-
 #include "ColorHug.h"
 
 ChColorSelect	 CHugGetColorSelect	(void);
@@ -31,6 +29,6 @@ void		 CHugSetColorSelect	(ChColorSelect	 color_select);
 ChFreqScale	 CHugGetMultiplier	(void);
 void		 CHugSetMultiplier	(ChFreqScale	 multiplier);
 void		 CHugFatalError		(ChError	 error);
-UINT8		 CHugSelfTest		(void);
+uint8_t		 CHugSelfTest		(void);
 
 #endif /* __CH_COMMON_H */

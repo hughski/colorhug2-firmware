@@ -22,27 +22,25 @@
 #ifndef __CH_MATH_H
 #define __CH_MATH_H
 
-#include <GenericTypeDefs.h>
-
 #include "ColorHug.h"
 
 /* a 32 bit struct to hold numbers from the range -32767 to +32768
  * with a precision of at least 0.000015 */
 typedef union {
 	struct {
-		UINT16	fraction;
-		INT16	offset;
+		uint16_t	fraction;
+		int16_t		offset;
 	};
 	struct {
-		INT32	raw;
+		int32_t		raw;
 	};
 } CHugPackedFloat;
 
 ChError	 CHugPackedFloatAdd		(const CHugPackedFloat	*pf1,
-						 const CHugPackedFloat	*pf2,
-						 CHugPackedFloat	*result);
+					 const CHugPackedFloat	*pf2,
+					 CHugPackedFloat	*result);
 ChError	 CHugPackedFloatMultiply	(const CHugPackedFloat	*pf1,
-						 const CHugPackedFloat	*pf2,
-						 CHugPackedFloat	*result);
+					 const CHugPackedFloat	*pf2,
+					 CHugPackedFloat	*result);
 
 #endif /* __CH_MATH_H */

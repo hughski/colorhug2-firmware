@@ -19,9 +19,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <p18cxxx.h>
-#include <delays.h>
-
 #include "ColorHug.h"
 
 #include "ch-common.h"
@@ -79,23 +76,23 @@ CHugFatalError (ChError error)
 	while (1) {
 		for (i = 0; i < error; i++) {
 			PORTE = CH_STATUS_LED_RED;
-			Delay10KTCYx(0xff);
+			delay10ktcy(0xff);
 			PORTE = 0x00;
-			Delay10KTCYx(0xff);
+			delay10ktcy(0xff);
 		}
-		Delay10KTCYx(0xff);
-		Delay10KTCYx(0xff);
+		delay10ktcy(0xff);
+		delay10ktcy(0xff);
 	}
 }
 
 /**
  * CHugSelfTestSensor:
  **/
-static UINT8
-CHugSelfTestSensor(UINT8 min_pulses)
+static uint8_t
+CHugSelfTestSensor(uint8_t min_pulses)
 {
-	UINT16 i;
-	UINT8 pulses = 0;
+	uint16_t i;
+	uint8_t pulses = 0;
 	unsigned char ra_tmp = PORTA;
 
 	/* check sensor reports some values */
@@ -114,12 +111,12 @@ CHugSelfTestSensor(UINT8 min_pulses)
  *  - Tests the GREEN sensor
  *  - Tests the BLUE sensor
  **/
-UINT8
+uint8_t
 CHugSelfTest(void)
 {
-	const UINT8 min_pulses = 3;
-	UINT8 pulses[3];
-	UINT8 rc;
+	const uint8_t min_pulses = 3;
+	uint8_t pulses[3];
+	uint8_t rc;
 
 	/* check multiplier can be set and read */
 	CHugSetMultiplier(CH_FREQ_SCALE_0);

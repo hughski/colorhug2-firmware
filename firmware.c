@@ -30,10 +30,7 @@
 #include "ch-math.h"
 #include "ch-common.h"
 
-#include <p18cxxx.h>
-#include <delays.h>
 #include <flash.h>
-#include <GenericTypeDefs.h>
 
 #include <USB/usb.h>
 #include <USB/usb_common.h>
@@ -117,17 +114,17 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static UINT16	FirmwareVersion[3] = { 1, 2, 0 };
+static uint16_t		FirmwareVersion[3] = { 1, 2, 0 };
 
 #pragma udata
 
-static UINT32		SensorSerial = 0x00000000;
-static UINT16		DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
-static UINT16		CalibrationMap[6];
-static UINT16		SensorIntegralTime = 0xffff;
+static uint32_t		SensorSerial = 0x00000000;
+static uint16_t		DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
+static uint16_t		CalibrationMap[6];
+static uint16_t		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 static CHugPackedFloat	PreScale;
-static UINT16		PcbErrata = CH_PCB_ERRATA_NONE;
+static uint16_t		PcbErrata = CH_PCB_ERRATA_NONE;
 static ChSha1		remote_hash;
 
 #pragma udata udata1
@@ -136,8 +133,8 @@ char OwnerEmail[CH_OWNER_LENGTH_MAX];
 
 #pragma udata
 /* USB idle support */
-static UINT8 idle_command = 0x00;
-static UINT8 idle_counter = 0x00;
+static uint8_t		idle_command = 0x00;
+static uint8_t		idle_counter = 0x00;
 
 /* USB buffers */
 unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
@@ -149,10 +146,10 @@ USB_HANDLE	USBInHandle = 0;
 
 /* need to save this so we can power down in USB suspend and then power
  * back up in the same mode */
-static ChFreqScale multiplier_old = CH_FREQ_SCALE_0;
+static ChFreqScale	multiplier_old = CH_FREQ_SCALE_0;
 
 /* protect against a deactivated device changing its serial number */
-static UINT8 flash_success = 0xff;
+static uint8_t		flash_success = 0xff;
 
 #pragma code
 
@@ -169,7 +166,7 @@ CHugGetLEDs(void)
  * CHugSetLEDsInternal:
  **/
 static void
-CHugSetLEDsInternal(UINT8 leds)
+CHugSetLEDsInternal(uint8_t leds)
 {
 	/* the first few boards on the P&P machines had the
 	 * LEDs soldered the wrong way around */
@@ -186,9 +183,9 @@ CHugSetLEDsInternal(UINT8 leds)
  * CHugSetLEDsDutyCycle:
  **/
 static void
-CHugSetLEDsDutyCycle(UINT8 leds, UINT8 length, UINT8 duty)
+CHugSetLEDsDutyCycle(uint8_t leds, uint8_t length, uint8_t duty)
 {
-	UINT8 i, j;
+	uint8_t i, j;
 	for (j = 0; j < length; j++) {
 		ClrWdt();
 		CHugSetLEDsInternal(leds);
@@ -204,7 +201,7 @@ CHugSetLEDsDutyCycle(UINT8 leds, UINT8 length, UINT8 duty)
 static void
 CHugWelcomeFlash(void)
 {
-	UINT8 i;
+	uint8_t i;
 
 	/* do not to the startup flash */
 	if ((PcbErrata & CH_PCB_ERRATA_NO_WELCOME) > 0)
@@ -225,12 +222,12 @@ CHugWelcomeFlash(void)
  * CHugSetLEDs:
  **/
 static void
-CHugSetLEDs(UINT8 leds,
-	    UINT8 repeat,
-	    UINT8 on_time,
-	    UINT8 off_time)
+CHugSetLEDs(uint8_t leds,
+	    uint8_t repeat,
+	    uint8_t on_time,
+	    uint8_t off_time)
 {
-	UINT8 i;
+	uint8_t i;
 
 	/* trivial case */
 	if (repeat == 0) {
@@ -241,9 +238,9 @@ CHugSetLEDs(UINT8 leds,
 	/* run in a loop */
 	for (i = 0; i < repeat; i++) {
 		CHugSetLEDsInternal (leds);
-		Delay10KTCYx(on_time);
+		delay10ktcy(on_time);
 		CHugSetLEDsInternal (0);
-		Delay10KTCYx(off_time);
+		delay10ktcy(off_time);
 
 		/* clear watchdog */
 		ClrWdt();
@@ -258,10 +255,10 @@ CHugReadEEprom(void)
 {
 	/* read this into RAM so it can be changed */
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_SERIAL,
-		  sizeof(UINT32),
+		  sizeof(uint32_t),
 		  (unsigned char *) &SensorSerial);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_DARK_OFFSET_RED,
-		  3 * sizeof(UINT16),
+		  3 * sizeof(uint16_t),
 		  (unsigned char *) DarkCalibration);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PRE_SCALE,
 		  sizeof(CHugPackedFloat),
@@ -270,10 +267,10 @@ CHugReadEEprom(void)
 		  sizeof(CHugPackedFloat),
 		  (unsigned char *) &PostScale);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_CALIBRATION_MAP,
-		  6 * sizeof(UINT16),
+		  6 * sizeof(uint16_t),
 		  (unsigned char *) &CalibrationMap);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PCB_ERRATA,
-		  1 * sizeof(UINT16),
+		  1 * sizeof(uint16_t),
 		  (unsigned char *) &PcbErrata);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_REMOTE_HASH,
 		  1 * sizeof(ChSha1),
@@ -322,10 +319,10 @@ CHugWriteEEprom(void)
 	/* write this in one fell swoop */
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_SERIAL,
 	       (void *) &SensorSerial,
-	       sizeof(UINT32));
+	       sizeof(uint32_t));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_DARK_OFFSET_RED,
 	       (void *) DarkCalibration,
-	       3 * sizeof(UINT16));
+	       3 * sizeof(uint16_t));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_PRE_SCALE,
 	       (void *) &PreScale,
 	       sizeof(CHugPackedFloat));
@@ -334,10 +331,10 @@ CHugWriteEEprom(void)
 	       sizeof(CHugPackedFloat));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 	       (void *) &CalibrationMap,
-	       6 * sizeof(UINT16));
+	       6 * sizeof(uint16_t));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_PCB_ERRATA,
 	       (void *) &PcbErrata,
-	       1 * sizeof(UINT16));
+	       1 * sizeof(uint16_t));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_REMOTE_HASH,
 	       (void *) &remote_hash,
 	       1 * sizeof(ChSha1));
@@ -377,16 +374,16 @@ CHugIsMagicUnicorn(const char *text)
  * CHugScaleByIntegral:
  **/
 static void
-CHugScaleByIntegral (UINT16 *pulses, UINT32 actual_integral_time)
+CHugScaleByIntegral (uint16_t *pulses, uint32_t actual_integral_time)
 {
-	UINT32 tmp;
+	uint32_t tmp;
 
 	/* no point, so optimize */
 	if (actual_integral_time == 0xffff)
 		return;
 
 	/* do this as integer math for speed */
-	tmp = (UINT32) *pulses * 0xffff;
+	tmp = (uint32_t) *pulses * 0xffff;
 	*pulses = tmp / actual_integral_time;
 }
 
@@ -413,12 +410,12 @@ CHugScaleByIntegral (UINT16 *pulses, UINT32 actual_integral_time)
  * accuracy by 12.5% for low light readings, at the slight expense of
  * making the calibration duration 6.25ms longer.
  **/
-static UINT16
-CHugTakeReadingPulses (UINT32 integral_time, UINT32 *last_rising_edge)
+static uint16_t
+CHugTakeReadingPulses (uint32_t integral_time, uint32_t *last_rising_edge)
 {
-	UINT32 i;
-	UINT32 last_rising_edge_tmp = 0;
-	UINT16 number_edges = 0;
+	uint32_t i;
+	uint32_t last_rising_edge_tmp = 0;
+	uint16_t number_edges = 0;
 	unsigned char ra_tmp = PORTA;
 
 	/* wait for the output to change so we start on a new pulse
@@ -474,18 +471,18 @@ out:
  * SensorIntegralTime taken from the user, but for dark readings we
  * multiply this by a constant to get a more accurate reading.
  **/
-static UINT16
+static uint16_t
 CHugTakeReading (void)
 {
-	const UINT32 edges_min = 10; /* this is a dim CRT screen */
-	UINT16 number_edges;
-	UINT32 integral;
-	UINT32 integral_max;
-	UINT32 last_rising_edge;
+	const uint32_t edges_min = 10; /* this is a dim CRT screen */
+	uint16_t number_edges;
+	uint32_t integral;
+	uint32_t integral_max;
+	uint32_t last_rising_edge;
 
 	/* set the maximum permitted reading time
 	 * FIXME: make this configurable? */
-	integral_max = (UINT32) SensorIntegralTime * 4;
+	integral_max = (uint32_t) SensorIntegralTime * 4;
 
 	/* get a 10% test reading */
 	integral = SensorIntegralTime / 10;
@@ -498,7 +495,7 @@ CHugTakeReading (void)
 		 * accurate reading */
 		integral = integral_max;
 	} else {
-		integral = (edges_min * (UINT32) SensorIntegralTime) / (UINT32) number_edges;
+		integral = (edges_min * (uint32_t) SensorIntegralTime) / (uint32_t) number_edges;
 
 		/* we're expected to read for this much time, so for
 		 * white light get the best precision available */
@@ -532,13 +529,13 @@ out:
  * @green: Value from 0x0000 to 0x7ffff
  * @blue: Value from 0x0000 to 0x7ffff
  **/
-static UINT8
+static uint8_t
 CHugTakeReadings (CHugPackedFloat *red,
 		  CHugPackedFloat *green,
 		  CHugPackedFloat *blue)
 {
-	UINT16 reading;
-	UINT8 rc = CH_ERROR_NONE;
+	uint16_t reading;
+	uint8_t rc = CH_ERROR_NONE;
 
 	/* set to zero */
 	red->raw = 0;
@@ -596,13 +593,13 @@ out:
  *
  * Find the dot product of two vectors
  **/
-static UINT8
+static uint8_t
 CHugDotProduct(const CHugPackedFloat *vec1,
 	       const CHugPackedFloat *vec2,
 	       CHugPackedFloat *scalar)
 {
 	CHugPackedFloat tmp;
-	UINT8 rc;
+	uint8_t rc;
 
 	/* 1 */
 	rc = CHugPackedFloatMultiply (&vec1[0],
@@ -646,12 +643,12 @@ out:
  *
  * Multiply the device vector by the calibration matrix.
  **/
-static UINT8
+static uint8_t
 CHugCalibrationMultiply (const CHugPackedFloat *cal,
 			 const CHugPackedFloat *device_rgb,
 			 CHugPackedFloat *xyz)
 {
-	UINT8 rc;
+	uint8_t rc;
 
 	/* X */
 	rc = CHugDotProduct(cal + 0, device_rgb, &xyz[0]);
@@ -674,11 +671,11 @@ out:
 /**
  * CHugSwitchCalibrationMatrix:
  **/
-static UINT8
-CHugSwitchCalibrationMatrix(UINT16 calibration_index,
+static uint8_t
+CHugSwitchCalibrationMatrix(uint16_t calibration_index,
 			    CHugPackedFloat *calibration)
 {
-	UINT32 addr;
+	uint32_t addr;
 	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
 	ReadFlash(addr,
 		  9 * sizeof(CHugPackedFloat),
@@ -691,8 +688,8 @@ CHugSwitchCalibrationMatrix(UINT16 calibration_index,
 /**
  * CHugTakeReadingsXYZ:
  **/
-static UINT8
-CHugTakeReadingsXYZ (UINT8 calibration_index,
+static uint8_t
+CHugTakeReadingsXYZ (uint8_t calibration_index,
 		     CHugPackedFloat *x,
 		     CHugPackedFloat *y,
 		     CHugPackedFloat *z)
@@ -700,8 +697,8 @@ CHugTakeReadingsXYZ (UINT8 calibration_index,
 	CHugPackedFloat calibration[9];
 	CHugPackedFloat readings[3];
 	CHugPackedFloat readings_tmp[3];
-	UINT8 i;
-	UINT8 rc;
+	uint8_t i;
+	uint8_t rc;
 
 	/* get integer readings */
 	rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
@@ -771,14 +768,14 @@ CHugDeviceIdle(void)
 /**
  * CHugGetCalibrationMatrix:
  **/
-static UINT8
-CHugGetCalibrationMatrix(UINT16 calibration_index,
+static uint8_t
+CHugGetCalibrationMatrix(uint16_t calibration_index,
 			 CHugPackedFloat *calibration,
-			 UINT8 *types,
-			 UINT8 *description)
+			 uint8_t *types,
+			 uint8_t *description)
 {
-	UINT32 addr;
-	UINT8 matrix_size;
+	uint32_t addr;
+	uint8_t matrix_size;
 
 	matrix_size = 9 * sizeof(CHugPackedFloat);
 	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
@@ -786,7 +783,7 @@ CHugGetCalibrationMatrix(UINT16 calibration_index,
 		  matrix_size,
 		  (unsigned char *) calibration);
 	ReadFlash(addr + matrix_size,
-		  sizeof(UINT8),
+		  sizeof(uint8_t),
 		  (unsigned char *) types);
 	ReadFlash(addr + matrix_size + 1,
 		  CH_CALIBRATION_DESCRIPTION_LEN,
@@ -800,9 +797,9 @@ CHugGetCalibrationMatrix(UINT16 calibration_index,
  * CHugCopyFlash:
  **/
 static void
-CHugCopyFlash(UINT32 src, UINT32 dest, UINT16 len)
+CHugCopyFlash(uint32_t src, uint32_t dest, uint16_t len)
 {
-	UINT32 addr;
+	uint32_t addr;
 
 	/* nothing to do */
 	if (src == dest)
@@ -822,15 +819,15 @@ CHugCopyFlash(UINT32 src, UINT32 dest, UINT16 len)
 /**
  * CHugSetCalibrationMatrix:
  **/
-static UINT8
-CHugSetCalibrationMatrix(UINT16 calibration_index,
+static uint8_t
+CHugSetCalibrationMatrix(uint16_t calibration_index,
 			 CHugPackedFloat *calibration,
-			 UINT8 types,
-			 UINT8 *description)
+			 uint8_t types,
+			 uint8_t *description)
 {
-	UINT32 addr_block_start;
-	UINT32 offset;
-	UINT8 matrix_size;
+	uint32_t addr_block_start;
+	uint32_t offset;
+	uint8_t matrix_size;
 
 	/* calculate offsets */
 	addr_block_start = CH_CALIBRATION_ADDR +
@@ -881,14 +878,14 @@ CHugSetCalibrationMatrix(UINT16 calibration_index,
 /**
  * CHugTakeReadingArray:
  **/
-static UINT8
-CHugTakeReadingArray(UINT8 *data)
+static uint8_t
+CHugTakeReadingArray(uint8_t *data)
 {
-	UINT32 i;
-	UINT32 integral_time = SensorIntegralTime;
-	UINT8 idx;
-	UINT8 rc;
-	UINT32 chunk;
+	uint32_t i;
+	uint32_t integral_time = SensorIntegralTime;
+	uint8_t idx;
+	uint8_t rc;
+	uint32_t chunk;
 	unsigned char ra_tmp = PORTA;
 
 	/* set all buckets to zero */
@@ -920,10 +917,10 @@ out:
  * A hash is only valid when it is first set. It is invalid when all
  * bytes of the hash are 0xff.
  **/
-static UINT8
+static uint8_t
 ChSha1Valid(ChSha1 *sha1)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < 20; i++) {
 		if (sha1->bytes[i] != 0xff)
 			return CH_ERROR_NONE;
@@ -939,12 +936,12 @@ ProcessIO(void)
 {
 	CHugPackedFloat readings[3];
 	CHugPackedFloat readings_tmp[3];
-	UINT16 address;
-	UINT16 calibration_index;
-	UINT16 reading;
-	UINT8 checksum;
-	UINT8 i;
-	UINT8 length;
+	uint16_t address;
+	uint16_t calibration_index;
+	uint16_t reading;
+	uint8_t checksum;
+	uint8_t i;
+	uint8_t length;
 	unsigned char cmd;
 	unsigned char rc = CH_ERROR_NONE;
 	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
@@ -1008,12 +1005,12 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(void *) &PcbErrata,
 			2);
-		reply_len += sizeof(UINT16);
+		reply_len += sizeof(uint16_t);
 		break;
 	case CH_CMD_SET_PCB_ERRATA:
 		memcpy (&PcbErrata,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			sizeof(UINT16));
+			sizeof(uint16_t));
 		break;
 	case CH_CMD_GET_REMOTE_HASH:
 
@@ -1059,7 +1056,7 @@ ProcessIO(void)
 		/* get the chosen calibration matrix */
 		memcpy (&calibration_index,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			sizeof(UINT16));
+			sizeof(uint16_t));
 		if (calibration_index > CH_CALIBRATION_MAX) {
 			rc = CH_ERROR_INVALID_VALUE;
 			break;
@@ -1076,7 +1073,7 @@ ProcessIO(void)
 		/* set the chosen calibration matrix */
 		memcpy (&calibration_index,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			sizeof(UINT16));
+			sizeof(uint16_t));
 		if (calibration_index > CH_CALIBRATION_MAX) {
 			rc = CH_ERROR_INVALID_VALUE;
 			break;
@@ -1111,24 +1108,24 @@ ProcessIO(void)
 	case CH_CMD_GET_DARK_OFFSETS:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&DarkCalibration,
-			3 * sizeof(UINT16));
-		reply_len += 3 * sizeof(UINT16);
+			3 * sizeof(uint16_t));
+		reply_len += 3 * sizeof(uint16_t);
 		break;
 	case CH_CMD_SET_DARK_OFFSETS:
 		memcpy ((void *) &DarkCalibration,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			3 * sizeof(UINT16));
+			3 * sizeof(uint16_t));
 		break;
 	case CH_CMD_GET_CALIBRATION_MAP:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&CalibrationMap,
-			6 * sizeof(UINT16));
-		reply_len += 6 * sizeof(UINT16);
+			6 * sizeof(uint16_t));
+		reply_len += 6 * sizeof(uint16_t);
 		break;
 	case CH_CMD_SET_CALIBRATION_MAP:
 		memcpy ((void *) &CalibrationMap,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			6 * sizeof(UINT16));
+			6 * sizeof(uint16_t));
 		break;
 	case CH_CMD_GET_SERIAL_NUMBER:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
@@ -1154,8 +1151,8 @@ ProcessIO(void)
 		reading = CHugTakeReadingPulses(SensorIntegralTime, NULL);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &reading,
-			sizeof(UINT16));
-		reply_len += sizeof(UINT16);
+			sizeof(uint16_t));
+		reply_len += sizeof(uint16_t);
 		break;
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings without using the factory
@@ -1182,7 +1179,7 @@ ProcessIO(void)
 		 * calibration matrix */
 		memcpy (&calibration_index,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			sizeof(UINT16));
+			sizeof(uint16_t));
 		if (calibration_index > CH_CALIBRATION_MAX + 6) {
 			rc = CH_ERROR_INVALID_VALUE;
 			break;
@@ -1330,7 +1327,7 @@ InitializeSystem(void)
 	if(UCONbits.USBEN == 1) {
 		UCONbits.SUSPND = 0;
 		UCON = 0;
-		Delay10KTCYx(0xff);
+		delay10ktcy(0xff);
 	}
 
 	/* only turn on the USB module when the device has power */

@@ -39,8 +39,8 @@ CHugPackedFloatAdd (const CHugPackedFloat *pf1,
 		    const CHugPackedFloat *pf2,
 		    CHugPackedFloat *result)
 {
-	INT32 pf1_tmp;
-	INT32 pf2_tmp;
+	int32_t pf1_tmp;
+	int32_t pf2_tmp;
 
 	/* check overflow */
 	pf1_tmp = pf1->raw / 0xffff;
@@ -85,14 +85,14 @@ CHugPackedFloatMultiply (const CHugPackedFloat *pf1,
 		return CH_ERROR_OVERFLOW_MULTIPLY;
 
 	/* do long multiplication on each 16 bit part */
-	result->raw = ((UINT32) pf1_tmp.fraction *
-		       (UINT32) pf2_tmp.fraction) / 0x10000;
-	result->raw += ((UINT32) pf1_tmp.offset *
-			(UINT32) pf2_tmp.offset) * 0x10000;
-	result->raw += (UINT32) pf1_tmp.fraction *
-		       (UINT32) pf2_tmp.offset;
-	result->raw += (UINT32) pf1_tmp.offset *
-		       (UINT32) pf2_tmp.fraction;
+	result->raw = ((uint32_t) pf1_tmp.fraction *
+		       (uint32_t) pf2_tmp.fraction) / 0x10000;
+	result->raw += ((uint32_t) pf1_tmp.offset *
+			(uint32_t) pf2_tmp.offset) * 0x10000;
+	result->raw += (uint32_t) pf1_tmp.fraction *
+		       (uint32_t) pf2_tmp.offset;
+	result->raw += (uint32_t) pf1_tmp.offset *
+		       (uint32_t) pf2_tmp.fraction;
 
 	/* correct sign bit */
 	if ((pf1->raw < 0) ^ (pf2->raw < 0))
