@@ -1,7 +1,12 @@
 		ColorHug Firmware README
 
 Right, you're probably reading this file as you want to make a drvier
-for the ColorHug hardware. This is the basics:
+for the ColorHug hardware.
+
+If you came here for modifying, building and flashing the firmware
+please have a look at the Makefiles.
+
+This is the basics:
 
 == General Device Information ==
 
