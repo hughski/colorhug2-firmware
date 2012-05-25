@@ -25,6 +25,7 @@
 #ifdef __SDCC
  #include <stdint.h>
  #include <delay.h>
+ #include <string.h>
  #include <pic16/pic18f46j50.h>
 #else
  #include <GenericTypeDefs.h>
