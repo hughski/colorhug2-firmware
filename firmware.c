@@ -128,8 +128,8 @@ static uint16_t		PcbErrata = CH_PCB_ERRATA_NONE;
 static ChSha1		remote_hash;
 
 #pragma udata udata1
-char OwnerName[CH_OWNER_LENGTH_MAX];
-char OwnerEmail[CH_OWNER_LENGTH_MAX];
+static uint8_t OwnerName[CH_OWNER_LENGTH_MAX];
+static uint8_t OwnerEmail[CH_OWNER_LENGTH_MAX];
 
 #pragma udata
 /* USB idle support */
@@ -137,9 +137,9 @@ static uint8_t		idle_command = 0x00;
 static uint8_t		idle_counter = 0x00;
 
 /* USB buffers */
-unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
-unsigned char TxBuffer[CH_USB_HID_EP_SIZE];
-unsigned char FlashBuffer[CH_FLASH_WRITE_BLOCK_SIZE];
+static uint8_t RxBuffer[CH_USB_HID_EP_SIZE];
+static uint8_t TxBuffer[CH_USB_HID_EP_SIZE];
+static uint8_t FlashBuffer[CH_FLASH_WRITE_BLOCK_SIZE];
 
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
