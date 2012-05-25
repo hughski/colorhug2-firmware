@@ -1,5 +1,8 @@
+*.asm
+*.cod
 *.cof
 *.hex
+*.lst
 *.map
 *.mcs
 *.mcw
