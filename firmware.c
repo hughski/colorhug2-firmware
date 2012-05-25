@@ -390,7 +390,7 @@ CHugScaleByIntegral (uint16_t *pulses, uint32_t actual_integral_time)
 /**
  * CHugTakeReadingPulses:
  * @integral_time: The integral time of the sample
- * @last_rising_edge: (out): The last rising edge value, or %NULL
+ * @last_rising_edge: (out): The last rising edge value, or 0
  * Return value: the number of detected edges for the sample
  *
  * The TAOS3200 sensor with the external IR filter and in the rubber
@@ -458,7 +458,7 @@ CHugTakeReadingPulses (uint32_t integral_time, uint32_t *last_rising_edge)
 		goto out;
 
 	/* return last rising edge */
-	if (last_rising_edge != NULL)
+	if (last_rising_edge != 0)
 		*last_rising_edge = last_rising_edge_tmp;
 out:
 	return number_edges;
@@ -486,7 +486,7 @@ CHugTakeReading (void)
 
 	/* get a 10% test reading */
 	integral = SensorIntegralTime / 10;
-	number_edges = CHugTakeReadingPulses(integral, NULL);
+	number_edges = CHugTakeReadingPulses(integral, 0);
 
 	/* if we got any reading, scale the integral time to get at
 	 * least the minimum number of edges */
@@ -1148,7 +1148,7 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READING_RAW:
 		/* take a single reading */
-		reading = CHugTakeReadingPulses(SensorIntegralTime, NULL);
+		reading = CHugTakeReadingPulses(SensorIntegralTime, 0);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &reading,
 			sizeof(uint16_t));
