@@ -17,42 +17,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# You will need to have Microchip's compiler and Application Library installed.
-# Both are available for Linux, MacOS, and Windows.
-#
-# The toolchain package, "MPLAB® C18 Lite Compiler for PIC18 MCUs", is
-# referenced at this page :
-#
-# 	<http://www.microchip.com/pagehandler/en-us/family/mplabx/>
-#
-#    Here's a direct download link:
-# 	<http://www.microchip.com/mplabc18-linux-installer>
-#
-# The libraries package, "Microchip Application Libraries", is referenced here:
-#
-#	<http://www.microchip.com/stellent/idcplg?IdcService=SS_GET_PAGE&nodeId=2680&dDocName=en547784>
-#
-#    Here's a direct download link:
-#	<http://ww1.microchip.com/downloads/en/softwarelibrary/microchip-application-libraries-v2012-04-03-linux-installer.run>
-#
-# After downloading and installing the packages:
-#
-# - include <compiler-toolchain-dir>/bin and <..>/mpasm into your PATH, e.g.
-#
-#       export PATH="$PATH:/path/to/toolchain/bin:/path/to/toolchain/mpasm"
-#
-# - edit this makefile and update MICROCHIP_APP_LIB_ROOT
-#   or set it when calling make, e.g.
-#
-#       make MICROCHIP_APP_LIB_ROOT=/path/to/applib
-#
-# Finally you will need the tool "colorhug-inhx32-to-bin", which is part of
-# colorhug-client, in your PATH as well.
-#
 # When editing this makefile please keep in mind that Microchip likes to put
 # white spaces in both file names and directory names.
-
-MICROCHIP_APP_LIB_ROOT := /home/thilo/projects/colorhug/microchip_toolchain/lib/Microchip
 
 headers =				\
 	ch-common.h			\
@@ -74,34 +40,25 @@ bootloader_SRC =			\
 	ch-math.c			\
 	ch-common.c
 
-microchip_usbhid_SRC = ${MICROCHIP_APP_LIB_ROOT}/USB/HID\ Device\ Driver/usb_function_hid.c
-microchip_usbdev_SRC = ${MICROCHIP_APP_LIB_ROOT}/USB/usb_device.c
+microchip_usbhid_SRC = ${MICROCHIP_APP_LIB_ROOT}/Microchip/USB/HID\ Device\ Driver/usb_function_hid.c
+microchip_usbdev_SRC = ${MICROCHIP_APP_LIB_ROOT}/Microchip/USB/usb_device.c
 microchip_usblib_OBJS = usb_function_hid.o usb_device.o
 
 firmware_OBJS   = ${firmware_SRC:%.c=%.o}   ${microchip_usblib_OBJS}
 bootloader_OBJS = ${bootloader_SRC:%.c=%.o} ${microchip_usblib_OBJS}
 
-linker_script = 18F46J50.lkr
-
-CC_DEVICE = 18f46j50
-LD_DEVICE = 18F46J50
-
-CC = mcc18
-AS = MPASMWIN
-LD = mplink
-AR = mplib
 INHX2BIN = colorhug-inhx32-to-bin
 
-CC_INCLUDE = $(shell dirname `which ${CC}`)/../h
-CC_LIBS    = $(shell dirname `which ${CC}`)/../lib
+include makefiles/toolchain-microchip.mk
+include makefiles/app-lib-microchip.mk
 
-CFLAGS  = -I. -I${MICROCHIP_APP_LIB_ROOT}/Include -I${CC_INCLUDE} -p${CC_DEVICE}
-LDFLAGS = ${linker_script} -p ${LD_DEVICE} -w -z__MPLAB_BUILD=1 -u_CRUNTIME -l ${CC_LIBS}
+#
+# Generic rules and includes
 
-# Generic rules
 .PHONY: clean all
+.DEFAULT_GOAL := all
 
-all: firmware.bin bootloader.bin
+all:check-toolchain check-app-lib firmware.bin bootloader.bin 
 
 %.o: %.c Makefile
 	${CC} ${CFLAGS} $< -o $@
@@ -114,6 +71,7 @@ all: firmware.bin bootloader.bin
 # Specific rules for sources from Microchip's application library.
 # Treated specially since Microchip likes to put white spaces into its
 # default application install paths.
+
 usb_device.o: ${microchip_usbdev_SRC}
 	${CC} ${CFLAGS} ${microchip_usbdev_SRC} -o $@
 
@@ -122,13 +80,14 @@ usb_function_hid.o: ${microchip_usbhid_SRC}
 
 #
 # Firmware, bootloader, scrubbing
+
 firmware.cof firmware.hex: ${firmware_OBJS} ${headers} Makefile
 	${LD} ${LDFLAGS} ${firmware_OBJS} -o $@
 
 bootloader.cof bootloader.hex: ${bootloader_OBJS} ${headers} Makefile
 	${LD} ${LDFLAGS} ${bootloader_OBJS} -o $@
 
-clean:
+clean:  clean-toolchain clean-app-lib			
 	rm -f				\
 	firmware.hex			\
 	firmware.cof			\

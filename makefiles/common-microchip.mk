@@ -16,13 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 #
-# Makefile entry point for building the colorhug firmware
+#
+# Shared variables of all microchip makefiles
 #
 
-# Either "microchip" or "sdcc"
-#  See the specific makefiles for more information.
-TOOLCHAIN := microchip
+MICROCHIP_ROOT	= /opt/microchip
+DOWNLOAD_DIR 	= $(shell pwd)/microchip-toolchain-downloads
 
-include makefiles/Makefile.${TOOLCHAIN}
