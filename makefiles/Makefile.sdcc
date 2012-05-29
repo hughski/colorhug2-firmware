@@ -54,8 +54,8 @@ ch-math.o: Makefile ch-math.c
 	$(CC) $(CFLAGS) -c ch-math.c
 
 # bootloader
-bootloader.o: Makefile firmware.c
-	$(CC) $(CFLAGS) -o bootloader.o -DCOLORHUG_BOOTLOADER -c firmware.c
+bootloader.o: Makefile bootloader.c
+	$(CC) $(CFLAGS) -o bootloader.o -DCOLORHUG_BOOTLOADER -c bootloader.c
 bootloader.hex: Makefile bootloader.o ch-common.o
 	$(CC) -o bootloader.hex $(LIBS) bootloader.o ch-common.o
 
