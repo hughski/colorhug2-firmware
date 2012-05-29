@@ -22,6 +22,17 @@
 #ifndef HARDWARE_PROFILE_H
 #define HARDWARE_PROFILE_H
 
-#include "HardwareProfile - ColorHug.h"
+/* USB stack hardware selection options */
+
+//#define USE_SELF_POWER_SENSE_IO
+#define tris_self_power		TRISCbits.TRISC2    // Input
+#define self_power		1
+
+//#define USE_USB_BUS_SENSE_IO
+#define tris_usb_bus_sense	TRISCbits.TRISC2    // Input
+#define USB_BUS_SENSE		1
+
+#define COLORHUG
+#define CLOCK_FREQ		48000000
 
 #endif

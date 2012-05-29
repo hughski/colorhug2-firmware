@@ -24,7 +24,6 @@ headers =				\
 	ch-common.h			\
 	ch-math.h			\
 	ColorHug.h			\
-	HardwareProfile\ -\ ColorHug.h	\
 	HardwareProfile.h		\
 	usb_config.h
 

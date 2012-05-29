@@ -32,7 +32,6 @@ file_004=.
 file_005=.
 file_006=.
 file_007=.
-file_008=.
 [GENERATED_FILES]
 file_000=no
 file_001=no
@@ -42,7 +41,6 @@ file_004=no
 file_005=no
 file_006=no
 file_007=no
-file_008=no
 [OTHER_FILES]
 file_000=no
 file_001=no
@@ -52,7 +50,6 @@ file_004=no
 file_005=no
 file_006=no
 file_007=no
-file_008=no
 [FILE_INFO]
 file_000=bootloader.c
 file_001=C:\Microchip Solutions v2012-04-03\Microchip\USB\usb_device.c
@@ -62,7 +59,6 @@ file_004=ch-common.c
 file_005=ColorHug.h
 file_006=HardwareProfile.h
 file_007=usb_config.h
-file_008=HardwareProfile - ColorHug.h
 [SUITE_INFO]
 suite_guid={5B7D72DD-9861-47BD-9F60-2BE967BF8416}
 suite_state=
