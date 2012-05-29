@@ -89,7 +89,7 @@ sudo-install-toolchain: ${TOOLCHAIN_INSTALLER}
 		 sudo="sudo"; };									 \
 	$$sudo ${TOOLCHAIN_INSTALLER} --mode unattended &&						 \
 		cd ${MICROCHIP_TOOLCHAIN_ROOT}/lib/ &&							 \
-		sudo ln -s p18F46J50.lib  p18f46j50.lib	&&						 \
+		sudo ln -fs p18F46J50.lib  p18f46j50.lib &&						 \
 		echo "Done."
 
 sudo-uninstall-toolchain: ${TOOLCHAIN_UNINSTALLER}
