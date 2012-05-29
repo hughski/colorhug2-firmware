@@ -43,7 +43,7 @@ APP_LIB_UNINSTALLER = ${MICROCHIP_APP_LIB_ROOT}/Uninstall\ Microchip\ Applicatio
 clean-app-lib:
 	rm -rf ${DOWNLOAD_DIR}/
 
-check-app-lib:
+sanity-app-lib:
 	@test -d ${MICROCHIP_APP_LIB_ROOT}/Microchip/Include || { echo "";			\
 		echo "####  You are lacking the Microchip application libraries.";		\
 		echo "####  These libraries are required to build the ColorHug firmware."; 	\
@@ -61,8 +61,18 @@ ${APP_LIB_INSTALLER}:
 	wget -O $@ ${APP_LIB_URL}
 	chmod 755 $@
 
+sanity-app-lib-installer: ${APP_LIB_INSTALLER}
+	@${APP_LIB_INSTALLER} --version >/dev/null 2>&1 || test $$? -ne 127 || { 		\
+		echo "";              								\
+		echo "####  Unable to execute the application library installer";		\
+		echo "";              								\
+		echo "      ${APP_LIB_INSTALLER}";						\
+		echo "";              								\
+		echo "####  If you are on a x86_64 system please install 32bit support.";	\
+		echo "####  ('sudo apt-get install ia32-libs' on ubuntu)"; echo "";   		\
+		false; }
 
-sudo-install-app-lib: ${APP_LIB_INSTALLER}
+sudo-install-app-lib: sanity-app-lib-installer
 	@sudo=""											  \
 	test "`whoami`" = "root" || { echo "";								  \
 		 echo  "####   Unfortunately, Microchip's application libraries installer requires";	  \

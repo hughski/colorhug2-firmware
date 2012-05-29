@@ -52,12 +52,10 @@ include makefiles/toolchain-microchip.mk
 include makefiles/app-lib-microchip.mk
 
 #
-# Generic rules and includes
+# Generic rules and sanity
 
 .PHONY: clean all
 .DEFAULT_GOAL := all
-
-all:check-toolchain check-app-lib firmware.bin bootloader.bin 
 
 %.o: %.c Makefile
 	${CC} ${CFLAGS} $< -o $@
@@ -65,6 +63,19 @@ all:check-toolchain check-app-lib firmware.bin bootloader.bin
 # Pad the HEX file into an easy-to-distribute BIN file
 %.bin: %.hex ${INHX2BIN}
 	${INHX2BIN} $< $@
+
+all: sanity firmware.bin bootloader.bin 
+
+sanity: sanity-toolchain sanity-app-lib
+	@${INHX2BIN} >/dev/null 2>&1 || test $$? -ne 127 || { 				\
+		echo "####";              						\
+		echo "####  You need the tool '${INHX2BIN}' from the package";          \
+		echo "####  'colorhug-client' in your PATH to build the firmware.";     \
+		echo "####";              						\
+		echo "####  If colorhug-client is installed then ${INHX2BIN}";		\
+		echo "####  usually resides in /usr/local/bin/ or in /usr/bin/,";	\
+		echo "####  sometimes even in /usr/libexec/.";				\
+		echo "####"; false; }
 
 #
 # Specific rules for sources from Microchip's application library.

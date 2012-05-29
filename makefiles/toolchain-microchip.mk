@@ -59,7 +59,7 @@ LDFLAGS += ${linker_script} -p ${LD_DEVICE} -l ${MICROCHIP_TOOLCHAIN_ROOT}/lib -
 clean-toolchain:
 	rm -rf ${DOWNLOAD_DIR}/
 
-check-toolchain:
+sanity-toolchain:
 	@${CC} -v    >/dev/null 2>&1 &&								\
 	 ${LD} -v    >/dev/null 2>&1 || { echo "";						\
 		echo "####  You are lacking the Microchip toolchain.";				\
@@ -76,9 +76,19 @@ ${TOOLCHAIN_INSTALLER}:
 	@echo ""
 	wget -O $@ ${TOOLCHAIN_URL}
 	chmod 755 $@
-	
 
-sudo-install-toolchain: ${TOOLCHAIN_INSTALLER}
+sanity-toolchain-installer: ${TOOLCHAIN_INSTALLER}
+	@${TOOLCHAIN_INSTALLER} --version >/dev/null 2>&1 || test $$? -ne 127 || { 		\
+		echo "";              								\
+		echo "####  Unable to execute the toolchain installer";          		\
+		echo "";              								\
+		echo "      ${TOOLCHAIN_INSTALLER}";						\
+		echo "";              								\
+		echo "####  If you are on a x86_64 system please install 32bit support.";	\
+		echo "####  ('sudo apt-get install ia32-libs' on ubuntu)"; echo "";   		\
+		false; }
+
+sudo-install-toolchain: sanity-toolchain-installer
 	@sudo=""											 \
 	test "`whoami`" = "root" || { echo "";								 \
 		 echo  "####   Unfortunately, Microchip's toolchain installer requires root privileges.";\
