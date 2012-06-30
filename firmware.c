@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2012 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -676,12 +676,26 @@ CHugSwitchCalibrationMatrix(uint16_t calibration_index,
 			    CHugPackedFloat *calibration)
 {
 	uint32_t addr;
+	uint8_t calibration_type;
+
 	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
 	ReadFlash(addr,
 		  9 * sizeof(CHugPackedFloat),
 		  (unsigned char *) calibration);
 	if (calibration[0].raw == 0xffffffff)
 		return CH_ERROR_NO_CALIBRATION;
+
+	/* check the calibration matrix is valid */
+	ReadFlash(addr + 0x24, 1,
+		  (unsigned char *) &calibration_type);
+	if (calibration_index == 0) {
+		if (calibration_type != CH_CALIBRATION_TYPE_ALL)
+			return CH_ERROR_INVALID_CALIBRATION;
+	} else {
+		if (calibration_type == 0)
+			return CH_ERROR_INVALID_CALIBRATION;
+	}
+
 	return CH_ERROR_NONE;
 }
 
