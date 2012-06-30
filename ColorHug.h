@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2012 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -663,7 +663,16 @@
 #define	CH_EEPROM_OFFSET_EMAIL			0x40 /* 64 bytes */
 
 /* although each calibration can be stored in 60 bytes,
- * we use a full 64 byte block */
+ * we use a full 64 byte block
+ *
+ *    x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF
+ * 0x [..mat00..] [..mat01..] [..mat02..] [..mat10..]
+ * 1x [..mat11..] [..mat12..] [..mat20..] [..mat21..]
+ * 2x [..mat22..] [] [.description...................
+ * 3x ..................................] [.unused..]
+ *
+ * Where 0x24 is the supported calibration types bitfield byte.
+ */
 #define	CH_CALIBRATION_ADDR_TMP			0xdc00	/* each is 64 bytes */
 #define	CH_CALIBRATION_ADDR			0xe000	/* each is 64 bytes */
 #define	CH_CALIBRATION_MAX			64	/* so finishes at device params */
