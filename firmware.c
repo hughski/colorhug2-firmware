@@ -627,9 +627,6 @@ out:
 
 /**
  * CHugTakeReadingsFrequency:
- * @red: Value from 0x0000 to 0x7ffff
- * @green: Value from 0x0000 to 0x7ffff
- * @blue: Value from 0x0000 to 0x7ffff
  **/
 static uint8_t
 CHugTakeReadingsFrequency (CHugPackedFloat *red,
@@ -688,29 +685,76 @@ out:
 }
 
 /**
+ * CHugTakeReadingsDuration:
+ **/
+static uint8_t
+CHugTakeReadingsDuration (CHugPackedFloat *red,
+			  CHugPackedFloat *green,
+			  CHugPackedFloat *blue)
+{
+	uint32_t tmp;
+	uint8_t rc = CH_ERROR_NONE;
+
+	/* clear */
+	red->raw = 0;
+	green->raw = 0;
+	blue->raw = 0;
+
+	/* check the device is sane */
+	if (SensorSerial == 0xffffffff) {
+		rc = CH_ERROR_NO_SERIAL;
+		goto out;
+	}
+
+	/* do red */
+	CHugSetColorSelect(CH_COLOR_SELECT_RED);
+	tmp = CHugTakeReadingDuration (SensorIntegralTime);
+	if (tmp > 0)
+		red->raw = 0xffffffff / tmp;
+
+	/* do green */
+	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
+	tmp = CHugTakeReadingDuration (SensorIntegralTime);
+	if (tmp > 0)
+		green->raw = 0xffffffff / tmp;
+
+	/* do blue */
+	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
+	tmp = CHugTakeReadingDuration (SensorIntegralTime);
+	if (tmp > 0)
+		blue->raw = 0xffffffff / tmp;
+out:
+	return rc;
+}
+
+/**
  * CHugTakeReadings:
- * @red: Value from 0x0000 to 0x7ffff
- * @green: Value from 0x0000 to 0x7ffff
- * @blue: Value from 0x0000 to 0x7ffff
  **/
 static uint8_t
 CHugTakeReadings (CHugPackedFloat *red,
 		  CHugPackedFloat *green,
 		  CHugPackedFloat *blue)
 {
-	uint8_t rc;
-	rc = CHugTakeReadingsFrequency(red, green, blue);
-	if (rc != CH_ERROR_NONE)
+	uint8_t rc = CH_ERROR_INVALID_VALUE;
+	if (MeasureMode == CH_MEASURE_MODE_FREQUENCY) {
+		rc = CHugTakeReadingsFrequency(red, green, blue);
+		if (rc != CH_ERROR_NONE)
+			goto out;
+		rc = CHugPackedFloatMultiply(red, &PostScale, red);
+		if (rc != CH_ERROR_NONE)
+			goto out;
+		rc = CHugPackedFloatMultiply(green, &PostScale, green);
+		if (rc != CH_ERROR_NONE)
+			goto out;
+		rc = CHugPackedFloatMultiply(blue, &PostScale, blue);
+		if (rc != CH_ERROR_NONE)
+			goto out;
 		goto out;
-	rc = CHugPackedFloatMultiply(red, &PostScale, red);
-	if (rc != CH_ERROR_NONE)
+	}
+	if (MeasureMode == CH_MEASURE_MODE_DURATION) {
+		rc = CHugTakeReadingsDuration(red, green, blue);
 		goto out;
-	rc = CHugPackedFloatMultiply(green, &PostScale, green);
-	if (rc != CH_ERROR_NONE)
-		goto out;
-	rc = CHugPackedFloatMultiply(blue, &PostScale, blue);
-	if (rc != CH_ERROR_NONE)
-		goto out;
+	}
 out:
 	return rc;
 }
