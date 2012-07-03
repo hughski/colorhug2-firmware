@@ -125,6 +125,7 @@ static uint16_t		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 static CHugPackedFloat	PreScale;
 static uint16_t		PcbErrata = CH_PCB_ERRATA_NONE;
+static uint8_t		MeasureMode = CH_MEASURE_MODE_FREQUENCY;
 static ChSha1		remote_hash;
 
 #pragma udata udata1
@@ -1058,6 +1059,17 @@ ProcessIO(void)
 		memcpy (&PcbErrata,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(uint16_t));
+		break;
+	case CH_CMD_GET_MEASURE_MODE:
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(void *) &MeasureMode,
+			sizeof(uint8_t));
+		reply_len += sizeof(uint8_t);
+		break;
+	case CH_CMD_SET_MEASURE_MODE:
+		memcpy (&MeasureMode,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
+			sizeof(uint8_t));
 		break;
 	case CH_CMD_GET_REMOTE_HASH:
 
