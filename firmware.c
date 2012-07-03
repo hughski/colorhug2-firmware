@@ -388,7 +388,7 @@ CHugScaleByIntegral (uint16_t *pulses, uint32_t actual_integral_time)
 }
 
 /**
- * CHugTakeReadingPulses:
+ * CHugTakeReadingsFrequencyRaw:
  * @integral_time: The integral time of the sample
  * @last_rising_edge: (out): The last rising edge value, or 0
  * Return value: the number of detected edges for the sample
@@ -411,7 +411,7 @@ CHugScaleByIntegral (uint16_t *pulses, uint32_t actual_integral_time)
  * making the calibration duration 6.25ms longer.
  **/
 static uint16_t
-CHugTakeReadingPulses (uint32_t integral_time, uint32_t *last_rising_edge)
+CHugTakeReadingsFrequencyRaw (uint32_t integral_time, uint32_t *last_rising_edge)
 {
 	uint32_t i;
 	uint32_t last_rising_edge_tmp = 0;
@@ -465,14 +465,29 @@ out:
 }
 
 /**
- * CHugTakeReading:
+ * CHugTakeReadingRaw:
  *
  * Take a reading from the sensor. For bright readings we use the
  * SensorIntegralTime taken from the user, but for dark readings we
  * multiply this by a constant to get a more accurate reading.
  **/
 static uint16_t
-CHugTakeReading (void)
+CHugTakeReadingRaw (uint32_t integral_time)
+{
+	uint16_t val;
+	val = CHugTakeReadingsFrequencyRaw(integral_time, 0);
+	return val;
+}
+
+/**
+ * CHugTakeReadingFrequency:
+ *
+ * Take a reading from the sensor. For bright readings we use the
+ * SensorIntegralTime taken from the user, but for dark readings we
+ * multiply this by a constant to get a more accurate reading.
+ **/
+static uint16_t
+CHugTakeReadingFrequency (void)
 {
 	const uint32_t edges_min = 10; /* this is a dim CRT screen */
 	uint16_t number_edges;
@@ -486,7 +501,7 @@ CHugTakeReading (void)
 
 	/* get a 10% test reading */
 	integral = SensorIntegralTime / 10;
-	number_edges = CHugTakeReadingPulses(integral, 0);
+	number_edges = CHugTakeReadingsFrequencyRaw(integral, 0);
 
 	/* if we got any reading, scale the integral time to get at
 	 * least the minimum number of edges */
@@ -509,8 +524,8 @@ CHugTakeReading (void)
 	}
 
 	/* get the number of pulses with the new threshold */
-	number_edges = CHugTakeReadingPulses(integral,
-					     &last_rising_edge);
+	number_edges = CHugTakeReadingsFrequencyRaw(integral,
+						    &last_rising_edge);
 	if (number_edges == 0)
 		goto out;
 
@@ -524,15 +539,15 @@ out:
 }
 
 /**
- * CHugTakeReadings:
+ * CHugTakeReadingsFrequency:
  * @red: Value from 0x0000 to 0x7ffff
  * @green: Value from 0x0000 to 0x7ffff
  * @blue: Value from 0x0000 to 0x7ffff
  **/
 static uint8_t
-CHugTakeReadings (CHugPackedFloat *red,
-		  CHugPackedFloat *green,
-		  CHugPackedFloat *blue)
+CHugTakeReadingsFrequency (CHugPackedFloat *red,
+			   CHugPackedFloat *green,
+			   CHugPackedFloat *blue)
 {
 	uint16_t reading;
 	uint8_t rc = CH_ERROR_NONE;
@@ -554,7 +569,7 @@ CHugTakeReadings (CHugPackedFloat *red,
 
 	/* do red */
 	CHugSetColorSelect(CH_COLOR_SELECT_RED);
-	reading = CHugTakeReading();
+	reading = CHugTakeReadingFrequency();
 	if (reading > 0x7fff) {
 		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
@@ -564,7 +579,7 @@ CHugTakeReadings (CHugPackedFloat *red,
 
 	/* do green */
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
-	reading = CHugTakeReading();
+	reading = CHugTakeReadingFrequency();
 	if (reading > 0x7fff) {
 		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
@@ -574,7 +589,7 @@ CHugTakeReadings (CHugPackedFloat *red,
 
 	/* do blue */
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
-	reading = CHugTakeReading();
+	reading = CHugTakeReadingFrequency();
 	if (reading > 0x7fff) {
 		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
@@ -582,6 +597,22 @@ CHugTakeReadings (CHugPackedFloat *red,
 	if (reading > DarkCalibration[CH_COLOR_OFFSET_BLUE])
 		blue->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
 out:
+	return rc;
+}
+
+/**
+ * CHugTakeReadings:
+ * @red: Value from 0x0000 to 0x7ffff
+ * @green: Value from 0x0000 to 0x7ffff
+ * @blue: Value from 0x0000 to 0x7ffff
+ **/
+static uint8_t
+CHugTakeReadings (CHugPackedFloat *red,
+		  CHugPackedFloat *green,
+		  CHugPackedFloat *blue)
+{
+	uint8_t rc;
+	rc = CHugTakeReadingsFrequency(red, green, blue);
 	return rc;
 }
 
@@ -1162,7 +1193,7 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READING_RAW:
 		/* take a single reading */
-		reading = CHugTakeReadingPulses(SensorIntegralTime, 0);
+		reading = CHugTakeReadingRaw(SensorIntegralTime);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &reading,
 			sizeof(uint16_t));
