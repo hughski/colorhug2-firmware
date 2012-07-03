@@ -466,6 +466,84 @@ out:
 }
 
 /**
+ * CHugWaitForPulse:
+ *
+ * Wait for the next rising pulse.
+ *
+ * Return value: the number of ticks spent waiting, where a tick is
+ * the clock frequency / 32, or zero for no rising edge detected.
+ **/
+static uint32_t
+CHugWaitForPulse (uint32_t integral_time)
+{
+	uint32_t i;
+	unsigned char ra_tmp = PORTA;
+
+	/* wait for rising edge */
+	for (i = 0; i < integral_time; i++) {
+		if (ra_tmp == PORTA)
+			continue;
+		/* __      ____
+		 *   |____|    |___
+		 *
+		 *        ^- START HERE
+		 */
+		if (PORTAbits.RA5 == 1)
+			goto out;
+		ra_tmp = PORTA;
+	}
+
+	/* we never got a pulse */
+	i = 0;
+out:
+	return i;
+}
+
+/**
+ * CHugTakeReadingDuration:
+ *
+ * Take a reading from the sensor using the pulse width
+ * where black ~= 10Hz and white ~= 1kHz
+ **/
+static uint32_t
+CHugTakeReadingDuration (uint32_t integral_time)
+{
+	uint32_t tmp;
+	uint32_t total = 0;
+	uint32_t total_check = 0;
+	uint8_t i;
+	uint8_t rc = CH_ERROR_NONE;
+
+	/* wait for initial rising edge */
+	tmp = CHugWaitForPulse (integral_time);
+	if (tmp == 0)
+		goto out;
+
+	/* wait for rising edges */
+	for (i = 0; i < 0xffff; i++) {
+
+		/* if we don't get a pulse then just assume maximum */
+		tmp = CHugWaitForPulse(integral_time);
+		if (tmp == 0) {
+			total = 0;
+			goto out;
+		}
+
+		/* if we would overflow a uint32 then abort */
+		total_check += tmp / 0xff;
+		if (total_check > integral_time / 0xff)
+			break;
+
+		total += tmp;
+	}
+
+	/* average out */
+	total /= i;
+out:
+	return total;
+}
+
+/**
  * CHugTakeReadingRaw:
  *
  * Take a reading from the sensor. For bright readings we use the
@@ -475,8 +553,16 @@ out:
 static uint32_t
 CHugTakeReadingRaw (uint32_t integral_time)
 {
-	uint32_t val;
-	val = CHugTakeReadingsFrequencyRaw(integral_time, 0);
+	uint32_t val = 0;
+	if (MeasureMode == CH_MEASURE_MODE_FREQUENCY) {
+		val = CHugTakeReadingsFrequencyRaw(integral_time, 0);
+		goto out;
+	}
+	if (MeasureMode == CH_MEASURE_MODE_DURATION) {
+		val = CHugTakeReadingDuration(integral_time);
+		goto out;
+	}
+out:
 	return val;
 }
 
