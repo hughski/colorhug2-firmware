@@ -472,10 +472,10 @@ out:
  * SensorIntegralTime taken from the user, but for dark readings we
  * multiply this by a constant to get a more accurate reading.
  **/
-static uint16_t
+static uint32_t
 CHugTakeReadingRaw (uint32_t integral_time)
 {
-	uint16_t val;
+	uint32_t val;
 	val = CHugTakeReadingsFrequencyRaw(integral_time, 0);
 	return val;
 }
@@ -986,7 +986,7 @@ ProcessIO(void)
 	CHugPackedFloat readings[3];
 	uint16_t address;
 	uint16_t calibration_index;
-	uint16_t reading;
+	uint32_t reading;
 	uint8_t checksum;
 	uint8_t i;
 	uint8_t length;
@@ -1210,8 +1210,8 @@ ProcessIO(void)
 		reading = CHugTakeReadingRaw(SensorIntegralTime);
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &reading,
-			sizeof(uint16_t));
-		reply_len += sizeof(uint16_t);
+			sizeof(uint32_t));
+		reply_len += sizeof(uint32_t);
 		break;
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings without using the factory
