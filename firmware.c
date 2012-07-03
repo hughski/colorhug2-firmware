@@ -613,6 +613,18 @@ CHugTakeReadings (CHugPackedFloat *red,
 {
 	uint8_t rc;
 	rc = CHugTakeReadingsFrequency(red, green, blue);
+	if (rc != CH_ERROR_NONE)
+		goto out;
+	rc = CHugPackedFloatMultiply(red, &PostScale, red);
+	if (rc != CH_ERROR_NONE)
+		goto out;
+	rc = CHugPackedFloatMultiply(green, &PostScale, green);
+	if (rc != CH_ERROR_NONE)
+		goto out;
+	rc = CHugPackedFloatMultiply(blue, &PostScale, blue);
+	if (rc != CH_ERROR_NONE)
+		goto out;
+out:
 	return rc;
 }
 
@@ -752,22 +764,13 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
-	/* post scale */
-	for (i = 0; i < 3; i++) {
-		rc = CHugPackedFloatMultiply(&readings[i],
-					     &PostScale,
-					     &readings_tmp[i]);
-		if (rc != CH_ERROR_NONE)
-			goto out;
-	}
-
 	/* convert to xyz using the factory calibration */
 	rc = CHugSwitchCalibrationMatrix(0, calibration);
 	if (rc != CH_ERROR_NONE)
 		goto out;
 	rc = CHugCalibrationMultiply(calibration,
-				     readings_tmp,
-				     readings);
+				     readings,
+				     readings_tmp);
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
@@ -778,20 +781,20 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 		if (rc != CH_ERROR_NONE)
 			goto out;
 		rc = CHugCalibrationMultiply(calibration,
-					     readings,
-					     readings_tmp);
+					     readings_tmp,
+					     readings);
 		if (rc != CH_ERROR_NONE)
 			goto out;
 	} else {
-		memcpy(readings_tmp,
-		       (void *) readings,
+		memcpy(readings,
+		       (void *) readings_tmp,
 		       sizeof(readings));
 	}
 
 	/* copy values */
-	*x = readings_tmp[0];
-	*y = readings_tmp[1];
-	*z = readings_tmp[2];
+	*x = readings[0];
+	*y = readings[1];
+	*z = readings[2];
 out:
 	return rc;
 }
@@ -980,7 +983,6 @@ static void
 ProcessIO(void)
 {
 	CHugPackedFloat readings[3];
-	CHugPackedFloat readings_tmp[3];
 	uint16_t address;
 	uint16_t calibration_index;
 	uint16_t reading;
@@ -1207,15 +1209,8 @@ ProcessIO(void)
 				      &readings[CH_COLOR_OFFSET_BLUE]);
 		if (rc != CH_ERROR_NONE)
 			break;
-		for (i = 0; i < 3; i++) {
-			rc = CHugPackedFloatMultiply(&readings[i],
-						     &PostScale,
-						     &readings_tmp[i]);
-			if (rc != CH_ERROR_NONE)
-				goto out;
-		}
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) readings_tmp,
+			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));
 		reply_len += 3 * sizeof(CHugPackedFloat);
 		break;
