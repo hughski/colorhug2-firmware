@@ -584,7 +584,7 @@ CHugTakeReadingFrequency (void)
 
 	/* set the maximum permitted reading time
 	 * FIXME: make this configurable? */
-	integral_max = (uint32_t) SensorIntegralTime * 4;
+	integral_max = (uint32_t) SensorIntegralTime * 3;
 
 	/* get a 10% test reading */
 	integral = SensorIntegralTime / 10;
