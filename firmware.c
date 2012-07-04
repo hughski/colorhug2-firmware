@@ -511,10 +511,9 @@ out:
 static uint32_t
 CHugTakeReadingDuration (uint32_t integral_time)
 {
+	uint16_t i;
 	uint32_t tmp;
 	uint32_t total = 0;
-	uint32_t total_check = 0;
-	uint8_t i;
 	uint8_t rc = CH_ERROR_NONE;
 
 	/* wait for initial rising or falling edge */
@@ -527,19 +526,33 @@ CHugTakeReadingDuration (uint32_t integral_time)
 	/* wait for edges */
 	for (i = 0; i < 0xffff; i++) {
 
+		/* we've already got enough samples */
+		if (total > integral_time * 2)
+			break;
+
 		/* if we don't get a pulse then just assume maximum */
 		tmp = CHugWaitForPulse(integral_time);
 		if (tmp == 0) {
-			total = 0;
-			goto out;
+			/* try harder */
+			tmp = CHugWaitForPulse(integral_time);
+			if (tmp > 0)
+				tmp += integral_time;
 		}
+		if (tmp == 0)
+			break;
 
 		/* if we would overflow a uint32 then abort */
-		total_check += tmp / 0xff;
-		if (total_check > integral_time / 0xff)
+		if (total + tmp < total)
 			break;
 
 		total += tmp;
+	}
+
+	/* if we only got one initial pulse and then nothing else then
+	 * return a very large reading */
+	if (i == 0) {
+		total = integral_time * 0xff;
+		goto out;
 	}
 
 	/* average out */
