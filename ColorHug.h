@@ -671,7 +671,14 @@
 #define CH_EEPROM_ADDR_HIGH_INTERRUPT		0x4008
 #define CH_EEPROM_ADDR_LOW_INTERRUPT		0x4018
 
-/* EEPROM address offsets */
+/* EEPROM address offsets
+ *
+ *    x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF
+ * 0x [..serial.] [d-R] [d-G] [d-B] [pre-scale] [post
+ * 1x scle] [.......calibration map...........] [err]
+ * 2x [............remote-hash.......................
+ * 3x ..........] [..............unused.............]
+ */
 #define	CH_EEPROM_ADDR_CONFIG			0xf000
 #define	CH_EEPROM_OFFSET_SERIAL			0x00 /* 4 bytes */
 #define	CH_EEPROM_OFFSET_DARK_OFFSET_RED	0x04 /* 2 bytes */
@@ -683,7 +690,18 @@
 #define	CH_EEPROM_OFFSET_PCB_ERRATA		0x1e /* 2 bytes */
 #define	CH_EEPROM_OFFSET_REMOTE_HASH		0x20 /* 20 bytes */
 
-/* EEPROM owner offsets */
+/* EEPROM owner offsets
+ *
+ *    x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF
+ * 0x [....................name......................
+ * 1x ...............................................
+ * 2x ...............................................
+ * 3x ..............................................]
+ * 4x [................email address.................
+ * 5x ...............................................
+ * 6x ...............................................
+ * 7x ..............................................]
+ */
 #define	CH_EEPROM_ADDR_OWNER			0xf040
 #define	CH_EEPROM_OFFSET_NAME			0x00 /* 64 bytes */
 #define	CH_EEPROM_OFFSET_EMAIL			0x40 /* 64 bytes */
