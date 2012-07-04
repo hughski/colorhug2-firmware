@@ -236,7 +236,9 @@
 /**
  * CH_CMD_SET_DARK_OFFSETS:
  *
- * Set the dark offsets.
+ * Set the dark offsets for use when taking samples when the measure
+ * mode is FREQUENCY. When the measure mode is DURATION these values
+ * have no effect.
  *
  * IN:  [1:cmd][2:red][2:green][2:blue]
  * OUT: [1:retval][1:cmd]
