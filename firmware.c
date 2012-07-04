@@ -125,7 +125,7 @@ static uint16_t		SensorIntegralTime = 0xffff;
 static CHugPackedFloat	PostScale;
 static CHugPackedFloat	PreScale;
 static uint16_t		PcbErrata = CH_PCB_ERRATA_NONE;
-static uint8_t		MeasureMode = CH_MEASURE_MODE_FREQUENCY;
+static uint8_t		MeasureMode = CH_MEASURE_MODE_DURATION;
 static ChSha1		remote_hash;
 
 #pragma udata udata1
