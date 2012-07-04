@@ -11,10 +11,10 @@
     <filename>colorhug-1.2.0.bin</filename>
     <size></size>
     <changelog>
-     <item>
+     <info>
       Use the new USB vendor and product IDs assigned to Hughski Limited
       by the USB Implementers Forum, Inc.
-     </item>
+     </info>
     </changelog>
   </update>
 
@@ -27,10 +27,10 @@
     <filename>colorhug-1.1.7.bin</filename>
     <size>19712</size>
     <changelog>
-     <item>
+     <info>
       Add a self test device command that can be used to check the
       ColorHug PCB automatically at manufacture time.
-     </item>
+     </info>
     </changelog>
   </update>
 
