@@ -517,8 +517,10 @@ CHugTakeReadingDuration (uint32_t integral_time)
 	uint8_t i;
 	uint8_t rc = CH_ERROR_NONE;
 
-	/* wait for initial rising edge */
-	tmp = CHugWaitForPulse (integral_time);
+	/* wait for initial rising or falling edge */
+	tmp = CHugWaitForPulse(integral_time);
+	if (tmp == 0)
+		tmp = CHugWaitForPulse(integral_time);
 	if (tmp == 0)
 		goto out;
 
