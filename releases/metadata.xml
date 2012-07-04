@@ -15,6 +15,22 @@
       Use the new USB vendor and product IDs assigned to Hughski Limited
       by the USB Implementers Forum, Inc.
      </info>
+     <info>
+      Switch to using a measurement mode of DURATION by default which
+      uses the pulse width triggered on any edge rather than counting
+      the number of positive edges over a set time interval.
+      This improves accuracy, and lowers quantisation errors by an order
+      of magnitude when taking samples of dark patches.
+     </info>
+     <info>
+      Add commands to get and set the measurement mode.
+      This is not stored in EEPROM and so has to be set after each
+      re-plug event.
+     </info>
+     <info>
+      Switch to using make to generate the firmware using the microchip
+      toolchain on Linux, or optionally sdcc.
+     </info>
     </changelog>
   </update>
 
