@@ -524,7 +524,7 @@ CHugTakeReadingDuration (uint32_t integral_time)
 	if (tmp == 0)
 		goto out;
 
-	/* wait for rising edges */
+	/* wait for edges */
 	for (i = 0; i < 0xffff; i++) {
 
 		/* if we don't get a pulse then just assume maximum */
