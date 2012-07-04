@@ -419,6 +419,9 @@ CHugTakeReadingsFrequencyRaw (uint32_t integral_time, uint32_t *last_rising_edge
 	uint16_t number_edges = 0;
 	unsigned char ra_tmp = PORTA;
 
+	/* clear watchdog */
+	ClrWdt();
+
 	/* wait for the output to change so we start on a new pulse
 	 * rising edge, which means more accurate black readings */
 	for (i = 0; i < integral_time; i++) {
@@ -478,6 +481,9 @@ CHugWaitForPulse (uint32_t integral_time)
 {
 	uint32_t i;
 	unsigned char ra_tmp = PORTA;
+
+	/* clear watchdog */
+	ClrWdt();
 
 	/* wait for rising edge */
 	for (i = 0; i < integral_time; i++) {
