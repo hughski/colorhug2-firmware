@@ -485,18 +485,15 @@ CHugWaitForPulse (uint32_t integral_time)
 	/* clear watchdog */
 	ClrWdt();
 
-	/* wait for rising edge */
+	/* wait for rising or falling edge */
 	for (i = 0; i < integral_time; i++) {
-		if (ra_tmp == PORTA)
-			continue;
 		/* __      ____
 		 *   |____|    |___
 		 *
-		 *        ^- START HERE
+		 *   ^----^- START HERE
 		 */
-		if (PORTAbits.RA5 == 1)
+		if (ra_tmp != PORTA)
 			goto out;
-		ra_tmp = PORTA;
 	}
 
 	/* we never got a pulse */
