@@ -19,6 +19,28 @@
   </update>
 
   <update>
+    <state>stable</state>
+    <version>1.1.8</version>
+    <supported_hardware>1</supported_hardware>
+    <checksum type="sha1">76fdec2d6508109896d84a71410e98f7f05e2f16</checksum>
+    <timestamp>1341245213</timestamp>
+    <filename>colorhug-1.1.8.bin</filename>
+    <size>18304</size>
+    <changelog>
+     <info>
+      Return with an error when a non-factory calibration matrix is
+      installed in slot 0 or when a user-matrix has no capabilities.
+     </info>
+     <info>
+      Return with an error when the dark calibration is impossibly high
+      which could have been set when the user manually ran:
+      $ colorhug-cmd set-dark-offsets
+      using versions of colorhug-client less than 0.1.11.
+     </info>
+    </changelog>
+  </update>
+
+  <update>
     <state>testing</state>
     <version>1.1.7</version>
     <supported_hardware>1</supported_hardware>
