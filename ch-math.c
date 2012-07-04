@@ -60,7 +60,7 @@ CHugPackedFloatAdd (const CHugPackedFloat *pf1,
  * CHugPackedFloatMultiply:
  *
  * @pf1: A %CHugPackedFloat
- * @pf1: A %CHugPackedFloat
+ * @pf2: A %CHugPackedFloat
  * @result: A %CHugPackedFloat
  *
  * Multiplies two packed floats together using only integer maths.
