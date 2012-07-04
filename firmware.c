@@ -716,18 +716,21 @@ CHugTakeReadingsDuration (CHugPackedFloat *red,
 	tmp = CHugTakeReadingDuration (SensorIntegralTime);
 	if (tmp > 0)
 		red->raw = 0xffffffff / tmp;
+	red->raw /= PreScale.offset;
 
 	/* do green */
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
 	tmp = CHugTakeReadingDuration (SensorIntegralTime);
 	if (tmp > 0)
 		green->raw = 0xffffffff / tmp;
+	green->raw /= PreScale.offset;
 
 	/* do blue */
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
 	tmp = CHugTakeReadingDuration (SensorIntegralTime);
 	if (tmp > 0)
 		blue->raw = 0xffffffff / tmp;
+	blue->raw /= PreScale.offset;
 out:
 	return rc;
 }
