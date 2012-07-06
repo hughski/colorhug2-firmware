@@ -541,10 +541,6 @@ CHugTakeReadingDuration (uint32_t integral_time)
 		if (tmp == 0)
 			break;
 
-		/* if we would overflow a uint32 then abort */
-		if (total + tmp < total)
-			break;
-
 		total += tmp;
 	}
 
