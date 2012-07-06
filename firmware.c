@@ -512,32 +512,42 @@ static uint32_t
 CHugTakeReadingDuration (uint32_t integral_time)
 {
 	uint16_t i;
+	uint16_t repeat_max;
+	uint32_t sample_time = integral_time * 2;
 	uint32_t tmp;
 	uint32_t total = 0;
 	uint8_t rc = CH_ERROR_NONE;
 
 	/* wait for initial rising or falling edge */
-	tmp = CHugWaitForPulse(integral_time);
-	if (tmp == 0)
-		tmp = CHugWaitForPulse(integral_time);
+	tmp = CHugWaitForPulse(sample_time);
 	if (tmp == 0)
 		goto out;
 
-	/* wait for edges */
-	for (i = 0; i < 0xffff; i++) {
+	/* if the duration is small, then get the average to better
+	 * predict the number of samples to repeat */
+	if (tmp < 1000) {
+		for (i = 0; i != 7; i++)
+			tmp += CHugWaitForPulse(sample_time);
+		tmp /= 8;
+	}
 
-		/* we've already got enough samples */
-		if (total > integral_time * 2)
+	/* adapt the repeats to the inverse of the first reading, which
+	 * should give approximately a linear sample time for all
+	 * luminance levels */
+	repeat_max = integral_time / tmp;
+	if (repeat_max < 5)
+		repeat_max = 5;
+
+	/* wait for edges */
+	for (i = 0; i != repeat_max; i++) {
+
+		/* we've already got enough data, so shortcut the
+		 * repeat to avoid timing out */
+		if (total > sample_time)
 			break;
 
 		/* if we don't get a pulse then just assume maximum */
-		tmp = CHugWaitForPulse(integral_time);
-		if (tmp == 0) {
-			/* try harder */
-			tmp = CHugWaitForPulse(integral_time);
-			if (tmp > 0)
-				tmp += integral_time;
-		}
+		tmp = CHugWaitForPulse(sample_time);
 		if (tmp == 0)
 			break;
 
