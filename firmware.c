@@ -486,7 +486,7 @@ CHugWaitForPulse (uint32_t integral_time)
 	ClrWdt();
 
 	/* wait for rising or falling edge */
-	for (i = 0; i < integral_time; i++) {
+	for (i = 0; i != integral_time; i++) {
 		/* __      ____
 		 *   |____|    |___
 		 *
@@ -729,21 +729,21 @@ CHugTakeReadingsDuration (CHugPackedFloat *red,
 	tmp = CHugTakeReadingDuration (SensorIntegralTime);
 	if (tmp > 0)
 		red->raw = 0xffffffff / tmp;
-	red->raw /= PreScale.offset;
+	red->raw /= 8;
 
 	/* do green */
 	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
 	tmp = CHugTakeReadingDuration (SensorIntegralTime);
 	if (tmp > 0)
 		green->raw = 0xffffffff / tmp;
-	green->raw /= PreScale.offset;
+	green->raw /= 8;
 
 	/* do blue */
 	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
 	tmp = CHugTakeReadingDuration (SensorIntegralTime);
 	if (tmp > 0)
 		blue->raw = 0xffffffff / tmp;
-	blue->raw /= PreScale.offset;
+	blue->raw /= 8;
 out:
 	return rc;
 }
