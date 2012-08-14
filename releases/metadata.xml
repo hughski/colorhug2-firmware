@@ -28,9 +28,18 @@
       re-plug event.
      </info>
      <info>
+      Send full HID packets as the OS X and Microsoft HID stacks verify
+      that incoming transfers have the correct size.
+      Many thanks to Vernon Tang for working out the problem.
+     </info>
+     <info>
       Switch to using make to generate the firmware using the microchip
       toolchain on Linux, or optionally sdcc.
      </info>
+     <warning>
+      You need to check that any client accessing the hardware has
+      colorhug-client 0.1.12 or newer installed.
+     </warning>
     </changelog>
   </update>
 

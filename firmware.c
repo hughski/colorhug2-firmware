@@ -1149,7 +1149,6 @@ ProcessIO(void)
 	uint8_t length;
 	unsigned char cmd;
 	unsigned char rc = CH_ERROR_NONE;
-	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
@@ -1187,18 +1186,15 @@ ProcessIO(void)
 	switch(cmd) {
 	case CH_CMD_GET_HARDWARE_VERSION:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = PORTB & 0x0f;
-		reply_len += 1;
 		break;
 	case CH_CMD_GET_COLOR_SELECT:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetColorSelect();
-		reply_len += 1;
 		break;
 	case CH_CMD_SET_COLOR_SELECT:
 		CHugSetColorSelect(RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	case CH_CMD_GET_LEDS:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetLEDs();
-		reply_len += 1;
 		break;
 	case CH_CMD_SET_LEDS:
 		CHugSetLEDs(RxBuffer[CH_BUFFER_INPUT_DATA + 0],
@@ -1210,7 +1206,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(void *) &PcbErrata,
 			2);
-		reply_len += sizeof(uint16_t);
 		break;
 	case CH_CMD_SET_PCB_ERRATA:
 		memcpy (&PcbErrata,
@@ -1221,7 +1216,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(void *) &MeasureMode,
 			sizeof(uint8_t));
-		reply_len += sizeof(uint8_t);
 		break;
 	case CH_CMD_SET_MEASURE_MODE:
 		memcpy (&MeasureMode,
@@ -1237,7 +1231,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(void *) &remote_hash,
 			sizeof(ChSha1));
-		reply_len += sizeof(ChSha1);
 		break;
 	case CH_CMD_SET_REMOTE_HASH:
 		memcpy (&remote_hash,
@@ -1246,7 +1239,6 @@ ProcessIO(void)
 		break;
 	case CH_CMD_GET_MULTIPLIER:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();
-		reply_len += 1;
 		break;
 	case CH_CMD_SET_MULTIPLIER:
 		CHugSetMultiplier(RxBuffer[CH_BUFFER_INPUT_DATA]);
@@ -1255,7 +1247,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(void *) &SensorIntegralTime,
 			2);
-		reply_len += 2;
 		break;
 	case CH_CMD_SET_INTEGRAL_TIME:
 		memcpy (&SensorIntegralTime,
@@ -1266,7 +1257,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&FirmwareVersion,
 			2 * 3);
-		reply_len += 2 * 3;
 		break;
 	case CH_CMD_GET_CALIBRATION:
 		/* get the chosen calibration matrix */
@@ -1283,7 +1273,6 @@ ProcessIO(void)
 					      &TxBuffer[CH_BUFFER_OUTPUT_DATA] + 0x25);
 		if (rc != CH_ERROR_NONE)
 			break;
-		reply_len += (9 * sizeof(CHugPackedFloat)) + 1 + CH_CALIBRATION_DESCRIPTION_LEN;
 		break;
 	case CH_CMD_SET_CALIBRATION:
 		/* set the chosen calibration matrix */
@@ -1303,7 +1292,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &PostScale,
 			sizeof(CHugPackedFloat));
-		reply_len += sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_SET_POST_SCALE:
 		memcpy ((void *) &PostScale,
@@ -1314,7 +1302,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &PreScale,
 			sizeof(CHugPackedFloat));
-		reply_len += sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_SET_PRE_SCALE:
 		memcpy ((void *) &PreScale,
@@ -1325,7 +1312,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&DarkCalibration,
 			3 * sizeof(uint16_t));
-		reply_len += 3 * sizeof(uint16_t);
 		break;
 	case CH_CMD_SET_DARK_OFFSETS:
 		memcpy ((void *) &DarkCalibration,
@@ -1336,7 +1322,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&CalibrationMap,
 			6 * sizeof(uint16_t));
-		reply_len += 6 * sizeof(uint16_t);
 		break;
 	case CH_CMD_SET_CALIBRATION_MAP:
 		memcpy ((void *) &CalibrationMap,
@@ -1347,7 +1332,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &SensorSerial,
 			4);
-		reply_len += 4;
 		break;
 	case CH_CMD_SET_SERIAL_NUMBER:
 		memcpy (&SensorSerial,
@@ -1368,7 +1352,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &reading,
 			sizeof(uint32_t));
-		reply_len += sizeof(uint32_t);
 		break;
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings without using the factory
@@ -1381,7 +1364,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));
-		reply_len += 3 * sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_TAKE_READING_XYZ:
 		/* take multiple readings and multiply with the
@@ -1408,7 +1390,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));
-		reply_len += 3 * sizeof(CHugPackedFloat);
 		break;
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
@@ -1430,13 +1411,11 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) OwnerName,
 			CH_OWNER_LENGTH_MAX);
-		reply_len += CH_OWNER_LENGTH_MAX;
 		break;
 	case CH_CMD_GET_OWNER_EMAIL:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) OwnerEmail,
 			CH_OWNER_LENGTH_MAX);
-		reply_len += CH_OWNER_LENGTH_MAX;
 		break;
 	case CH_CMD_SET_OWNER_NAME:
 		memcpy ((void *) OwnerName,
@@ -1450,7 +1429,6 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READING_ARRAY:
 		rc = CHugTakeReadingArray(&TxBuffer[CH_BUFFER_OUTPUT_DATA]);
-		reply_len += 30;
 		break;
 	case CH_CMD_SELF_TEST:
 		rc = CHugSelfTest();
@@ -1466,7 +1444,7 @@ out:
 		TxBuffer[CH_BUFFER_OUTPUT_CMD] = cmd;
 		USBInHandle = HIDTxPacket(HID_EP,
 					  (BYTE*)&TxBuffer[0],
-					  reply_len);
+					  CH_USB_HID_EP_SIZE);
 	}
 re_arm_rx:
 	/* re-arm the OUT endpoint for the next packet */
