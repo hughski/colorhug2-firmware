@@ -80,7 +80,7 @@ CHugLowPriorityISRCode (void)
 }
 
 /* ensure this is incremented on each released build */
-static uint16_t	FirmwareVersion[3] = { 0, 2, 0 };
+static uint16_t	FirmwareVersion[3] = { 0, 2, 1 };
 
 #pragma rom
 
@@ -152,7 +152,6 @@ ProcessIO(void)
 	uint8_t checksum;
 	unsigned char cmd;
 	unsigned char rc = CH_ERROR_NONE;
-	unsigned char reply_len = CH_BUFFER_OUTPUT_DATA;
 
 	/* reset the LED state */
 	led_counter--;
@@ -184,7 +183,6 @@ ProcessIO(void)
 	switch(cmd) {
 	case CH_CMD_GET_HARDWARE_VERSION:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = PORTB & 0x0f;
-		reply_len += 1;
 		break;
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
@@ -194,7 +192,6 @@ ProcessIO(void)
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&FirmwareVersion,
 			2 * 3);
-		reply_len += 2 * 3;
 		break;
 	case CH_CMD_ERASE_FLASH:
 		/* are we lost or stolen */
@@ -235,7 +232,6 @@ ProcessIO(void)
 		checksum = CHugCalculateChecksum (&TxBuffer[CH_BUFFER_OUTPUT_DATA+1],
 						  length);
 		TxBuffer[CH_BUFFER_OUTPUT_DATA+0] = checksum;
-		reply_len += length + 1;
 		break;
 	case CH_CMD_WRITE_FLASH:
 		/* are we lost or stolen */
@@ -316,7 +312,7 @@ ProcessIO(void)
 		TxBuffer[CH_BUFFER_OUTPUT_CMD] = cmd;
 		USBInHandle = HIDTxPacket(HID_EP,
 					  (BYTE*)&TxBuffer[0],
-					  reply_len);
+					  CH_USB_HID_EP_SIZE);
 	}
 
 	/* re-arm the OUT endpoint for the next packet */

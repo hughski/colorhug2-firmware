@@ -49,7 +49,7 @@ To send a command you have to:
 
  * Then immediately do another interrupt transfer on endpoint 0x81, but
    this time the buffer size has to be the exact number of bytes you are
-   expecting from the command.
+   expecting from the command[2].
 
   - The returned buffer will be in the following LE format:
         [1:retval][1:cmd][62:data]
@@ -147,3 +147,12 @@ mode and no other commands are required to get an XYZ reading.
     devices in the wild that have a bootloader with the old VID and PID.
     This means, if you write a program to flash devices, please also
     accept the old VID/PID numbers too.
+
+[2] Before 16th August 2012, the ColorHug firmware would send the exact
+    number of bytes when processing a command. Since then the firmware
+    has been changed to always send the full 64 bytes for each command.
+    This allows the device to work in OS X and Microsoft Windows where
+    the number of returned bytes has to match what is reported in the
+    HID descriptor. The bootloader cannot be changed on devices in the
+    wild, and this means that the firmware can only be upgraded on a
+    computer with Linux installed.
