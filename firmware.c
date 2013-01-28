@@ -923,7 +923,8 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 		goto out;
 
 	/* convert to xyz using the factory calibration */
-	rc = CHugSwitchCalibrationMatrix(0, calibration);
+	rc = CHugSwitchCalibrationMatrix(CH_CALIBRATION_INDEX_FACTORY_ONLY,
+					 calibration);
 	if (rc != CH_ERROR_NONE)
 		goto out;
 	rc = CHugCalibrationMultiply(calibration,
@@ -933,7 +934,7 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 		goto out;
 
 	/* use the specified correction matrix */
-	if (calibration_index != 0) {
+	if (calibration_index != CH_CALIBRATION_INDEX_FACTORY_ONLY) {
 		rc = CHugSwitchCalibrationMatrix(calibration_index,
 						 calibration);
 		if (rc != CH_ERROR_NONE)
