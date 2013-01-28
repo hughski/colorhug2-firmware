@@ -46,7 +46,7 @@ microchip_usblib_OBJS = usb_function_hid.o usb_device.o
 firmware_OBJS   = ${firmware_SRC:%.c=%.o}   ${microchip_usblib_OBJS}
 bootloader_OBJS = ${bootloader_SRC:%.c=%.o} ${microchip_usblib_OBJS}
 
-INHX2BIN = colorhug-inhx32-to-bin
+INHX2BIN = /usr/libexec/colorhug-inhx32-to-bin
 
 include makefiles/toolchain-microchip.mk
 include makefiles/app-lib-microchip.mk
