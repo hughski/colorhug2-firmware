@@ -2,6 +2,7 @@
 *.cod
 *.cof
 *.hex
+*.bin
 *.lst
 *.map
 *.mcs
