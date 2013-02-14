@@ -45,7 +45,7 @@ ROM USB_DEVICE_DESCRIPTOR device_dsc=
 	USB_EP0_BUFF_SIZE,		/* Max packet size for EP0, see usb_config.h */
 	CH_USB_VID,			/* Vendor ID */
 #ifdef COLORHUG_BOOTLOADER
-	CH_USB_PID_BOOTLADER,		/* Product ID */
+	CH_USB_PID_BOOTLOADER,		/* Product ID */
 #else
 	CH_USB_PID_FIRMWARE,		/* Product ID */
 #endif
