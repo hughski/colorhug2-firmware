@@ -37,7 +37,6 @@
 #include <USB/usb_function_hid.h>
 
 /* configuration */
-#if defined(COLORHUG)
 #pragma config XINST	= OFF		/* turn off extended instruction set */
 #pragma config STVREN	= ON		/* Stack overflow reset */
 #pragma config PLLDIV	= 3		/* (12 MHz crystal used on this board) */
@@ -61,9 +60,6 @@
 #pragma config WPEND	= PAGE_0	/* Write/Erase protect Flash Memory pages */
 #pragma config WPCFG	= OFF		/* Write/Erase Protection of last page Disabled */
 #pragma config WPDIS	= OFF		/* Write Protect Disable */
-#else
-#error No hardware board defined, see "HardwareProfile.h" and __FILE__
-#endif
 
 #pragma code High_ISR = 0x08
 void
