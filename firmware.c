@@ -25,7 +25,6 @@
  */
 
 #include "ColorHug.h"
-#include "HardwareProfile.h"
 #include "usb_config.h"
 #include "ch-math.h"
 #include "ch-common.h"
@@ -235,9 +234,9 @@ CHugSetLEDs(uint8_t leds,
 	/* run in a loop */
 	for (i = 0; i < repeat; i++) {
 		CHugSetLEDsInternal (leds);
-		delay10ktcy(on_time);
+		Delay10KTCYx(on_time);
 		CHugSetLEDsInternal (0);
-		delay10ktcy(off_time);
+		Delay10KTCYx(off_time);
 
 		/* clear watchdog */
 		ClrWdt();
@@ -1511,7 +1510,7 @@ InitializeSystem(void)
 	if(UCONbits.USBEN == 1) {
 		UCONbits.SUSPND = 0;
 		UCON = 0;
-		delay10ktcy(0xff);
+		Delay10KTCYx(0xff);
 	}
 
 	/* only turn on the USB module when the device has power */

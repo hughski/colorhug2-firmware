@@ -76,12 +76,12 @@ CHugFatalError (ChError error)
 	while (1) {
 		for (i = 0; i < error; i++) {
 			PORTE = CH_STATUS_LED_RED;
-			delay10ktcy(0xff);
+			Delay10KTCYx(0xff);
 			PORTE = 0x00;
-			delay10ktcy(0xff);
+			Delay10KTCYx(0xff);
 		}
-		delay10ktcy(0xff);
-		delay10ktcy(0xff);
+		Delay10KTCYx(0xff);
+		Delay10KTCYx(0xff);
 	}
 }
 

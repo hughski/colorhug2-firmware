@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2013 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -23,12 +23,8 @@
 #define HARDWARE_PROFILE_H
 
 /* USB stack hardware selection options */
-
-//#define USE_SELF_POWER_SENSE_IO
-#define tris_self_power		TRISCbits.TRISC2    // Input
 #define self_power		1
-
-//#define USE_USB_BUS_SENSE_IO
+#define tris_self_power		TRISCbits.TRISC2    // Input
 #define tris_usb_bus_sense	TRISCbits.TRISC2    // Input
 #define USB_BUS_SENSE		1
 #define CLOCK_FREQ		48000000

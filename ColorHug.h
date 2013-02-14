@@ -22,23 +22,15 @@
 #ifndef COLOR_HUG_H
 #define COLOR_HUG_H
 
-#ifdef __SDCC
- #include <stdint.h>
- #include <delay.h>
- #include <string.h>
- #include <pic16/pic18f46j50.h>
-#else
- #include <GenericTypeDefs.h>
- #include <delays.h>
- #include <p18cxxx.h>
- #define uint8_t	UINT8
- #define uint16_t	UINT16
- #define uint32_t	UINT32
- #define int8_t		INT8
- #define int16_t	INT16
- #define int32_t	INT32
- #define delay10ktcy	Delay10KTCYx
-#endif
+#include <GenericTypeDefs.h>
+#include <delays.h>
+#include <p18cxxx.h>
+#define uint8_t		UINT8
+#define uint16_t	UINT16
+#define uint32_t	UINT32
+#define int8_t		INT8
+#define int16_t		INT16
+#define int32_t		INT32
 
 /* device constants */
 #define	CH_USB_VID				0x273f
