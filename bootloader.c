@@ -87,9 +87,9 @@ static uint8_t idle_command = 0x00;
 static uint8_t idle_counter = 0x00;
 
 /* USB buffers */
-unsigned char RxBuffer[CH_USB_HID_EP_SIZE];
-unsigned char TxBuffer[CH_USB_HID_EP_SIZE];
-unsigned char FlashBuffer[CH_FLASH_WRITE_BLOCK_SIZE];
+uint8_t RxBuffer[CH_USB_HID_EP_SIZE];
+uint8_t TxBuffer[CH_USB_HID_EP_SIZE];
+uint8_t FlashBuffer[CH_FLASH_WRITE_BLOCK_SIZE];
 
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
@@ -146,8 +146,8 @@ ProcessIO(void)
 	uint16_t erase_length;
 	uint8_t length;
 	uint8_t checksum;
-	unsigned char cmd;
-	unsigned char rc = CH_ERROR_NONE;
+	uint8_t cmd;
+	uint8_t rc = CH_ERROR_NONE;
 
 	/* reset the LED state */
 	led_counter--;
@@ -224,7 +224,7 @@ ProcessIO(void)
 			break;
 		}
 		ReadFlash(address, length,
-			  (unsigned char *) &TxBuffer[CH_BUFFER_OUTPUT_DATA+1]);
+			  (uint8_t *) &TxBuffer[CH_BUFFER_OUTPUT_DATA+1]);
 		checksum = CHugCalculateChecksum (&TxBuffer[CH_BUFFER_OUTPUT_DATA+1],
 						  length);
 		TxBuffer[CH_BUFFER_OUTPUT_DATA+0] = checksum;
@@ -271,7 +271,7 @@ ProcessIO(void)
 				length);
 			WriteBytesFlash(address - CH_FLASH_TRANSFER_BLOCK_SIZE,
 					CH_FLASH_WRITE_BLOCK_SIZE,
-					(unsigned char *) FlashBuffer);
+					(uint8_t *) FlashBuffer);
 		}
 		break;
 	case CH_CMD_BOOT_FLASH:
@@ -292,7 +292,7 @@ ProcessIO(void)
 		EraseFlash(CH_EEPROM_ADDR_FLASH_SUCCESS,
 			   CH_EEPROM_ADDR_FLASH_SUCCESS + 1);
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
-				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
+				(uint8_t *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	case CH_CMD_SELF_TEST:
 		rc = CHugSelfTest();
@@ -460,9 +460,9 @@ main(void)
 	 *  3. the flash success is 0x01
 	 */
 	ReadFlash(CH_EEPROM_ADDR_RUNCODE, 2,
-		  (unsigned char *) &runcode_start);
+		  (uint8_t *) &runcode_start);
 	ReadFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
-		  (unsigned char *) &flash_success);
+		  (uint8_t *) &flash_success);
 	if (RCONbits.NOT_RI &&
 	    runcode_start != 0xffff &&
 	    flash_success == 0x01)

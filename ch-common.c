@@ -93,7 +93,7 @@ CHugSelfTestSensor(uint8_t min_pulses)
 {
 	uint16_t i;
 	uint8_t pulses = 0;
-	unsigned char ra_tmp = PORTA;
+	uint8_t ra_tmp = PORTA;
 
 	/* check sensor reports some values */
 	for (i = 0; i < 0xffff && pulses < min_pulses; i++) {

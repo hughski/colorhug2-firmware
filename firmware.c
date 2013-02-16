@@ -152,7 +152,7 @@ static uint8_t		flash_success = 0xff;
 /**
  * CHugGetLEDs:
  **/
-unsigned char
+uint8_t
 CHugGetLEDs(void)
 {
 	return (PORTEbits.RE1 << 1) + PORTEbits.RE0;
@@ -252,31 +252,31 @@ CHugReadEEprom(void)
 	/* read this into RAM so it can be changed */
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_SERIAL,
 		  sizeof(uint32_t),
-		  (unsigned char *) &SensorSerial);
+		  (uint8_t *) &SensorSerial);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_DARK_OFFSET_RED,
 		  3 * sizeof(uint16_t),
-		  (unsigned char *) DarkCalibration);
+		  (uint8_t *) DarkCalibration);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PRE_SCALE,
 		  sizeof(CHugPackedFloat),
-		  (unsigned char *) &PreScale);
+		  (uint8_t *) &PreScale);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_POST_SCALE,
 		  sizeof(CHugPackedFloat),
-		  (unsigned char *) &PostScale);
+		  (uint8_t *) &PostScale);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 		  6 * sizeof(uint16_t),
-		  (unsigned char *) &CalibrationMap);
+		  (uint8_t *) &CalibrationMap);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PCB_ERRATA,
 		  1 * sizeof(uint16_t),
-		  (unsigned char *) &PcbErrata);
+		  (uint8_t *) &PcbErrata);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_REMOTE_HASH,
 		  1 * sizeof(ChSha1),
-		  (unsigned char *) &remote_hash);
+		  (uint8_t *) &remote_hash);
 	ReadFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_NAME,
 		  CH_OWNER_LENGTH_MAX * sizeof(char),
-		  (unsigned char *) OwnerName);
+		  (uint8_t *) OwnerName);
 	ReadFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_EMAIL,
 		  CH_OWNER_LENGTH_MAX * sizeof(char),
-		  (unsigned char *) OwnerEmail);
+		  (uint8_t *) OwnerEmail);
 
 	/* the default value in flash is 0xff */
 	if (OwnerName[0] == 0xff)
@@ -336,16 +336,16 @@ CHugWriteEEprom(void)
 	       1 * sizeof(ChSha1));
 	WriteBytesFlash(CH_EEPROM_ADDR_CONFIG,
 			CH_FLASH_WRITE_BLOCK_SIZE,
-			(unsigned char *) FlashBuffer);
+			(uint8_t *) FlashBuffer);
 
 	EraseFlash(CH_EEPROM_ADDR_OWNER,
 		   CH_EEPROM_ADDR_OWNER + 2 * CH_FLASH_WRITE_BLOCK_SIZE);
 	WriteBytesFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_NAME,
 			CH_FLASH_WRITE_BLOCK_SIZE,
-			(unsigned char *) OwnerName);
+			(uint8_t *) OwnerName);
 	WriteBytesFlash(CH_EEPROM_ADDR_OWNER + CH_EEPROM_OFFSET_EMAIL,
 			CH_FLASH_WRITE_BLOCK_SIZE,
-			(unsigned char *) OwnerEmail);
+			(uint8_t *) OwnerEmail);
 }
 
 /**
@@ -412,7 +412,7 @@ CHugTakeReadingsFrequencyRaw (uint32_t integral_time, uint32_t *last_rising_edge
 	uint32_t i;
 	uint32_t last_rising_edge_tmp = 0;
 	uint16_t number_edges = 0;
-	unsigned char ra_tmp = PORTA;
+	uint8_t ra_tmp = PORTA;
 
 	/* clear watchdog */
 	ClrWdt();
@@ -475,7 +475,7 @@ static uint32_t
 CHugWaitForPulse (uint32_t integral_time)
 {
 	uint32_t i;
-	unsigned char ra_tmp = PORTA;
+	uint8_t ra_tmp = PORTA;
 
 	/* clear watchdog */
 	ClrWdt();
@@ -877,13 +877,13 @@ CHugSwitchCalibrationMatrix(uint16_t calibration_index,
 	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
 	ReadFlash(addr,
 		  9 * sizeof(CHugPackedFloat),
-		  (unsigned char *) calibration);
+		  (uint8_t *) calibration);
 	if (calibration[0].raw == 0xffffffff)
 		return CH_ERROR_NO_CALIBRATION;
 
 	/* check the calibration matrix is valid */
 	ReadFlash(addr + 0x24, 1,
-		  (unsigned char *) &calibration_type);
+		  (uint8_t *) &calibration_type);
 	if (calibration_index == 0) {
 		if (calibration_type != CH_CALIBRATION_TYPE_ALL)
 			return CH_ERROR_INVALID_CALIBRATION;
@@ -983,13 +983,13 @@ CHugGetCalibrationMatrix(uint16_t calibration_index,
 	addr = CH_CALIBRATION_ADDR + (calibration_index * 0x40);
 	ReadFlash(addr,
 		  matrix_size,
-		  (unsigned char *) calibration);
+		  (uint8_t *) calibration);
 	ReadFlash(addr + matrix_size,
 		  sizeof(uint8_t),
-		  (unsigned char *) types);
+		  (uint8_t *) types);
 	ReadFlash(addr + matrix_size + 1,
 		  CH_CALIBRATION_DESCRIPTION_LEN,
-		  (unsigned char *) description);
+		  (uint8_t *) description);
 	if (description[0] == 0xff)
 		return CH_ERROR_NO_CALIBRATION;
 	return CH_ERROR_NONE;
@@ -1011,10 +1011,10 @@ CHugCopyFlash(uint32_t src, uint32_t dest, uint16_t len)
 	for (addr = 0; addr < len; addr += CH_FLASH_WRITE_BLOCK_SIZE) {
 		ReadFlash(src + addr,
 			  CH_FLASH_WRITE_BLOCK_SIZE,
-			  (unsigned char *) FlashBuffer);
+			  (uint8_t *) FlashBuffer);
 		WriteBytesFlash(dest + addr,
 				CH_FLASH_WRITE_BLOCK_SIZE,
-				(unsigned char *) FlashBuffer);
+				(uint8_t *) FlashBuffer);
 	}
 }
 
@@ -1067,7 +1067,7 @@ CHugSetCalibrationMatrix(uint16_t calibration_index,
 	       CH_CALIBRATION_DESCRIPTION_LEN);
 	WriteBytesFlash(addr_block_start + offset,
 			CH_FLASH_WRITE_BLOCK_SIZE,
-			(unsigned char *) FlashBuffer);
+			(uint8_t *) FlashBuffer);
 
 	/* write matrixes after the offset */
 	CHugCopyFlash(CH_CALIBRATION_ADDR_TMP + offset + 0x40,
@@ -1088,7 +1088,7 @@ CHugTakeReadingArray(uint8_t *data)
 	uint8_t idx;
 	uint8_t rc;
 	uint32_t chunk;
-	unsigned char ra_tmp = PORTA;
+	uint8_t ra_tmp = PORTA;
 
 	/* set all buckets to zero */
 	memset(data, 0x00, 30);
@@ -1143,8 +1143,8 @@ ProcessIO(void)
 	uint8_t checksum;
 	uint8_t i;
 	uint8_t length;
-	unsigned char cmd;
-	unsigned char rc = CH_ERROR_NONE;
+	uint8_t cmd;
+	uint8_t rc = CH_ERROR_NONE;
 
 	/* User Application USB tasks */
 	if ((USBDeviceState < CONFIGURED_STATE) ||
@@ -1401,7 +1401,7 @@ ProcessIO(void)
 		EraseFlash(CH_EEPROM_ADDR_FLASH_SUCCESS,
 			   CH_EEPROM_ADDR_FLASH_SUCCESS + 1);
 		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
-				(unsigned char *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
+				(uint8_t *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	case CH_CMD_GET_OWNER_NAME:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
@@ -1643,7 +1643,7 @@ main(void)
 
 	/* read the flash success */
 	ReadFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
-		  (unsigned char *) &flash_success);
+		  (uint8_t *) &flash_success);
 
 	/* the watchdog saved us from our doom */
 	if (!RCONbits.NOT_TO)
