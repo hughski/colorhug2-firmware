@@ -28,6 +28,7 @@
 #include "usb_config.h"
 #include "ch-math.h"
 #include "ch-common.h"
+#include "ch-sram.h"
 #include "ch-temp.h"
 
 #include <flash.h>
@@ -1390,6 +1391,38 @@ ProcessIO(void)
 			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));
 		break;
+	case CH_CMD_READ_SRAM:
+		/* allow to read any SRAM address as only 64k is
+		 * adressable by a uint16 */
+		memcpy (&address,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
+			2);
+		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
+		if (length > 60) {
+			rc = CH_ERROR_INVALID_LENGTH;
+			break;
+		}
+		CHugSramDmaToCpu(address,
+				 &TxBuffer[CH_BUFFER_OUTPUT_DATA],
+				 length);
+		CHugSramDmaWait();
+		break;
+	case CH_CMD_WRITE_SRAM:
+		/* allow to write any SRAM address as only 64k is
+		 * adressable by a uint16 */
+		memcpy (&address,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
+			2);
+		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
+		if (length > 60) {
+			rc = CH_ERROR_INVALID_LENGTH;
+			break;
+		}
+		CHugSramDmaFromCpu(&RxBuffer[CH_BUFFER_INPUT_DATA+3],
+				   address,
+				   length);
+		CHugSramDmaWait();
+		break;
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
 		idle_command = CH_CMD_RESET;
@@ -1514,14 +1547,48 @@ InitializeSystem(void)
 	 * set RB7 to input (PGD) */
 	TRISB = 0b11111111;
 
-	/* set RC0 to RC2 to input (unused) */
-	TRISC = 0xff;
+	/* set RC0 to input (unused),
+	 * set RC1 to output (SCK2),
+	 * set RC2 to output (SDO2)
+	 * set RC3 to input (unused)
+	 * set RC4 to input (unused)
+	 * set RC5 to input (unused)
+	 * set RC6 to input (unused
+	 * set RC7 to input (unused) */
+	TRISC = 0b11111001;
 
-	/* set RD0 to RD7 to input (unused) */
-	TRISD = 0xff;
+	/* set RD0 to input (unused),
+	/* set RD1 to input (unused),
+	 * set RD2 to input (SDI2),
+	 * set RD3 to output (SS2) [SSDMA?],
+	 * set RD4-RD7 to input (unused) */
+	TRISD = 0b11110111;
 
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
+
+	/* assign remappable input and outputs */
+	RPINR21 = 19; /* RP19 = SDI2 */
+	RPINR22 = 12; /* RP12 = SCK2 (input and output) */
+	RPOR12 = 0x0a; /* RP12 = SCK2 */
+	RPOR13 = 0x09; /* RP13 = SDO2 */
+	RPOR20 = 0x0c; /* RP20 = SS2 (SSDMA) */
+
+	/* turn on the SPI bus */
+	SSP2STATbits.CKE = 1;		/* enable SMBus-specific inputs */
+	SSP2STATbits.SMP = 0;		/* enable slew rate for HS mode */
+	SSP2CON1bits.SSPEN = 1;		/* enables the serial port */
+	SSP2CON1bits.SSPM = 0x0;	/* SPI mastter mode, clk = Fosc / 4 */
+
+	/* set up the DMA controller */
+	DMACON1bits.SSCON0 = 0;		/* SSDMA (_CS) is not DMA controlled */
+	DMACON1bits.SSCON1 = 0;
+	DMACON1bits.DLYINTEN = 0;	/* don't interrupt after each byte */
+	DMACON2bits.INTLVL = 0x0;	/* interrupt only when complete */
+	DMACON2bits.DLYCYC = 0x02;	/* minimum delay between bytes */
+
+	/* clear base SRAM memory */
+	CHugSramWipe(0x0000, 0xffff);
 
 	/* setup the I2C controller */
 	SSP1ADD = 0x3e;

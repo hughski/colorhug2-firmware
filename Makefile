@@ -95,6 +95,7 @@ firmware_OBJS =							\
 	firmware.o						\
 	ch-common.o						\
 	ch-math.o						\
+	ch-sram.o						\
 	ch-temp.o						\
 	usb_descriptors_firmware.o				\
 	usb_device.o						\
@@ -103,6 +104,7 @@ firmware_OBJS =							\
 bootloader_OBJS =						\
 	bootloader.o						\
 	ch-common.o						\
+	ch-sram.o						\
 	ch-temp.o						\
 	usb_descriptors_bootloader.o				\
 	usb_device.o						\

@@ -644,6 +644,30 @@
 #define	CH_CMD_GET_MEASURE_MODE			0x37
 
 /**
+ * CH_CMD_READ_SRAM:
+ *
+ * Read in raw data from the SRAM memory.
+ *
+ * IN:  [1:cmd][2:address][1:length]
+ * OUT: [1:retval][1:cmd][1-60:data]
+ *
+ * This command is only available in firmware mode.
+ **/
+#define	CH_CMD_READ_SRAM			0x38
+
+/**
+ * CH_CMD_WRITE_SRAM:
+ *
+ * Write raw data to the SRAM memory.
+ *
+ * IN:  [1:cmd][2:address][1:length][1-60:data]
+ * OUT: [1:retval][1:cmd]
+ *
+ * This command is only available in firmware mode.
+ **/
+#define	CH_CMD_WRITE_SRAM			0x39
+
+/**
  * CH_CMD_GET_TEMPERATURE:
  *
  * Gets the temperature of the sensor in degrees celsius
@@ -814,6 +838,8 @@ typedef enum {
 	CH_ERROR_SELF_TEST_COLOR_SELECT,
 	CH_ERROR_SELF_TEST_MULTIPLIER,
 	CH_ERROR_INVALID_CALIBRATION,
+	CH_ERROR_SRAM_FAILED,
+	CH_ERROR_OUT_OF_MEMORY,
 	CH_ERROR_SELF_TEST_TEMPERATURE,
 	CH_ERROR_SELF_TEST_I2C,
 	CH_ERROR_LAST

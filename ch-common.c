@@ -22,6 +22,7 @@
 #include "ColorHug.h"
 
 #include "ch-common.h"
+#include "ch-sram.h"
 #include "ch-temp.h"
 
 /**
@@ -84,6 +85,60 @@ CHugFatalError (ChError error)
 		Delay10KTCYx(0xff);
 		Delay10KTCYx(0xff);
 	}
+}
+
+/**
+ * CHugSelfTestSram:
+ **/
+static uint8_t
+CHugSelfTestSram(void)
+{
+	uint8_t rc;
+	uint8_t sram_dma[4];
+	uint8_t sram_tmp;
+
+	/* check SRAM */
+	CHugSramWriteByte(0x0000, 0xde);
+	CHugSramWriteByte(0x0001, 0xad);
+	CHugSramWriteByte(0x0002, 0xbe);
+	CHugSramWriteByte(0x0003, 0xef);
+	sram_tmp = CHugSramReadByte(0x0000);
+	if (sram_tmp != 0xde) {
+		rc = CH_ERROR_SRAM_FAILED;
+		goto out;
+	}
+	sram_tmp = CHugSramReadByte(0x0001);
+	if (sram_tmp != 0xad) {
+		rc = CH_ERROR_SRAM_FAILED;
+		goto out;
+	}
+
+	/* test DMA to and from SRAM */
+	sram_dma[0] = 0xde;
+	sram_dma[1] = 0xad;
+	sram_dma[2] = 0xbe;
+	sram_dma[3] = 0xef;
+	CHugSramDmaFromCpu(sram_dma, 0x0010, 3);
+	CHugSramDmaWait();
+	sram_dma[0] = 0x00;
+	sram_dma[1] = 0x00;
+	sram_dma[2] = 0x00;
+	sram_dma[3] = 0x00;
+	CHugSramDmaToCpu(0x0010, sram_dma, 3);
+	CHugSramDmaWait();
+
+	if (sram_dma[0] != 0xde &&
+	    sram_dma[1] != 0xad &&
+	    sram_dma[2] != 0xbe &&
+	    sram_dma[3] != 0xef) {
+		rc = CH_ERROR_SRAM_FAILED;
+		goto out;
+	}
+
+	/* success */
+	rc = CH_ERROR_NONE;
+out:
+	return rc;
 }
 
 /**
@@ -152,6 +207,7 @@ out:
  *  - Tests the RED sensor
  *  - Tests the GREEN sensor
  *  - Tests the BLUE sensor
+ *  - Tests the SRAM functionality
  *  - Checks the I2C bus
  *  - Tests the ambient sensor
  **/
@@ -216,6 +272,11 @@ CHugSelfTest(void)
 		rc = CH_ERROR_SELF_TEST_BLUE;
 		goto out;
 	}
+
+	/* check SRAM */
+	rc = CHugSelfTestSram();
+	if (rc != CH_ERROR_NONE)
+		goto out;
 
 	/* check I2C */
 	rc = CHugSelfTestI2C();
