@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011-2012 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2013 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -28,8 +28,10 @@
 #include "usb_config.h"
 #include "ch-math.h"
 #include "ch-common.h"
+#include "ch-temp.h"
 
 #include <flash.h>
+#include <i2c.h>
 
 #include <USB/usb.h>
 #include <USB/usb_common.h>
@@ -1137,6 +1139,7 @@ static void
 ProcessIO(void)
 {
 	CHugPackedFloat readings[3];
+	CHugPackedFloat temp;
 	uint16_t address;
 	uint16_t calibration_index;
 	uint32_t reading;
@@ -1426,6 +1429,14 @@ ProcessIO(void)
 	case CH_CMD_TAKE_READING_ARRAY:
 		rc = CHugTakeReadingArray(&TxBuffer[CH_BUFFER_OUTPUT_DATA]);
 		break;
+	case CH_CMD_GET_TEMPERATURE:
+		rc = CHugTempGetAmbient(&temp);
+		if (rc != CH_ERROR_NONE)
+			goto out;
+		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
+			(const void *) &temp,
+			sizeof(CHugPackedFloat));
+		break;
 	case CH_CMD_SELF_TEST:
 		rc = CHugSelfTest();
 		break;
@@ -1493,8 +1504,15 @@ InitializeSystem(void)
 	 * set RA7 to input (OSC1, HSPLL in) */
 	TRISA = 0xf0;
 
-	/* set RB0 to RB3 to input (h/w revision) others input (unused) */
-	TRISB = 0xff;
+	/* set RB0 to input (h/w revision),
+	 * set RB1 to input (h/w revision),
+	 * set RB2 to input (h/w revision),
+	 * set RB3 to input (h/w revision),
+	 * set RB4 to input (SCL),
+	 * set RB5 to input (SDA),
+	 * set RB6 to input (PGC),
+	 * set RB7 to input (PGD) */
+	TRISB = 0b11111111;
 
 	/* set RC0 to RC2 to input (unused) */
 	TRISC = 0xff;
@@ -1504,6 +1522,11 @@ InitializeSystem(void)
 
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
+
+	/* setup the I2C controller */
+	SSP1ADD = 0x3e;
+	OpenI2C1(MASTER, SLEW_ON);
+	CHugTempSetResolution(CH_TEMP_RESOLUTION_1_16C);
 
 	/* The USB module will be enabled if the bootloader has booted,
 	 * so we soft-detach from the host. */

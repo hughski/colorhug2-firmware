@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011-2012 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2013 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -22,6 +22,7 @@
 #include "ColorHug.h"
 
 #include "ch-common.h"
+#include "ch-temp.h"
 
 /**
  * CHugGetColorSelect:
@@ -104,12 +105,55 @@ CHugSelfTestSensor(uint8_t min_pulses)
 }
 
 /**
+ * CHugSelfTestI2C:
+ **/
+static uint8_t
+CHugSelfTestI2C(void)
+{
+	uint8_t i = 0x00;
+	uint8_t rc;
+
+	/* test the i2c bus */
+	SSP1CON2bits.SEN = 1;
+	while (SSP1CON2bits.SEN) {
+		if (++i == 0) {
+			rc = CH_ERROR_SELF_TEST_I2C;
+			goto out;
+		}
+	}
+	PIR1bits.SSP1IF = 0;
+	SSP1BUF = 0x00;
+	while (!PIR1bits.SSP1IF) {
+		if (++i == 0) {
+			rc = CH_ERROR_SELF_TEST_I2C;
+			goto out;
+		}
+	}
+	SSP1CON2bits.PEN = 1;
+	while (SSP1CON2bits.PEN) {
+		if (++i == 0) {
+			rc = CH_ERROR_SELF_TEST_I2C;
+			goto out;
+		}
+	}
+	rc = CH_ERROR_NONE;
+	goto out;
+
+	/* success */
+	rc = CH_ERROR_NONE;
+out:
+	return rc;
+}
+
+/**
  * CHugSelfTest:
  *
  * Tests the device in the following ways:
  *  - Tests the RED sensor
  *  - Tests the GREEN sensor
  *  - Tests the BLUE sensor
+ *  - Checks the I2C bus
+ *  - Tests the ambient sensor
  **/
 uint8_t
 CHugSelfTest(void)
@@ -117,6 +161,7 @@ CHugSelfTest(void)
 	const uint8_t min_pulses = 3;
 	uint8_t pulses[3];
 	uint8_t rc;
+	CHugPackedFloat tmp;
 
 	/* check multiplier can be set and read */
 	CHugSetMultiplier(CH_FREQ_SCALE_0);
@@ -169,6 +214,20 @@ CHugSelfTest(void)
 	}
 	if (pulses[CH_COLOR_OFFSET_BLUE] != min_pulses) {
 		rc = CH_ERROR_SELF_TEST_BLUE;
+		goto out;
+	}
+
+	/* check I2C */
+	rc = CHugSelfTestI2C();
+	if (rc != CH_ERROR_NONE)
+		goto out;
+
+	/* get the sensor temperature */
+	rc = CHugTempGetAmbient(&tmp);
+	if (rc != CH_ERROR_NONE)
+		goto out;
+	if (tmp.offset > 50 || tmp.offset < 10) {
+		rc = CH_ERROR_SELF_TEST_TEMPERATURE;
 		goto out;
 	}
 

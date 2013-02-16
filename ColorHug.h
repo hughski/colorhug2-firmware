@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011-2012 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2013 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -644,6 +644,18 @@
 #define	CH_CMD_GET_MEASURE_MODE			0x37
 
 /**
+ * CH_CMD_GET_TEMPERATURE:
+ *
+ * Gets the temperature of the sensor in degrees celsius
+ *
+ * IN:  [1:cmd]
+ * OUT: [1:retval][1:cmd][4:temperature]
+ *
+ * This command is only available in firmware mode.
+ **/
+#define	CH_CMD_GET_TEMPERATURE			0x3b
+
+/**
  * CH_CMD_SELF_TEST:
  *
  * Tests the device by trying to get a non-zero reading from each
@@ -802,6 +814,8 @@ typedef enum {
 	CH_ERROR_SELF_TEST_COLOR_SELECT,
 	CH_ERROR_SELF_TEST_MULTIPLIER,
 	CH_ERROR_INVALID_CALIBRATION,
+	CH_ERROR_SELF_TEST_TEMPERATURE,
+	CH_ERROR_SELF_TEST_I2C,
 	CH_ERROR_LAST
 } ChError;
 
