@@ -43,11 +43,11 @@ AR = ${MICROCHIP_TOOLCHAIN_ROOT}/bin/mplib
 INHX2BIN = /usr/libexec/colorhug-inhx32-to-bin
 COLORHUG_CMD = /usr/bin/colorhug-cmd
 
-MICROCHIP_APP_LIB_ROOT 	 = ${MICROCHIP_ROOT}/libs-v2012-04-03
+MICROCHIP_APP_LIB_ROOT 	 = ${MICROCHIP_ROOT}/libs-v2013-06-15
 
-APP_LIB_URL   = http://ww1.microchip.com/downloads/en/softwarelibrary/microchip-application-libraries-v2012-04-03-linux-installer.run
-APP_LIB_INSTALLER   = ${DOWNLOAD_DIR}/microchip-application-libraries-v2012-04-03-linux-installer.run
-APP_LIB_UNINSTALLER = ${MICROCHIP_APP_LIB_ROOT}/Uninstall\ Microchip\ Application\ Libraries\ v2012-04-03
+APP_LIB_URL   = http://ww1.microchip.com/downloads/en/softwarelibrary/microchip-libraries-for-applications-v2013-06-15-linux-installer.run
+APP_LIB_INSTALLER   = ${DOWNLOAD_DIR}/microchip-application-libraries-v2013-06-15-linux-installer.run
+APP_LIB_UNINSTALLER = ${MICROCHIP_APP_LIB_ROOT}/Uninstall\ Microchip\ Application\ Libraries\ v2013-06-15
 
 .DEFAULT_GOAL := all
 .PHONY: 							\
