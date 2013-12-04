@@ -214,7 +214,7 @@ sanity-toolchain-installer: ${TOOLCHAIN_INSTALLER}
 	@${TOOLCHAIN_INSTALLER} --version >/dev/null 2>&1 || test $$? -ne 127 || { 		\
 		echo "####  Unable to execute the toolchain installer";          		\
 		echo "      ${TOOLCHAIN_INSTALLER}";						\
-		echo "####  If you are on a x86_64 system please install 32bit support.";	\
+		echo "####  If you are on a x86_64 system please install 32bit support, e.g. glibc.i686 libstdc++.i686";	\
 		false; }
 
 sudo-install-toolchain: sanity-toolchain-installer
