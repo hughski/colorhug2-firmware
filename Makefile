@@ -221,7 +221,8 @@ sudo-install-toolchain: sanity-toolchain-installer
 	sudo ${TOOLCHAIN_INSTALLER} --mode unattended &&	\
 		cd ${MICROCHIP_TOOLCHAIN_ROOT}/lib/ &&		\
 		sudo ln -fs p18F46J50.lib  p18f46j50.lib &&	\
-		echo "Done."
+		echo "Done." &&					\
+	sudo rm /lib/libusb* /lib/libUSB*
 
 sudo-uninstall-toolchain: ${TOOLCHAIN_UNINSTALLER}
 	sudo ${TOOLCHAIN_UNINSTALLER} --mode unattended &&	\
