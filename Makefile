@@ -32,7 +32,7 @@ MICROCHIP_ROOT	= /opt/microchip
 DOWNLOAD_DIR 	= $(shell pwd)/microchip-toolchain-downloads
 
 MICROCHIP_TOOLCHAIN_ROOT = ${MICROCHIP_ROOT}/mplabc18/v3.40
-TOOLCHAIN_URL = http://www.microchip.com/mplabc18-linux-installer
+TOOLCHAIN_URL = http://ww1.microchip.com/downloads/mplab/X/mplabc18-v3.40-linux-full-installer.run
 TOOLCHAIN_INSTALLER   = ${DOWNLOAD_DIR}/mplabc18-v3.40-linux-full-installer.run
 TOOLCHAIN_UNINSTALLER = ${MICROCHIP_TOOLCHAIN_ROOT}/UninstallMPLABC18v3.40
 
