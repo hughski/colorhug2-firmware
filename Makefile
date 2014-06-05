@@ -187,7 +187,8 @@ sanity-app-lib-installer: ${APP_LIB_INSTALLER}
 
 sudo-install-app-lib: sanity-app-lib-installer
 	sudo ${APP_LIB_INSTALLER} --mode unattended --prefix "${MICROCHIP_APP_LIB_ROOT}" >/dev/null &&  \
-		echo "Done."
+		echo "Done." &&					\
+	sudo rm /lib/libusb* /lib/libUSB*
 
 sudo-uninstall-app-lib: ${APP_LIB_UNINSTALLER}
 	sudo ${APP_LIB_UNINSTALLER} --mode unattended &&	\
@@ -221,8 +222,7 @@ sudo-install-toolchain: sanity-toolchain-installer
 	sudo ${TOOLCHAIN_INSTALLER} --mode unattended &&	\
 		cd ${MICROCHIP_TOOLCHAIN_ROOT}/lib/ &&		\
 		sudo ln -fs p18F46J50.lib  p18f46j50.lib &&	\
-		echo "Done." &&					\
-	sudo rm /lib/libusb* /lib/libUSB*
+		echo "Done."
 
 sudo-uninstall-toolchain: ${TOOLCHAIN_UNINSTALLER}
 	sudo ${TOOLCHAIN_UNINSTALLER} --mode unattended &&	\
