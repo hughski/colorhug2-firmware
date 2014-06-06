@@ -95,6 +95,7 @@ firmware_OBJS =							\
 	firmware.o						\
 	ch-common.o						\
 	ch-math.o						\
+	ch-mcdc04.o						\
 	ch-sram.o						\
 	ch-temp.o						\
 	usb_descriptors_firmware.o				\
@@ -104,6 +105,7 @@ firmware_OBJS =							\
 bootloader_OBJS =						\
 	bootloader.o						\
 	ch-common.o						\
+	ch-mcdc04.o						\
 	ch-sram.o						\
 	ch-temp.o						\
 	usb_descriptors_bootloader.o				\
@@ -123,6 +125,8 @@ ch-common.o: Makefile ch-common.h ch-common.c
 	$(CC) $(CFLAGS) ch-common.c
 ch-math.o: Makefile ch-math.h ch-math.c
 	$(CC) $(CFLAGS) ch-math.c
+ch-mcdc04.o: Makefile ch-mcdc04.h ch-mcdc04.c
+	$(CC) $(CFLAGS) ch-mcdc04.c
 ch-sram.o: Makefile ch-sram.h ch-sram.c
 	$(CC) $(CFLAGS) ch-sram.c
 ch-temp.o: Makefile ch-temp.h ch-temp.c

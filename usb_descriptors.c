@@ -127,9 +127,9 @@ sizeof(sd002),USB_DESCRIPTOR_STRING,
 #else
 
 /* Product string descriptor (unicode) */
-ROM struct{BYTE bLength;BYTE bDscType;WORD string[8];}sd002={
+ROM struct{BYTE bLength;BYTE bDscType;WORD string[9];}sd002={
 sizeof(sd002),USB_DESCRIPTOR_STRING,
-{'C','o','l','o','r','H','u','g'
+{'C','o','l','o','r','H','u','g','2'
 }};
 
 #endif

@@ -33,15 +33,9 @@
 #define int32_t		INT32
 
 /* device constants */
-#ifdef USE_OLD_VIDPID
- #define CH_USB_VID				0x04d8
- #define CH_USB_PID_BOOTLOADER			0xf8da
- #define CH_USB_PID_FIRMWARE			0xf8da
-#else
- #define CH_USB_VID				0x273f
- #define CH_USB_PID_BOOTLOADER			0x1000
- #define CH_USB_PID_FIRMWARE			0x1001
-#endif
+#define CH_USB_VID				0x273f
+#define CH_USB_PID_BOOTLOADER			0x1000
+#define CH_USB_PID_FIRMWARE			0x1004
 #define	CH_USB_CONFIG				0x0001
 #define	CH_USB_INTERFACE			0x0000
 #define	CH_USB_HID_EP				0x0001
