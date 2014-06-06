@@ -44,78 +44,6 @@
 #define	CH_USB_HID_EP_SIZE			64
 
 /**
- * CH_CMD_GET_COLOR_SELECT:
- *
- * Get the color select state.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][1:color_select]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_GET_COLOR_SELECT			0x01
-
-/**
- * CH_CMD_SET_COLOR_SELECT:
- *
- * Set the color select state.
- *
- * IN:  [1:cmd][1:color_select]
- * OUT: [1:retval][1:cmd]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_SET_COLOR_SELECT			0x02
-
-/**
- * CH_CMD_GET_MULTIPLIER:
- *
- * Gets the multiplier value.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][1:multiplier_value]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_GET_MULTIPLIER			0x03
-
-/**
- * CH_CMD_SET_MULTIPLIER:
- *
- * Sets the multiplier value.
- *
- * IN:  [1:cmd][1:multiplier_value]
- * OUT: [1:retval][1:cmd]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_SET_MULTIPLIER			0x04
-
-/**
- * CH_CMD_GET_INTEGRAL_TIME:
- *
- * Gets the integral time.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][2:integral_time]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_GET_INTEGRAL_TIME		0x05
-
-/**
- * CH_CMD_SET_INTEGRAL_TIME:
- *
- * Sets the integral time.
- *
- * IN:  [1:cmd][2:integral_time]
- * OUT: [1:retval][1:cmd]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_SET_INTEGRAL_TIME		0x06
-
-/**
  * CH_CMD_GET_FIRMWARE_VERSION:
  *
  * Gets the firmware version.
@@ -214,32 +142,6 @@
 #define	CH_CMD_SET_LEDS				0x0e
 
 /**
- * CH_CMD_GET_DARK_OFFSETS:
- *
- * Get the dark offsets.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][2:red][2:green][2:blue]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_GET_DARK_OFFSETS			0x0f
-
-/**
- * CH_CMD_SET_DARK_OFFSETS:
- *
- * Set the dark offsets for use when taking samples when the measure
- * mode is FREQUENCY. When the measure mode is DURATION these values
- * have no effect.
- *
- * IN:  [1:cmd][2:red][2:green][2:blue]
- * OUT: [1:retval][1:cmd]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_SET_DARK_OFFSETS			0x10
-
-/**
  * CH_CMD_GET_OWNER_NAME:
  *
  * Get User's Name
@@ -298,18 +200,6 @@
  * This command is only available in firmware mode.
  **/
 #define	CH_CMD_WRITE_EEPROM			0x20
-
-/**
- * CH_CMD_TAKE_READING_RAW:
- *
- * Take a raw reading.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][4:count]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_TAKE_READING_RAW			0x21
 
 /**
  * CH_CMD_TAKE_READINGS:
@@ -433,54 +323,6 @@
 #define	CH_CMD_SET_FLASH_SUCCESS		0x28
 
 /**
- * CH_CMD_GET_PRE_SCALE:
- *
- * Get the pre XYZ scaling constant. @scale is a packed float.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][4:scale]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_GET_PRE_SCALE			0x2c
-
-/**
- * CH_CMD_SET_PRE_SCALE:
- *
- * Set the pre XYZ scaling constant. @scale is a packed float.
- *
- * IN:  [1:cmd][4:scale]
- * OUT: [1:retval][1:cmd]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_SET_PRE_SCALE			0x2d
-
-/**
- * CH_CMD_GET_POST_SCALE:
- *
- * Get the post XYZ scaling constant. @scale is a packed float.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][4:scale]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_GET_POST_SCALE			0x2a
-
-/**
- * CH_CMD_SET_POST_SCALE:
- *
- * Set the post XYZ scaling constant. @scale is a packed float.
- *
- * IN:  [1:cmd][4:scale]
- * OUT: [1:retval][1:cmd]
- *
- * This command is only available in firmware mode.
- **/
-#define	CH_CMD_SET_POST_SCALE			0x2b
-
-/**
  * CH_CMD_GET_CALIBRATION_MAP:
  *
  * Get the mappings from default calibration type to calibration
@@ -532,26 +374,6 @@
  * This command is available in bootloader and firmware mode.
  **/
 #define	CH_CMD_GET_HARDWARE_VERSION		0x30
-
-/**
- * CH_CMD_TAKE_READING_ARRAY:
- *
- * Takes 30 raw samples and returns them in an array.
- *
- * This command can be used to find the optimum delay between patches
- * by showing a black sample area, then white, and then using this
- * command to find out how long the actual hardware delay is.
- *
- * It can also be used to find out how stable the device or output is
- * over a small amount of time, typically ~2.5 seconds for the maximum
- * integral time.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][30:reading_array]
- *
- * This command is available in firmware mode.
- **/
-#define	CH_CMD_TAKE_READING_ARRAY		0x31
 
 /**
  * CH_CMD_SET_PCB_ERRATA:
@@ -610,32 +432,6 @@
  * This command is available in firmware mode.
  **/
 #define	CH_CMD_GET_REMOTE_HASH			0x35
-
-/**
- * CH_CMD_SET_MEASURE_MODE:
- *
- * Sets the measurement mode. The mode can either be frequency or pulse
- * duration. The former is well tested, but the latter is much more
- * precise.
- *
- * IN:  [1:cmd][1:measure_mode]
- * OUT: [1:retval][1:cmd]
- *
- * This command is available in firmware mode.
- **/
-#define	CH_CMD_SET_MEASURE_MODE			0x36
-
-/**
- * CH_CMD_GET_MEASURE_MODE:
- *
- * Gets the measurement mode.
- *
- * IN:  [1:cmd]
- * OUT: [1:retval][1:cmd][1:measure_mode]
- *
- * This command is available in firmware mode.
- **/
-#define	CH_CMD_GET_MEASURE_MODE			0x37
 
 /**
  * CH_CMD_READ_SRAM:
@@ -704,18 +500,13 @@
 /* EEPROM address offsets
  *
  *    x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF
- * 0x [..serial.] [d-R] [d-G] [d-B] [pre-scale] [post
- * 1x scle] [.......calibration map...........] [err]
+ * 0x [..serial.] [..............unused..............
+ * 1x ....] [.......calibration map...........] [err]
  * 2x [............remote-hash.......................
  * 3x ..........] [..............unused.............]
  */
 #define	CH_EEPROM_ADDR_CONFIG			0xf000
 #define	CH_EEPROM_OFFSET_SERIAL			0x00 /* 4 bytes */
-#define	CH_EEPROM_OFFSET_DARK_OFFSET_RED	0x04 /* 2 bytes */
-#define	CH_EEPROM_OFFSET_DARK_OFFSET_GREEN	0x06 /* 2 bytes */
-#define	CH_EEPROM_OFFSET_DARK_OFFSET_BLUE	0x08 /* 2 bytes */
-#define	CH_EEPROM_OFFSET_PRE_SCALE		0x0a /* 4 bytes */
-#define	CH_EEPROM_OFFSET_POST_SCALE		0x0e /* 4 bytes */
 #define	CH_EEPROM_OFFSET_CALIBRATION_MAP	0x12 /* 12 bytes */
 #define	CH_EEPROM_OFFSET_PCB_ERRATA		0x1e /* 2 bytes */
 #define	CH_EEPROM_OFFSET_REMOTE_HASH		0x20 /* 20 bytes */

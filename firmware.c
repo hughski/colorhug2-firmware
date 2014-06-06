@@ -30,6 +30,7 @@
 #include "ch-common.h"
 #include "ch-sram.h"
 #include "ch-temp.h"
+#include "ch-mcdc04.h"
 
 #include <flash.h>
 #include <i2c.h>
@@ -117,13 +118,8 @@ static uint16_t		FirmwareVersion[3] = { 1, 2, 1 };
 #pragma udata
 
 static uint32_t		SensorSerial = 0x00000000;
-static uint16_t		DarkCalibration[3] = { 0x0000, 0x0000, 0x0000 };
 static uint16_t		CalibrationMap[6];
-static uint16_t		SensorIntegralTime = 0xffff;
-static CHugPackedFloat	PostScale;
-static CHugPackedFloat	PreScale;
 static uint16_t		PcbErrata = CH_PCB_ERRATA_NONE;
-static uint8_t		MeasureMode = CH_MEASURE_MODE_DURATION;
 static ChSha1		remote_hash;
 
 #pragma udata udata1
@@ -142,10 +138,6 @@ static uint8_t FlashBuffer[CH_FLASH_WRITE_BLOCK_SIZE];
 
 USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
-
-/* need to save this so we can power down in USB suspend and then power
- * back up in the same mode */
-static ChFreqScale	multiplier_old = CH_FREQ_SCALE_0;
 
 /* protect against a deactivated device changing its serial number */
 static uint8_t		flash_success = 0xff;
@@ -256,15 +248,6 @@ CHugReadEEprom(void)
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_SERIAL,
 		  sizeof(uint32_t),
 		  (uint8_t *) &SensorSerial);
-	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_DARK_OFFSET_RED,
-		  3 * sizeof(uint16_t),
-		  (uint8_t *) DarkCalibration);
-	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_PRE_SCALE,
-		  sizeof(CHugPackedFloat),
-		  (uint8_t *) &PreScale);
-	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_POST_SCALE,
-		  sizeof(CHugPackedFloat),
-		  (uint8_t *) &PostScale);
 	ReadFlash(CH_EEPROM_ADDR_CONFIG + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 		  6 * sizeof(uint16_t),
 		  (uint8_t *) &CalibrationMap);
@@ -288,20 +271,6 @@ CHugReadEEprom(void)
 		OwnerEmail[0] = '\0';
 	if (PcbErrata == 0xffff)
 		PcbErrata = CH_PCB_ERRATA_NONE;
-
-	/* fix up some PCBs we know about */
-	if (PcbErrata == CH_PCB_ERRATA_NONE) {
-		if (SensorSerial == 15 ||
-		    SensorSerial == 72 ||
-		    SensorSerial == 76 ||
-		    SensorSerial == 82 ||
-		    SensorSerial == 114 ||
-		    SensorSerial == 120 ||
-		    SensorSerial == 103 ||
-		    SensorSerial == 104) {
-			PcbErrata &= CH_PCB_ERRATA_SWAPPED_LEDS;
-		}
-	}
 }
 
 /**
@@ -319,15 +288,6 @@ CHugWriteEEprom(void)
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_SERIAL,
 	       (void *) &SensorSerial,
 	       sizeof(uint32_t));
-	memcpy(FlashBuffer + CH_EEPROM_OFFSET_DARK_OFFSET_RED,
-	       (void *) DarkCalibration,
-	       3 * sizeof(uint16_t));
-	memcpy(FlashBuffer + CH_EEPROM_OFFSET_PRE_SCALE,
-	       (void *) &PreScale,
-	       sizeof(CHugPackedFloat));
-	memcpy(FlashBuffer + CH_EEPROM_OFFSET_POST_SCALE,
-	       (void *) &PostScale,
-	       sizeof(CHugPackedFloat));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 	       (void *) &CalibrationMap,
 	       6 * sizeof(uint16_t));
@@ -367,421 +327,6 @@ CHugIsMagicUnicorn(const char *text)
 	    text[7] == '2')
 		return TRUE;
 	return FALSE;
-}
-
-/**
- * CHugScaleByIntegral:
- **/
-static void
-CHugScaleByIntegral (uint16_t *pulses, uint32_t actual_integral_time)
-{
-	uint32_t tmp;
-
-	/* no point, so optimize */
-	if (actual_integral_time == 0xffff)
-		return;
-
-	/* do this as integer math for speed */
-	tmp = (uint32_t) *pulses * 0xffff;
-	*pulses = tmp / actual_integral_time;
-}
-
-/**
- * CHugTakeReadingsFrequencyRaw:
- * @integral_time: The integral time of the sample
- * @last_rising_edge: (out): The last rising edge value, or 0
- * Return value: the number of detected edges for the sample
- *
- * The TAOS3200 sensor with the external IR filter and in the rubber
- * aperture gives the following rough outputs with red selected at 100%:
- *
- *   Frequency   |   Condition
- * --------------|-------------------
- *    10Hz       | Aperture covered
- *    160Hz      | TFT backlight on, but masked to black
- *    1.24KHz    | 100 white at 170cd/m2
- *
- * So when we sample for 100ms at ~160Hz we actually need to care about
- * starting and stopping the sample at the same point in the waveform,
- * otherwise we could be counting 15, 16 or 17 pulses.
- *
- * By triggering and stopping on the rising edge, we can improve the
- * accuracy by 12.5% for low light readings, at the slight expense of
- * making the calibration duration 6.25ms longer.
- **/
-static uint16_t
-CHugTakeReadingsFrequencyRaw (uint32_t integral_time, uint32_t *last_rising_edge)
-{
-	uint32_t i;
-	uint32_t last_rising_edge_tmp = 0;
-	uint16_t number_edges = 0;
-	uint8_t ra_tmp = PORTA;
-
-	/* clear watchdog */
-	ClrWdt();
-
-	/* wait for the output to change so we start on a new pulse
-	 * rising edge, which means more accurate black readings */
-	for (i = 0; i < integral_time; i++) {
-		if (ra_tmp != PORTA) {
-			/* ___      ____
-			 *    |____|    |___
-			 *
-			 *         ^- START HERE
-			 */
-			if (PORTAbits.RA5 == 1)
-				break;
-			ra_tmp = PORTA;
-		}
-	}
-
-	/* we got no change */
-	if (i == integral_time)
-		goto out;
-
-	/* count how many times we get a rising edge */
-	for (i = 0; i < integral_time; i++) {
-		if (ra_tmp != PORTA) {
-			if (PORTAbits.RA5 == 1) {
-				number_edges++;
-				/* _      ____
-				 *  |____|    |_
-				 *
-				 *       ^- SAVE LOOP COUNTER
-				 */
-				last_rising_edge_tmp = i;
-			}
-			ra_tmp = PORTA;
-		}
-	}
-
-	/* no second edge found */
-	if (last_rising_edge_tmp == 0)
-		goto out;
-
-	/* return last rising edge */
-	if (last_rising_edge != 0)
-		*last_rising_edge = last_rising_edge_tmp;
-out:
-	return number_edges;
-}
-
-/**
- * CHugWaitForPulse:
- *
- * Wait for the next rising pulse.
- *
- * Return value: the number of ticks spent waiting, where a tick is
- * the clock frequency / 32, or zero for no rising edge detected.
- **/
-static uint32_t
-CHugWaitForPulse (uint32_t integral_time)
-{
-	uint32_t i;
-	uint8_t ra_tmp = PORTA;
-
-	/* clear watchdog */
-	ClrWdt();
-
-	/* wait for rising or falling edge */
-	for (i = 0; i != integral_time; i++) {
-		/* __      ____
-		 *   |____|    |___
-		 *
-		 *   ^----^- START HERE
-		 */
-		if (ra_tmp != PORTA)
-			goto out;
-	}
-
-	/* we never got a pulse */
-	i = 0;
-out:
-	return i;
-}
-
-/**
- * CHugTakeReadingDuration:
- *
- * Take a reading from the sensor using the pulse width
- * where black ~= 10Hz and white ~= 1kHz
- **/
-static uint32_t
-CHugTakeReadingDuration (uint32_t integral_time)
-{
-	uint16_t i;
-	uint16_t repeat_max;
-	uint32_t sample_time = integral_time * 2;
-	uint32_t tmp;
-	uint32_t total = 0;
-	uint8_t rc = CH_ERROR_NONE;
-
-	/* wait for initial rising or falling edge */
-	tmp = CHugWaitForPulse(sample_time);
-	if (tmp == 0)
-		goto out;
-
-	/* if the duration is small, then get the average to better
-	 * predict the number of samples to repeat */
-	if (tmp < 1000) {
-		for (i = 0; i != 7; i++)
-			tmp += CHugWaitForPulse(sample_time);
-		tmp /= 8;
-	}
-
-	/* adapt the repeats to the inverse of the first reading, which
-	 * should give approximately a linear sample time for all
-	 * luminance levels */
-	repeat_max = integral_time / tmp;
-	if (repeat_max < 5)
-		repeat_max = 5;
-
-	/* wait for edges */
-	for (i = 0; i != repeat_max; i++) {
-
-		/* we've already got enough data, so shortcut the
-		 * repeat to avoid timing out */
-		if (total > sample_time)
-			break;
-
-		/* if we don't get a pulse then just assume maximum */
-		tmp = CHugWaitForPulse(sample_time);
-		if (tmp == 0)
-			break;
-
-		total += tmp;
-	}
-
-	/* if we only got one initial pulse and then nothing else then
-	 * return a very large reading */
-	if (i == 0) {
-		total = integral_time * 0xff;
-		goto out;
-	}
-
-	/* average out */
-	total /= i;
-out:
-	return total;
-}
-
-/**
- * CHugTakeReadingRaw:
- *
- * Take a reading from the sensor. For bright readings we use the
- * SensorIntegralTime taken from the user, but for dark readings we
- * multiply this by a constant to get a more accurate reading.
- **/
-static uint32_t
-CHugTakeReadingRaw (uint32_t integral_time)
-{
-	uint32_t val = 0;
-	if (MeasureMode == CH_MEASURE_MODE_FREQUENCY) {
-		val = CHugTakeReadingsFrequencyRaw(integral_time, 0);
-		goto out;
-	}
-	if (MeasureMode == CH_MEASURE_MODE_DURATION) {
-		val = CHugTakeReadingDuration(integral_time);
-		goto out;
-	}
-out:
-	return val;
-}
-
-/**
- * CHugTakeReadingFrequency:
- *
- * Take a reading from the sensor. For bright readings we use the
- * SensorIntegralTime taken from the user, but for dark readings we
- * multiply this by a constant to get a more accurate reading.
- **/
-static uint16_t
-CHugTakeReadingFrequency (void)
-{
-	const uint32_t edges_min = 10; /* this is a dim CRT screen */
-	uint16_t number_edges;
-	uint32_t integral;
-	uint32_t integral_max;
-	uint32_t last_rising_edge;
-
-	/* set the maximum permitted reading time
-	 * FIXME: make this configurable? */
-	integral_max = (uint32_t) SensorIntegralTime * 3;
-
-	/* get a 10% test reading */
-	integral = SensorIntegralTime / 10;
-	number_edges = CHugTakeReadingsFrequencyRaw(integral, 0);
-
-	/* if we got any reading, scale the integral time to get at
-	 * least the minimum number of edges */
-	if (number_edges == 0) {
-		/* perfect black, so try the hardest we can to get an
-		 * accurate reading */
-		integral = integral_max;
-	} else {
-		integral = (edges_min * (uint32_t) SensorIntegralTime) / (uint32_t) number_edges;
-
-		/* we're expected to read for this much time, so for
-		 * white light get the best precision available */
-		if (integral < SensorIntegralTime)
-			integral = SensorIntegralTime;
-
-		/* we can't go higher than this or we'll time out the
-		 * USB read */
-		else if (integral > integral_max)
-			integral = integral_max;
-	}
-
-	/* get the number of pulses with the new threshold */
-	number_edges = CHugTakeReadingsFrequencyRaw(integral,
-						    &last_rising_edge);
-	if (number_edges == 0)
-		goto out;
-
-	/* pre-multiply so 100% intensity is near 1.0 */
-	number_edges *= PreScale.offset;
-
-	/* scale by the integral time */
-	CHugScaleByIntegral(&number_edges, last_rising_edge);
-out:
-	return number_edges;
-}
-
-/**
- * CHugTakeReadingsFrequency:
- **/
-static uint8_t
-CHugTakeReadingsFrequency (CHugPackedFloat *red,
-			   CHugPackedFloat *green,
-			   CHugPackedFloat *blue)
-{
-	uint16_t reading;
-	uint8_t rc = CH_ERROR_NONE;
-
-	/* set to zero */
-	red->raw = 0;
-	green->raw = 0;
-	blue->raw = 0;
-
-	/* check the device is sane */
-	if (SensorSerial == 0xffffffff) {
-		rc = CH_ERROR_NO_SERIAL;
-		goto out;
-	}
-	if (DarkCalibration[CH_COLOR_OFFSET_RED] == 0xffff) {
-		rc = CH_ERROR_NO_CALIBRATION;
-		goto out;
-	}
-
-	/* do red */
-	CHugSetColorSelect(CH_COLOR_SELECT_RED);
-	reading = CHugTakeReadingFrequency();
-	if (reading > 0x7fff) {
-		rc = CH_ERROR_OVERFLOW_SENSOR;
-		goto out;
-	}
-	if (reading > DarkCalibration[CH_COLOR_OFFSET_RED])
-		red->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_RED];
-
-	/* do green */
-	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
-	reading = CHugTakeReadingFrequency();
-	if (reading > 0x7fff) {
-		rc = CH_ERROR_OVERFLOW_SENSOR;
-		goto out;
-	}
-	if (reading > DarkCalibration[CH_COLOR_OFFSET_GREEN])
-		green->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_GREEN];
-
-	/* do blue */
-	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
-	reading = CHugTakeReadingFrequency();
-	if (reading > 0x7fff) {
-		rc = CH_ERROR_OVERFLOW_SENSOR;
-		goto out;
-	}
-	if (reading > DarkCalibration[CH_COLOR_OFFSET_BLUE])
-		blue->fraction = reading - DarkCalibration[CH_COLOR_OFFSET_BLUE];
-out:
-	return rc;
-}
-
-/**
- * CHugTakeReadingsDuration:
- **/
-static uint8_t
-CHugTakeReadingsDuration (CHugPackedFloat *red,
-			  CHugPackedFloat *green,
-			  CHugPackedFloat *blue)
-{
-	uint32_t tmp;
-	uint8_t rc = CH_ERROR_NONE;
-
-	/* clear */
-	red->raw = 0;
-	green->raw = 0;
-	blue->raw = 0;
-
-	/* check the device is sane */
-	if (SensorSerial == 0xffffffff) {
-		rc = CH_ERROR_NO_SERIAL;
-		goto out;
-	}
-
-	/* do red */
-	CHugSetColorSelect(CH_COLOR_SELECT_RED);
-	tmp = CHugTakeReadingDuration (SensorIntegralTime);
-	if (tmp > 0)
-		red->raw = 0xffffffff / tmp;
-	red->raw /= 8;
-
-	/* do green */
-	CHugSetColorSelect(CH_COLOR_SELECT_GREEN);
-	tmp = CHugTakeReadingDuration (SensorIntegralTime);
-	if (tmp > 0)
-		green->raw = 0xffffffff / tmp;
-	green->raw /= 8;
-
-	/* do blue */
-	CHugSetColorSelect(CH_COLOR_SELECT_BLUE);
-	tmp = CHugTakeReadingDuration (SensorIntegralTime);
-	if (tmp > 0)
-		blue->raw = 0xffffffff / tmp;
-	blue->raw /= 8;
-out:
-	return rc;
-}
-
-/**
- * CHugTakeReadings:
- **/
-static uint8_t
-CHugTakeReadings (CHugPackedFloat *red,
-		  CHugPackedFloat *green,
-		  CHugPackedFloat *blue)
-{
-	uint8_t rc = CH_ERROR_INVALID_VALUE;
-	if (MeasureMode == CH_MEASURE_MODE_FREQUENCY) {
-		rc = CHugTakeReadingsFrequency(red, green, blue);
-		if (rc != CH_ERROR_NONE)
-			goto out;
-		rc = CHugPackedFloatMultiply(red, &PostScale, red);
-		if (rc != CH_ERROR_NONE)
-			goto out;
-		rc = CHugPackedFloatMultiply(green, &PostScale, green);
-		if (rc != CH_ERROR_NONE)
-			goto out;
-		rc = CHugPackedFloatMultiply(blue, &PostScale, blue);
-		if (rc != CH_ERROR_NONE)
-			goto out;
-		goto out;
-	}
-	if (MeasureMode == CH_MEASURE_MODE_DURATION) {
-		rc = CHugTakeReadingsDuration(red, green, blue);
-		goto out;
-	}
-out:
-	return rc;
 }
 
 /**
@@ -914,9 +459,9 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 	uint8_t rc;
 
 	/* get integer readings */
-	rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
-			      &readings[CH_COLOR_OFFSET_GREEN],
-			      &readings[CH_COLOR_OFFSET_BLUE]);
+	rc = CHugMcdc04TakeReadings(&readings[CH_COLOR_OFFSET_RED],
+				    &readings[CH_COLOR_OFFSET_GREEN],
+				    &readings[CH_COLOR_OFFSET_BLUE]);
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
@@ -1081,42 +626,6 @@ CHugSetCalibrationMatrix(uint16_t calibration_index,
 }
 
 /**
- * CHugTakeReadingArray:
- **/
-static uint8_t
-CHugTakeReadingArray(uint8_t *data)
-{
-	uint32_t i;
-	uint32_t integral_time = SensorIntegralTime;
-	uint8_t idx;
-	uint8_t rc;
-	uint32_t chunk;
-	uint8_t ra_tmp = PORTA;
-
-	/* set all buckets to zero */
-	memset(data, 0x00, 30);
-
-	/* do a long integral time to pick up multiple refreshes */
-	integral_time *= 10;
-	chunk = integral_time / 30;
-	for (i = 0; i < integral_time; i++) {
-		if (ra_tmp == PORTA)
-			continue;
-		if (PORTAbits.RA5 != 1)
-			continue;
-		idx = i / chunk;
-		if (data[idx] < 0xff)
-			data[idx]++;
-		ra_tmp = PORTA;
-	}
-
-	/* success */
-	rc = CH_ERROR_NONE;
-out:
-	return rc;
-}
-
-/**
  * ChSha1Valid:
  *
  * A hash is only valid when it is first set. It is invalid when all
@@ -1187,12 +696,6 @@ ProcessIO(void)
 	case CH_CMD_GET_HARDWARE_VERSION:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = PORTB & 0x0f;
 		break;
-	case CH_CMD_GET_COLOR_SELECT:
-		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetColorSelect();
-		break;
-	case CH_CMD_SET_COLOR_SELECT:
-		CHugSetColorSelect(RxBuffer[CH_BUFFER_INPUT_DATA]);
-		break;
 	case CH_CMD_GET_LEDS:
 		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetLEDs();
 		break;
@@ -1212,16 +715,6 @@ ProcessIO(void)
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(uint16_t));
 		break;
-	case CH_CMD_GET_MEASURE_MODE:
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(void *) &MeasureMode,
-			sizeof(uint8_t));
-		break;
-	case CH_CMD_SET_MEASURE_MODE:
-		memcpy (&MeasureMode,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			sizeof(uint8_t));
-		break;
 	case CH_CMD_GET_REMOTE_HASH:
 
 		/* check is valid */
@@ -1236,22 +729,6 @@ ProcessIO(void)
 		memcpy (&remote_hash,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			sizeof(ChSha1));
-		break;
-	case CH_CMD_GET_MULTIPLIER:
-		TxBuffer[CH_BUFFER_OUTPUT_DATA] = CHugGetMultiplier();
-		break;
-	case CH_CMD_SET_MULTIPLIER:
-		CHugSetMultiplier(RxBuffer[CH_BUFFER_INPUT_DATA]);
-		break;
-	case CH_CMD_GET_INTEGRAL_TIME:
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(void *) &SensorIntegralTime,
-			2);
-		break;
-	case CH_CMD_SET_INTEGRAL_TIME:
-		memcpy (&SensorIntegralTime,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			2);
 		break;
 	case CH_CMD_GET_FIRMWARE_VERSION:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
@@ -1288,36 +765,6 @@ ProcessIO(void)
 					 RxBuffer[CH_BUFFER_INPUT_DATA + 2 + 0x24],
 					 &RxBuffer[CH_BUFFER_INPUT_DATA + 3 + 0x24]);
 		break;
-	case CH_CMD_GET_POST_SCALE:
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) &PostScale,
-			sizeof(CHugPackedFloat));
-		break;
-	case CH_CMD_SET_POST_SCALE:
-		memcpy ((void *) &PostScale,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			sizeof(CHugPackedFloat));
-		break;
-	case CH_CMD_GET_PRE_SCALE:
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) &PreScale,
-			sizeof(CHugPackedFloat));
-		break;
-	case CH_CMD_SET_PRE_SCALE:
-		memcpy ((void *) &PreScale,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			sizeof(CHugPackedFloat));
-		break;
-	case CH_CMD_GET_DARK_OFFSETS:
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			&DarkCalibration,
-			3 * sizeof(uint16_t));
-		break;
-	case CH_CMD_SET_DARK_OFFSETS:
-		memcpy ((void *) &DarkCalibration,
-			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
-			3 * sizeof(uint16_t));
-		break;
 	case CH_CMD_GET_CALIBRATION_MAP:
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			&CalibrationMap,
@@ -1346,19 +793,12 @@ ProcessIO(void)
 			rc = CH_ERROR_WRONG_UNLOCK_CODE;
 		}
 		break;
-	case CH_CMD_TAKE_READING_RAW:
-		/* take a single reading */
-		reading = CHugTakeReadingRaw(SensorIntegralTime);
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			(const void *) &reading,
-			sizeof(uint32_t));
-		break;
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings without using the factory
 		 * calibration matrix but using post scaling */
-		rc = CHugTakeReadings(&readings[CH_COLOR_OFFSET_RED],
-				      &readings[CH_COLOR_OFFSET_GREEN],
-				      &readings[CH_COLOR_OFFSET_BLUE]);
+		rc = CHugMcdc04TakeReadings(&readings[CH_COLOR_OFFSET_RED],
+					    &readings[CH_COLOR_OFFSET_GREEN],
+					    &readings[CH_COLOR_OFFSET_BLUE]);
 		if (rc != CH_ERROR_NONE)
 			break;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
@@ -1459,9 +899,6 @@ ProcessIO(void)
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA],
 			CH_OWNER_LENGTH_MAX);
 		break;
-	case CH_CMD_TAKE_READING_ARRAY:
-		rc = CHugTakeReadingArray(&TxBuffer[CH_BUFFER_OUTPUT_DATA]);
-		break;
 	case CH_CMD_GET_TEMPERATURE:
 		rc = CHugTempGetAmbient(&temp);
 		if (rc != CH_ERROR_NONE)
@@ -1502,8 +939,6 @@ UserInit(void)
 	/* set some defaults to power down the sensor */
 	CHugSetLEDs(CH_STATUS_LED_RED | CH_STATUS_LED_GREEN,
 		    0, 0x00, 0x00);
-	CHugSetColorSelect(CH_COLOR_SELECT_WHITE);
-	CHugSetMultiplier(CH_FREQ_SCALE_0);
 
 	/* read out the sensor data from EEPROM */
 	CHugReadEEprom();
@@ -1628,10 +1063,6 @@ InitializeSystem(void)
 void
 USBCBSuspend(void)
 {
-	/* need to reduce power to < 2.5mA, so power down sensor */
-	multiplier_old = CHugGetMultiplier();
-	CHugSetMultiplier(CH_FREQ_SCALE_0);
-
 	/* power down LEDs */
 	CHugSetLEDs(0, 0, 0x00, 0x00);
 }
@@ -1650,8 +1081,6 @@ USBCBSuspend(void)
 static void
 USBCBWakeFromSuspend(void)
 {
-	/* restore full power mode */
-	CHugSetMultiplier(multiplier_old);
 }
 
 /**

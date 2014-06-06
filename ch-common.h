@@ -24,10 +24,6 @@
 
 #include "ColorHug.h"
 
-ChColorSelect	 CHugGetColorSelect	(void);
-void		 CHugSetColorSelect	(ChColorSelect	 color_select);
-ChFreqScale	 CHugGetMultiplier	(void);
-void		 CHugSetMultiplier	(ChFreqScale	 multiplier);
 void		 CHugFatalError		(ChError	 error);
 uint8_t		 CHugSelfTest		(void);
 
