@@ -1013,7 +1013,7 @@ InitializeSystem(void)
 	SSP2STATbits.CKE = 1;		/* enable SMBus-specific inputs */
 	SSP2STATbits.SMP = 0;		/* enable slew rate for HS mode */
 	SSP2CON1bits.SSPEN = 1;		/* enables the serial port */
-	SSP2CON1bits.SSPM = 0x0;	/* SPI mastter mode, clk = Fosc / 4 */
+	SSP2CON1bits.SSPM = 0x0;	/* SPI master mode, clk = Fosc / 4 */
 
 	/* set up the DMA controller */
 	DMACON1bits.SSCON0 = 0;		/* SSDMA (_CS) is not DMA controlled */
