@@ -122,15 +122,12 @@ CHugSelfTestSensor(void)
 		return rc;
 
 	/* are all the results invalid? */
-	if (xyz[CH_COLOR_OFFSET_RED].offset < 0x00ff) {
+	if (xyz[CH_COLOR_OFFSET_RED].offset < 0x20)
 		return CH_ERROR_SELF_TEST_RED;
-	}
-	if (xyz[CH_COLOR_OFFSET_GREEN].offset < 0x00ff) {
+	if (xyz[CH_COLOR_OFFSET_GREEN].offset < 0x20)
 		return CH_ERROR_SELF_TEST_GREEN;
-	}
-	if (xyz[CH_COLOR_OFFSET_BLUE].offset < 0x00ff) {
+	if (xyz[CH_COLOR_OFFSET_BLUE].offset < 0x20)
 		return CH_ERROR_SELF_TEST_BLUE;
-	}
 	return CH_ERROR_NONE;
 }
 
