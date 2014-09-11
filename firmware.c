@@ -463,30 +463,30 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 				    &readings[CH_COLOR_OFFSET_GREEN],
 				    &readings[CH_COLOR_OFFSET_BLUE]);
 	if (rc != CH_ERROR_NONE)
-		goto out;
+		return rc;
 
 	/* convert to xyz using the factory calibration */
 	rc = CHugSwitchCalibrationMatrix(CH_CALIBRATION_INDEX_FACTORY_ONLY,
 					 calibration);
 	if (rc != CH_ERROR_NONE)
-		goto out;
+		return rc;
 	rc = CHugCalibrationMultiply(calibration,
 				     readings,
 				     readings_tmp);
 	if (rc != CH_ERROR_NONE)
-		goto out;
+		return rc;
 
 	/* use the specified correction matrix */
 	if (calibration_index != CH_CALIBRATION_INDEX_FACTORY_ONLY) {
 		rc = CHugSwitchCalibrationMatrix(calibration_index,
 						 calibration);
 		if (rc != CH_ERROR_NONE)
-			goto out;
+			return rc;
 		rc = CHugCalibrationMultiply(calibration,
 					     readings_tmp,
 					     readings);
 		if (rc != CH_ERROR_NONE)
-			goto out;
+			return rc;
 	} else {
 		memcpy(readings,
 		       (void *) readings_tmp,
@@ -497,8 +497,7 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 	*x = readings[0];
 	*y = readings[1];
 	*z = readings[2];
-out:
-	return rc;
+	return CH_ERROR_NONE;
 }
 
 /**

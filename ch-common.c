@@ -56,7 +56,6 @@ CHugFatalError (ChError error)
 static uint8_t
 CHugSelfTestSram(void)
 {
-	uint8_t rc;
 	uint8_t sram_dma[4];
 	uint8_t sram_tmp;
 
@@ -66,15 +65,11 @@ CHugSelfTestSram(void)
 	CHugSramWriteByte(0x0002, 0xbe);
 	CHugSramWriteByte(0x0003, 0xef);
 	sram_tmp = CHugSramReadByte(0x0000);
-	if (sram_tmp != 0xde) {
-		rc = CH_ERROR_SRAM_FAILED;
-		goto out;
-	}
+	if (sram_tmp != 0xde)
+		return CH_ERROR_SRAM_FAILED;
 	sram_tmp = CHugSramReadByte(0x0001);
-	if (sram_tmp != 0xad) {
-		rc = CH_ERROR_SRAM_FAILED;
-		goto out;
-	}
+	if (sram_tmp != 0xad)
+		return CH_ERROR_SRAM_FAILED;
 
 	/* test DMA to and from SRAM */
 	sram_dma[0] = 0xde;
@@ -93,15 +88,11 @@ CHugSelfTestSram(void)
 	if (sram_dma[0] != 0xde &&
 	    sram_dma[1] != 0xad &&
 	    sram_dma[2] != 0xbe &&
-	    sram_dma[3] != 0xef) {
-		rc = CH_ERROR_SRAM_FAILED;
-		goto out;
-	}
+	    sram_dma[3] != 0xef)
+		return CH_ERROR_SRAM_FAILED;
 
 	/* success */
-	rc = CH_ERROR_NONE;
-out:
-	return rc;
+	return CH_ERROR_NONE;
 }
 
 /**
@@ -150,38 +141,25 @@ static uint8_t
 CHugSelfTestI2C(void)
 {
 	uint8_t i = 0x00;
-	uint8_t rc;
 
 	/* test the i2c bus */
 	SSP1CON2bits.SEN = 1;
 	while (SSP1CON2bits.SEN) {
-		if (++i == 0) {
-			rc = CH_ERROR_SELF_TEST_I2C;
-			goto out;
-		}
+		if (++i == 0)
+			return CH_ERROR_SELF_TEST_ADC_VDD;
 	}
 	PIR1bits.SSP1IF = 0;
 	SSP1BUF = 0x00;
 	while (!PIR1bits.SSP1IF) {
-		if (++i == 0) {
-			rc = CH_ERROR_SELF_TEST_I2C;
-			goto out;
-		}
+		if (++i == 0)
+			return CH_ERROR_SELF_TEST_ADC_VREF;
 	}
 	SSP1CON2bits.PEN = 1;
 	while (SSP1CON2bits.PEN) {
-		if (++i == 0) {
-			rc = CH_ERROR_SELF_TEST_I2C;
-			goto out;
-		}
+		if (++i == 0)
+			return CH_ERROR_SELF_TEST_ADC_VSS;
 	}
-	rc = CH_ERROR_NONE;
-	goto out;
-
-	/* success */
-	rc = CH_ERROR_NONE;
-out:
-	return rc;
+	return CH_ERROR_NONE;
 }
 
 /**
