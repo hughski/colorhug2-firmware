@@ -142,6 +142,9 @@ USB_HANDLE	USBInHandle = 0;
 /* protect against a deactivated device changing its serial number */
 static uint8_t		flash_success = 0xff;
 
+/* sensor context */
+CHugMcdc04Context ctx;
+
 #pragma code
 
 /**
@@ -459,6 +462,9 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 	uint8_t rc;
 
 	/* get integer readings */
+	rc = CHugMcdc04WriteConfig(&ctx);
+	if (rc != CH_ERROR_NONE)
+		return rc;
 	rc = CHugMcdc04TakeReadings(&readings[CH_COLOR_OFFSET_RED],
 				    &readings[CH_COLOR_OFFSET_GREEN],
 				    &readings[CH_COLOR_OFFSET_BLUE]);
@@ -795,6 +801,9 @@ ProcessIO(void)
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings without using the factory
 		 * calibration matrix but using post scaling */
+		rc = CHugMcdc04WriteConfig(&ctx);
+		if (rc != CH_ERROR_NONE)
+			break;
 		rc = CHugMcdc04TakeReadings(&readings[CH_COLOR_OFFSET_RED],
 					    &readings[CH_COLOR_OFFSET_GREEN],
 					    &readings[CH_COLOR_OFFSET_BLUE]);
@@ -971,12 +980,15 @@ InitializeSystem(void)
 	ANCON0 = 0xFF;
 	ANCON1 = 0xFF;
 
-	/* set RA0, RA1 to output (freq scaling),
-	 * set RA2, RA3 to output (color select),
+	/* set RA0 to input (READY)
+	 * set RA1 to input (unused)
+	 * set RA2 to input (unused)
+	 * set RA3 to input (unused)
+	 * set RA4 to input (missing)
 	 * set RA5 to input (frequency counter),
 	 * (RA6 is "don't care" in OSC2 mode)
 	 * set RA7 to input (OSC1, HSPLL in) */
-	TRISA = 0xf0;
+	TRISA = 0b11111111;
 
 	/* set RB0 to input (h/w revision),
 	 * set RB1 to input (h/w revision),
@@ -1033,7 +1045,7 @@ InitializeSystem(void)
 	CHugSramWipe(0x0000, 0xffff);
 #endif
 
-	/* setup the I2C controller */
+	/* set up the I2C controller */
 	SSP1ADD = 0x3e;
 	OpenI2C1(MASTER, SLEW_ON);
 
@@ -1041,6 +1053,12 @@ InitializeSystem(void)
 	/* set up TCN75A */
 	CHugTempSetResolution(CH_TEMP_RESOLUTION_1_16C);
 #endif
+
+	/* set up MCDC04 */
+	CHugMcdc04Init (&ctx);
+	CHugMcdc04SetTINT(&ctx, CH_MCDC04_TINT_512);
+	CHugMcdc04SetIREF(&ctx, CH_MCDC04_IREF_20);
+	CHugMcdc04SetDIV(&ctx, CH_MCDC04_DIV_DISABLE);
 
 	/* The USB module will be enabled if the bootloader has booted,
 	 * so we soft-detach from the host. */

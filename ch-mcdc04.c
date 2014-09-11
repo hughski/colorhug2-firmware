@@ -25,7 +25,8 @@
 
 #include "ch-mcdc04.h"
 
-#define MCDC04_SLAVE_ADDRESS		0b11101000
+#define MCDC04_SLAVE_ADDRESS_READ		0b11101001
+#define MCDC04_SLAVE_ADDRESS_WRITE		0b11101000
 
 typedef enum {
 	MCDC04_ADDR_OSR			= 0x00,	/* wo */
@@ -43,7 +44,7 @@ typedef enum {
 void
 CHugMcdc04Init (CHugMcdc04Context *ctx)
 {
-	ctx->tint = CH_MCDC04_TINT_64;
+	ctx->tint = CH_MCDC04_TINT_512;
 	ctx->iref = CH_MCDC04_IREF_20;
 	ctx->div = CH_MCDC04_DIV_DISABLE;
 }
@@ -88,7 +89,7 @@ CHugMcdc04WriteConfig (CHugMcdc04Context *ctx)
 	StartI2C1();
 
 	/* send slave address */
-	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
+	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS_WRITE);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
@@ -102,16 +103,17 @@ CHugMcdc04WriteConfig (CHugMcdc04Context *ctx)
 	}
 
 	/* go to configuration mode */
-	WriteI2C1(0b00000010);
+	rc = WriteI2C1(0b00000010);
+	if (rc != 0x00) {
+		rc = CH_ERROR_I2C_SLAVE_CONFIG;
+		goto out;
+	}
 
-	/* stop */
-	StopI2C1();
-
-	/* start */
-	StartI2C1();
+	/* restart */
+	RestartI2C1();
 
 	/* send slave address */
-	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
+	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS_WRITE);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
@@ -148,10 +150,8 @@ CHugMcdc04WriteConfig (CHugMcdc04Context *ctx)
 
 	/* send EDGES */
 	WriteI2C1(0x01); 		/* EDGES:	Only valid in SYND mode */
-
-	/* stop */
-	StopI2C1();
 out:
+	StopI2C1();
 	return rc;
 }
 
@@ -169,11 +169,15 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	uint8_t tmp_msb = 2;
 	uint32_t i;
 
+	/* ensure the READY pin is high */
+	if (PORTAbits.RA0 == 0)
+		return CH_ERROR_OVERFLOW_SENSOR;
+
 	/* start */
 	StartI2C1();
 
 	/* send slave address */
-	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
+	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS_WRITE);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
@@ -197,12 +201,11 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	StopI2C1();
 
 	/* wait for READY pin */
-	for (i = 0; i != 0xffffffff; i++) {
-		if (PORTAbits.RA2)
+	for (i = 0x80000; i > 0; i--) {
+		if (PORTAbits.RA0 && 0)
 			break;
-		Nop();
 	}
-	if (i == 0xffffffff) {
+	if (i == 0x0) {
 		rc = CH_ERROR_OVERFLOW_SENSOR;
 		goto out;
 	}
@@ -211,7 +214,7 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	StartI2C1();
 
 	/* send slave address */
-	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
+	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS_WRITE);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
@@ -228,7 +231,7 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	RestartI2C1();
 
 	/* send slave address */
-	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
+	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS_READ);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
@@ -248,8 +251,7 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	z->offset = ReadI2C1();
 	NotAckI2C1();
 
-	/* stop */
-	StopI2C1();
 out:
+	StopI2C1();
 	return rc;
 }
