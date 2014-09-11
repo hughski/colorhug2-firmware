@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011-2013 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2014 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -43,11 +43,11 @@
 /* configuration */
 #pragma config XINST	= OFF		/* turn off extended instruction set */
 #pragma config STVREN	= ON		/* Stack overflow reset */
-#pragma config PLLDIV	= 3		/* (12 MHz crystal used on this board) */
+#pragma config PLLDIV	= 6		/* (24 MHz crystal used on this board) */
 #pragma config WDTEN	= ON		/* Watch Dog Timer (WDT) */
 #pragma config CP0	= OFF		/* Code protect */
 #pragma config OSC	= HSPLL		/* HS oscillator, PLL enabled, HSPLL used by USB */
-#pragma config CPUDIV	= OSC1		/* OSC1 = divide by 1 mode */
+#pragma config CPUDIV	= OSC2_PLL2	/* OSC1 = divide by 2 mode */
 #pragma config IESO	= OFF		/* Internal External (clock) Switchover */
 #pragma config FCMEN	= ON		/* Fail Safe Clock Monitor */
 #pragma config T1DIG	= ON		/* secondary clock Source */
@@ -113,7 +113,7 @@ void CHugLowPriorityISRPlaceholder (void)
 }
 
 /* ensure this is incremented on each released build */
-static uint16_t		FirmwareVersion[3] = { 1, 2, 1 };
+static uint16_t		FirmwareVersion[3] = { 2, 0, 0 };
 
 #pragma udata
 
@@ -953,7 +953,7 @@ InitializeSystem(void)
 #if defined(__18F46J50)
 	/* Enable the PLL and wait 2+ms until the PLL locks
 	 * before enabling USB module */
-	unsigned int pll_startup_counter = 600;
+	uint16_t pll_startup_counter = 1200;
 	OSCTUNEbits.PLLEN = 1;
 	while (pll_startup_counter--);
 

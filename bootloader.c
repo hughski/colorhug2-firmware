@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011-2013 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2014 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -39,11 +39,11 @@
 /* configuration */
 #pragma config XINST	= OFF		/* turn off extended instruction set */
 #pragma config STVREN	= ON		/* Stack overflow reset */
-#pragma config PLLDIV	= 3		/* (12 MHz crystal used on this board) */
+#pragma config PLLDIV	= 6		/* (24 MHz crystal used on this board) */
 #pragma config WDTEN	= ON		/* Watch Dog Timer (WDT) */
 #pragma config CP0	= OFF		/* Code protect */
 #pragma config OSC	= HSPLL		/* HS oscillator, PLL enabled, HSPLL used by USB */
-#pragma config CPUDIV	= OSC1		/* OSC1 = divide by 1 mode */
+#pragma config CPUDIV	= OSC2_PLL2	/* OSC1 = divide by 2 mode */
 #pragma config IESO	= OFF		/* Internal External (clock) Switchover */
 #pragma config FCMEN	= ON		/* Fail Safe Clock Monitor */
 #pragma config T1DIG	= ON		/* secondary clock Source */
@@ -95,7 +95,7 @@ USB_HANDLE	USBOutHandle = 0;
 USB_HANDLE	USBInHandle = 0;
 
 /* flash the LEDs when in bootloader mode */
-#define	BOOTLOADER_FLASH_INTERVAL	0x2fff
+#define	BOOTLOADER_FLASH_INTERVAL	0x1fff
 static uint16_t led_counter = 0x0;
 
 /* protect against having a bad flash */

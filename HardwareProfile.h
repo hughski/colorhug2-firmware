@@ -27,6 +27,6 @@
 #define tris_self_power		TRISCbits.TRISC2    // Input
 #define tris_usb_bus_sense	TRISCbits.TRISC2    // Input
 #define USB_BUS_SENSE		1
-#define CLOCK_FREQ		48000000
+#define CLOCK_FREQ		24000000
 
 #endif
