@@ -202,7 +202,7 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 
 	/* wait for READY pin */
 	for (i = 0x80000; i > 0; i--) {
-		if (PORTAbits.RA0 && 0)
+		if (PORTAbits.RA0)
 			break;
 	}
 	if (i == 0x0) {
