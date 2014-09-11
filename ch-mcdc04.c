@@ -90,12 +90,16 @@ CHugMcdc04WriteConfig (CHugMcdc04Context *ctx)
 	/* send slave address */
 	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
 	}
 
 	/* send address pointer */
-	WriteI2C1(MCDC04_ADDR_OSR);
+	rc = WriteI2C1(MCDC04_ADDR_OSR);
+	if (rc != 0x00) {
+		rc = CH_ERROR_I2C_SLAVE_CONFIG;
+		goto out;
+	}
 
 	/* go to configuration mode */
 	WriteI2C1(0b00000010);
@@ -109,14 +113,14 @@ CHugMcdc04WriteConfig (CHugMcdc04Context *ctx)
 	/* send slave address */
 	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
 	}
 
 	/* set address pointer */
 	rc = WriteI2C1(MCDC04_ADDR_CREGL);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_CONFIG;
 		goto out;
 	}
 
@@ -171,15 +175,23 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	/* send slave address */
 	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
 	}
 
 	/* send address pointer */
-	WriteI2C1(MCDC04_ADDR_OSR);
+	rc = WriteI2C1(MCDC04_ADDR_OSR);
+	if (rc != 0x00) {
+		rc = CH_ERROR_I2C_SLAVE_CONFIG;
+		goto out;
+	}
 
 	/* start measurement */
-	WriteI2C1(0b10000011);
+	rc = WriteI2C1(0b10000011);
+	if (rc != 0x00) {
+		rc = CH_ERROR_I2C_SLAVE_CONFIG;
+		goto out;
+	}
 
 	/* stop */
 	StopI2C1();
@@ -201,12 +213,16 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	/* send slave address */
 	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
 	}
 
 	/* send address pointer */
-	WriteI2C1(MCDC04_ADDR_OSR);
+	rc = WriteI2C1(MCDC04_ADDR_OSR);
+	if (rc != 0x00) {
+		rc = CH_ERROR_I2C_SLAVE_CONFIG;
+		goto out;
+	}
 
 	/* reset the bus */
 	RestartI2C1();
@@ -214,7 +230,7 @@ CHugMcdc04TakeReadings (CHugPackedFloat *x,
 	/* send slave address */
 	rc = WriteI2C1(MCDC04_SLAVE_ADDRESS);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
 	}
 

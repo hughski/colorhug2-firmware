@@ -40,14 +40,14 @@ CHugTempSetResolution (ChTempResolution resolution)
 	/* send slave address (write) */
 	rc = WriteI2C1(0b10010000);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
 	}
 
 	/* set config pointer */
 	rc = WriteI2C1(0b00000001);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_CONFIG;
 		goto out;
 	}
 
@@ -79,7 +79,7 @@ CHugTempGetAmbient (CHugPackedFloat *result)
 	/* send slave address (write) */
 	rc = WriteI2C1(0b10010000);
 	if (rc != 0x00) {
-		rc = CH_ERROR_INCOMPLETE_REQUEST;
+		rc = CH_ERROR_I2C_SLAVE_ADDRESS;
 		goto out;
 	}
 
