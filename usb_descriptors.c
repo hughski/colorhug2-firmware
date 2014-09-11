@@ -119,9 +119,9 @@ sizeof(sd001),USB_DESCRIPTOR_STRING,
 #ifdef COLORHUG_BOOTLOADER
 
 /* Product string descriptor (unicode) */
-ROM struct{BYTE bLength;BYTE bDscType;WORD string[21];}sd002={
+ROM struct{BYTE bLength;BYTE bDscType;WORD string[22];}sd002={
 sizeof(sd002),USB_DESCRIPTOR_STRING,
-{'C','o','l','o','r','H','u','g',' ','(','b','o','o','t','l','o','a','d','e','r',')'
+{'C','o','l','o','r','H','u','g','2',' ','(','b','o','o','t','l','o','a','d','e','r',')'
 }};
 
 #else
