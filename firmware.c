@@ -950,8 +950,7 @@ UserInit(void)
 static void
 InitializeSystem(void)
 {
-#if defined(__18F46J50)
-	/* Enable the PLL and wait 2+ms until the PLL locks
+	/* enable the PLL and wait 2+ms until the PLL locks
 	 * before enabling USB module */
 	uint16_t pll_startup_counter = 1200;
 	OSCTUNEbits.PLLEN = 1;
@@ -960,10 +959,6 @@ InitializeSystem(void)
 	/* default all pins to digital */
 	ANCON0 = 0xFF;
 	ANCON1 = 0xFF;
-#elif defined(__18F4550)
-	/* default all pins to digital */
-	ADCON1 = 0x0F;
-#endif
 
 	/* set RA0, RA1 to output (freq scaling),
 	 * set RA2, RA3 to output (color select),
