@@ -126,6 +126,9 @@ static ChSha1		remote_hash;
 static uint8_t OwnerName[CH_OWNER_LENGTH_MAX];
 static uint8_t OwnerEmail[CH_OWNER_LENGTH_MAX];
 
+/* this is used to map the firmware to a hardware version */
+static const char flash_id[] = CH_FIRMWARE_ID_TOKEN;
+
 #pragma udata
 /* USB idle support */
 static uint8_t		idle_command = 0x00;
