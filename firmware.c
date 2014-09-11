@@ -831,6 +831,7 @@ ProcessIO(void)
 			3 * sizeof(CHugPackedFloat));
 		break;
 	case CH_CMD_READ_SRAM:
+#if defined(__HAVE_SRAM)
 		/* allow to read any SRAM address as only 64k is
 		 * adressable by a uint16 */
 		memcpy (&address,
@@ -845,8 +846,12 @@ ProcessIO(void)
 				 &TxBuffer[CH_BUFFER_OUTPUT_DATA],
 				 length);
 		CHugSramDmaWait();
+#else
+		rc = CH_ERROR_NOT_IMPLEMENTED;
+#endif
 		break;
 	case CH_CMD_WRITE_SRAM:
+#if defined(__HAVE_SRAM)
 		/* allow to write any SRAM address as only 64k is
 		 * adressable by a uint16 */
 		memcpy (&address,
@@ -861,6 +866,9 @@ ProcessIO(void)
 				   address,
 				   length);
 		CHugSramDmaWait();
+#else
+		rc = CH_ERROR_NOT_IMPLEMENTED;
+#endif
 		break;
 	case CH_CMD_RESET:
 		/* only reset when USB stack is not busy */
@@ -899,12 +907,16 @@ ProcessIO(void)
 			CH_OWNER_LENGTH_MAX);
 		break;
 	case CH_CMD_GET_TEMPERATURE:
+#if defined(__HAVE_TEMP_SENSOR)
 		rc = CHugTempGetAmbient(&temp);
 		if (rc != CH_ERROR_NONE)
 			goto out;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) &temp,
 			sizeof(CHugPackedFloat));
+#else
+		rc = CH_ERROR_NOT_IMPLEMENTED;
+#endif
 		break;
 	case CH_CMD_SELF_TEST:
 		rc = CHugSelfTest();
@@ -1016,13 +1028,19 @@ InitializeSystem(void)
 	DMACON2bits.INTLVL = 0x0;	/* interrupt only when complete */
 	DMACON2bits.DLYCYC = 0x02;	/* minimum delay between bytes */
 
+#if defined(__HAVE_SRAM)
 	/* clear base SRAM memory */
 	CHugSramWipe(0x0000, 0xffff);
+#endif
 
 	/* setup the I2C controller */
 	SSP1ADD = 0x3e;
 	OpenI2C1(MASTER, SLEW_ON);
+
+#if defined(__HAVE_TEMP_SENSOR)
+	/* set up TCN75A */
 	CHugTempSetResolution(CH_TEMP_RESOLUTION_1_16C);
+#endif
 
 	/* The USB module will be enabled if the bootloader has booted,
 	 * so we soft-detach from the host. */

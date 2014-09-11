@@ -50,6 +50,7 @@ CHugFatalError (ChError error)
 	}
 }
 
+#if defined(__HAVE_SRAM)
 /**
  * CHugSelfTestSram:
  **/
@@ -94,6 +95,7 @@ CHugSelfTestSram(void)
 	/* success */
 	return CH_ERROR_NONE;
 }
+#endif
 
 /**
  * CHugSelfTestSensor:
@@ -177,21 +179,19 @@ CHugSelfTest(void)
 	CHugPackedFloat tmp;
 	uint8_t rc;
 
-	/* check sensor */
-	rc = CHugSelfTestSensor();
-	if (rc != CH_ERROR_NONE)
-		goto out;
-
+#if defined(__HAVE_SRAM)
 	/* check SRAM */
 	rc = CHugSelfTestSram();
 	if (rc != CH_ERROR_NONE)
 		goto out;
+#endif
 
 	/* check I2C */
 	rc = CHugSelfTestI2C();
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
+#if defined(__HAVE_TEMP_SENSOR)
 	/* get the sensor temperature */
 	rc = CHugTempGetAmbient(&tmp);
 	if (rc != CH_ERROR_NONE)
@@ -200,6 +200,12 @@ CHugSelfTest(void)
 		rc = CH_ERROR_SELF_TEST_TEMPERATURE;
 		goto out;
 	}
+#endif
+
+	/* check sensor */
+	rc = CHugSelfTestSensor();
+	if (rc != CH_ERROR_NONE)
+		goto out;
 
 	/* success */
 	rc = CH_ERROR_NONE;
