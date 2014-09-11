@@ -998,11 +998,11 @@ InitializeSystem(void)
 	TRISE = 0x3c;
 
 	/* assign remappable input and outputs */
-	RPINR21 = 19; /* RP19 = SDI2 */
-	RPINR22 = 12; /* RP12 = SCK2 (input and output) */
-	RPOR12 = 0x0a; /* RP12 = SCK2 */
-	RPOR13 = 0x09; /* RP13 = SDO2 */
-	RPOR20 = 0x0c; /* RP20 = SS2 (SSDMA) */
+	RPINR21 = 19;			/* RP19 = SDI2 */
+	RPINR22 = 12;			/* RP12 = SCK2 (input and output) */
+	RPOR12 = 0x0a;			/* RP12 = SCK2 */
+	RPOR13 = 0x09;			/* RP13 = SDO2 */
+	RPOR20 = 0x0c;			/* RP20 = SS2 (SSDMA) */
 
 	/* turn on the SPI bus */
 	SSP2STATbits.CKE = 1;		/* enable SMBus-specific inputs */
