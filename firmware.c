@@ -290,7 +290,7 @@ CHugWriteEEprom(void)
 	       sizeof(uint32_t));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_CALIBRATION_MAP,
 	       (void *) &CalibrationMap,
-	       6 * sizeof(uint16_t));
+	       CH_CALIBRATION_INDEX_MAX * sizeof(uint16_t));
 	memcpy(FlashBuffer + CH_EEPROM_OFFSET_PCB_ERRATA,
 	       (void *) &PcbErrata,
 	       1 * sizeof(uint16_t));
