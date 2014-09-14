@@ -239,19 +239,18 @@ CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
 	}
 
 	/* read the XYZ color */
-	x->fraction = ((uint16_t) ReadI2C1()) << 8;
+	x->raw = ReadI2C1();
 	AckI2C1();
-	x->offset = ReadI2C1();
+	x->raw |= ((uint16_t) ReadI2C1()) << 8;
 	AckI2C1();
-	y->fraction = ((uint16_t) ReadI2C1()) << 8;
+	y->raw = ReadI2C1();
 	AckI2C1();
-	y->offset = ReadI2C1();
+	y->raw |= ((uint16_t) ReadI2C1()) << 8;
 	AckI2C1();
-	z->fraction = ((uint16_t) ReadI2C1()) << 8;
+	z->raw = ReadI2C1();
 	AckI2C1();
-	z->offset = ReadI2C1();
+	z->raw |= ((uint16_t) ReadI2C1()) << 8;
 	NotAckI2C1();
-
 out:
 	StopI2C1();
 	return rc;
