@@ -117,7 +117,8 @@ CHugSelfTestSensor(void)
 		return rc;
 
 	/* measure red, green and blue */
-	rc = CHugMcdc04TakeReadings(&xyz[CH_COLOR_OFFSET_RED],
+	rc = CHugMcdc04TakeReadings(&ctx,
+				    &xyz[CH_COLOR_OFFSET_RED],
 				    &xyz[CH_COLOR_OFFSET_GREEN],
 				    &xyz[CH_COLOR_OFFSET_BLUE]);
 	if (rc != CH_ERROR_NONE)

@@ -468,7 +468,8 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 	rc = CHugMcdc04WriteConfig(&ctx);
 	if (rc != CH_ERROR_NONE)
 		return rc;
-	rc = CHugMcdc04TakeReadings(&readings[CH_COLOR_OFFSET_RED],
+	rc = CHugMcdc04TakeReadings(&ctx,
+				    &readings[CH_COLOR_OFFSET_RED],
 				    &readings[CH_COLOR_OFFSET_GREEN],
 				    &readings[CH_COLOR_OFFSET_BLUE]);
 	if (rc != CH_ERROR_NONE)
@@ -807,7 +808,8 @@ ProcessIO(void)
 		rc = CHugMcdc04WriteConfig(&ctx);
 		if (rc != CH_ERROR_NONE)
 			break;
-		rc = CHugMcdc04TakeReadings(&readings[CH_COLOR_OFFSET_RED],
+		rc = CHugMcdc04TakeReadings(&ctx,
+					    &readings[CH_COLOR_OFFSET_RED],
 					    &readings[CH_COLOR_OFFSET_GREEN],
 					    &readings[CH_COLOR_OFFSET_BLUE]);
 		if (rc != CH_ERROR_NONE)

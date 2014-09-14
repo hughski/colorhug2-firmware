@@ -159,7 +159,8 @@ out:
  * CHugMcdc04TakeReadings:
  **/
 uint8_t
-CHugMcdc04TakeReadings (CHugPackedFloat *x,
+CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
+			CHugPackedFloat *x,
 			CHugPackedFloat *y,
 			CHugPackedFloat *z)
 {
