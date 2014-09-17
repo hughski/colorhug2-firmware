@@ -465,13 +465,10 @@ CHugTakeReadingsXYZ (uint8_t calibration_index,
 	uint8_t rc;
 
 	/* get integer readings */
-	rc = CHugMcdc04WriteConfig(&ctx);
-	if (rc != CH_ERROR_NONE)
-		return rc;
-	rc = CHugMcdc04TakeReadings(&ctx,
-				    &readings[CH_COLOR_OFFSET_RED],
-				    &readings[CH_COLOR_OFFSET_GREEN],
-				    &readings[CH_COLOR_OFFSET_BLUE]);
+	rc = CHugMcdc04TakeReadingsAuto(&ctx,
+					&readings[CH_COLOR_OFFSET_RED],
+					&readings[CH_COLOR_OFFSET_GREEN],
+					&readings[CH_COLOR_OFFSET_BLUE]);
 	if (rc != CH_ERROR_NONE)
 		return rc;
 
@@ -805,13 +802,10 @@ ProcessIO(void)
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings without using the factory
 		 * calibration matrix but using post scaling */
-		rc = CHugMcdc04WriteConfig(&ctx);
-		if (rc != CH_ERROR_NONE)
-			break;
-		rc = CHugMcdc04TakeReadings(&ctx,
-					    &readings[CH_COLOR_OFFSET_RED],
-					    &readings[CH_COLOR_OFFSET_GREEN],
-					    &readings[CH_COLOR_OFFSET_BLUE]);
+		rc = CHugMcdc04TakeReadingsAuto(&ctx,
+						&readings[CH_COLOR_OFFSET_RED],
+						&readings[CH_COLOR_OFFSET_GREEN],
+						&readings[CH_COLOR_OFFSET_BLUE]);
 		if (rc != CH_ERROR_NONE)
 			break;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],

@@ -42,7 +42,7 @@ typedef enum {
  * CHugMcdc04Init:
  **/
 void
-CHugMcdc04Init (CHugMcdc04Context *ctx)
+CHugMcdc04Init(CHugMcdc04Context *ctx)
 {
 	ctx->tint = CH_MCDC04_TINT_512;
 	ctx->iref = CH_MCDC04_IREF_20;
@@ -53,7 +53,7 @@ CHugMcdc04Init (CHugMcdc04Context *ctx)
  * CHugMcdc04SetTINT:
  **/
 void
-CHugMcdc04SetTINT (CHugMcdc04Context *ctx, CHugMcdc04Tint tint)
+CHugMcdc04SetTINT(CHugMcdc04Context *ctx, CHugMcdc04Tint tint)
 {
 	ctx->tint = tint;
 }
@@ -62,7 +62,7 @@ CHugMcdc04SetTINT (CHugMcdc04Context *ctx, CHugMcdc04Tint tint)
  * CHugMcdc04SetIREF:
  **/
 void
-CHugMcdc04SetIREF (CHugMcdc04Context *ctx, CHugMcdc04Iref iref)
+CHugMcdc04SetIREF(CHugMcdc04Context *ctx, CHugMcdc04Iref iref)
 {
 	ctx->iref = iref;
 }
@@ -71,16 +71,21 @@ CHugMcdc04SetIREF (CHugMcdc04Context *ctx, CHugMcdc04Iref iref)
  * CHugMcdc04SetIREF:
  **/
 void
-CHugMcdc04SetDIV (CHugMcdc04Context *ctx, CHugMcdc04Div div)
+CHugMcdc04SetDIV(CHugMcdc04Context *ctx, CHugMcdc04Div div)
 {
 	ctx->div = div;
 }
 
 /**
  * CHugMcdc04WriteConfig:
+ * @ctx: A #CHugMcdc04Context
+ *
+ * Writes the context settings to the device.
+ *
+ * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
  **/
-uint8_t
-CHugMcdc04WriteConfig (CHugMcdc04Context *ctx)
+ChError
+CHugMcdc04WriteConfig(CHugMcdc04Context *ctx)
 {
 	uint8_t tmp;
 	uint8_t rc;
@@ -133,7 +138,7 @@ CHugMcdc04WriteConfig (CHugMcdc04Context *ctx)
 	WriteI2C1(tmp);
 
 	/* send CREGH */
-	tmp = 0b10000000;		/* ENTM:	disable access to OUTINT */
+	tmp  = 0b0000000;		/* ENTM:	disable access to OUTINT */
 	tmp |= 0b0100000;		/* SB:		Standby Enable */
 	tmp |= 0b0001000;		/* MODE:	CMD measurement mode */
 	if (ctx->div != CH_MCDC04_DIV_DISABLE) {
@@ -157,18 +162,24 @@ out:
 
 /**
  * CHugMcdc04TakeReadings:
+ * @ctx: A #CHugMcdc04Context that has been set up
+ * @x: a #CHugPackedFloat, or %NULL
+ * @y: a #CHugPackedFloat, or %NULL
+ * @z: a #CHugPackedFloat, or %NULL
+ *
+ * Takes a reading from the ADC using a previously set up context.
+ *
+ * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
  **/
-uint8_t
+ChError
 CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
 			CHugPackedFloat *x,
 			CHugPackedFloat *y,
 			CHugPackedFloat *z)
 {
 	uint16_t tmp;
-	uint8_t rc;
-	uint8_t tmp_lsb = 4;
-	uint8_t tmp_msb = 2;
 	uint32_t i;
+	uint8_t rc;
 
 	/* ensure the READY pin is high */
 	if (PORTAbits.RA0 == 0)
@@ -238,20 +249,149 @@ CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
 		goto out;
 	}
 
-	/* read the XYZ color */
-	x->raw = ReadI2C1();
+	/* read the XYZ:X color */
+	tmp = ReadI2C1();
 	AckI2C1();
-	x->raw |= ((uint16_t) ReadI2C1()) << 8;
+	tmp |= ((uint16_t) ReadI2C1()) << 8;
 	AckI2C1();
-	y->raw = ReadI2C1();
+	if (x != NULL)
+		x->raw = tmp;
+
+	/* read the XYZ:Y color */
+	tmp = ReadI2C1();
 	AckI2C1();
-	y->raw |= ((uint16_t) ReadI2C1()) << 8;
+	tmp |= ((uint16_t) ReadI2C1()) << 8;
 	AckI2C1();
-	z->raw = ReadI2C1();
+	if (y != NULL)
+		y->raw = tmp;
+
+	/* read the XYZ:Z color */
+	tmp = ReadI2C1();
 	AckI2C1();
-	z->raw |= ((uint16_t) ReadI2C1()) << 8;
+	tmp |= ((uint16_t) ReadI2C1()) << 8;
 	NotAckI2C1();
+	if (z != NULL)
+		z->raw = tmp;
 out:
 	StopI2C1();
+	return rc;
+}
+
+typedef enum {
+	CH_MCDC04_CHAN_X,
+	CH_MCDC04_CHAN_Y,
+	CH_MCDC04_CHAN_Z
+} ChMcdc04Chan;
+
+/**
+ * CHugMcdc04TakeReadingsChannel:
+ **/
+static uint8_t
+CHugMcdc04TakeReadingsChannel(CHugMcdc04Context *ctx,
+			      ChMcdc04Chan chan,
+			      CHugPackedFloat *val)
+{
+	uint8_t i;
+	uint8_t rc;
+	uint32_t scale = 1;
+	uint32_t overflow;
+
+	/* set most sensitive initially */
+	ctx->iref = CH_MCDC04_IREF_20;
+
+	/* this is probably the smallest we want to go with a 50Hz refresh */
+	ctx->tint = CH_MCDC04_TINT_64;
+	ctx->div = CH_MCDC04_DIV_DISABLE;
+
+	/* try to get a reading in the middle 3/4 of FSD */
+	for (i = 0; i < 4; i++) {
+
+		/* take reading */
+		rc = CHugMcdc04WriteConfig(ctx);
+		if (rc != CH_ERROR_NONE)
+			return rc;
+		switch (chan) {
+		case CH_MCDC04_CHAN_X:
+			rc = CHugMcdc04TakeReadings(ctx, val, NULL, NULL);
+			break;
+		case CH_MCDC04_CHAN_Y:
+			rc = CHugMcdc04TakeReadings(ctx, NULL, val, NULL);
+			break;
+		case CH_MCDC04_CHAN_Z:
+			rc = CHugMcdc04TakeReadings(ctx, NULL, NULL, val);
+			break;
+		default:
+			rc = CH_ERROR_INVALID_VALUE;
+			break;
+		}
+		if (rc != CH_ERROR_NONE)
+			return rc;
+
+		/* the FSD is also the overflow value */
+		overflow = (((uint32_t) 1) << (ctx->tint + 10)) - 1;
+		if (overflow > 0xffff)
+			overflow = 0xffff;
+
+		/* bottom 1/8th */
+		if (val->raw < overflow / 8) {
+			ctx->tint += 2;
+			if (ctx->tint > CH_MCDC04_TINT_512)
+				ctx->tint = CH_MCDC04_TINT_512;
+			continue;
+		}
+
+		/* overflow or top 1/8th */
+		if (val->raw >= (overflow / 8) * 7) {
+			ctx->iref++;
+			continue;
+		}
+
+		/* success */
+		break;
+	}
+
+	/* calculate scale value */
+	scale *= (uint32_t) 1 << (CH_MCDC04_TINT_1024 - ctx->tint);
+	scale *= (uint32_t) 1 << (ctx->iref * 2);
+
+	/* scale value to absolute XYZ */
+	val->raw *= scale;
+	return rc;
+}
+
+/**
+ * CHugMcdc04TakeReadingsAuto:
+ * @ctx: A #CHugMcdc04Context
+ * @x: a #CHugPackedFloat, or %NULL
+ * @y: a #CHugPackedFloat, or %NULL
+ * @z: a #CHugPackedFloat, or %NULL
+ *
+ * Takes a reading from the ADC using an adaptive algorithm.
+ *
+ * This does three sets of measurements, adjusting the Tint and Iref for each
+ * channel in turn so that the reading falls into the middle 3/4 of the FSD.
+ *
+ * We never go below 64ms to avoid integration errors with either a 50Hz
+ * refresh on a CRT tube or PWM from a LED backlight.
+ *
+ * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
+ **/
+ChError
+CHugMcdc04TakeReadingsAuto(CHugMcdc04Context *ctx,
+			   CHugPackedFloat *x,
+			   CHugPackedFloat *y,
+			   CHugPackedFloat *z)
+{
+	uint8_t rc;
+
+	rc = CHugMcdc04TakeReadingsChannel(ctx, CH_MCDC04_CHAN_X, x);
+	if (rc != CH_ERROR_NONE)
+		return rc;
+	rc = CHugMcdc04TakeReadingsChannel(ctx, CH_MCDC04_CHAN_Y, y);
+	if (rc != CH_ERROR_NONE)
+		return rc;
+	rc = CHugMcdc04TakeReadingsChannel(ctx, CH_MCDC04_CHAN_Z, z);
+	if (rc != CH_ERROR_NONE)
+		return rc;
 	return rc;
 }
