@@ -801,7 +801,7 @@ ProcessIO(void)
 		break;
 	case CH_CMD_TAKE_READINGS:
 		/* take multiple readings without using the factory
-		 * calibration matrix but using post scaling */
+		 * calibration matrix */
 		rc = CHugMcdc04TakeReadingsAuto(&ctx,
 						&readings[CH_COLOR_OFFSET_RED],
 						&readings[CH_COLOR_OFFSET_GREEN],
