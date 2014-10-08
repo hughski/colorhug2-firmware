@@ -146,18 +146,18 @@ CHugSelfTestI2C(void)
 	SSP1CON2bits.SEN = 1;
 	while (SSP1CON2bits.SEN) {
 		if (++i == 0)
-			return CH_ERROR_SELF_TEST_ADC_VDD;
+			return CH_ERROR_SELF_TEST_I2C;
 	}
 	PIR1bits.SSP1IF = 0;
 	SSP1BUF = 0x00;
 	while (!PIR1bits.SSP1IF) {
 		if (++i == 0)
-			return CH_ERROR_SELF_TEST_ADC_VREF;
+			return CH_ERROR_SELF_TEST_I2C;
 	}
 	SSP1CON2bits.PEN = 1;
 	while (SSP1CON2bits.PEN) {
 		if (++i == 0)
-			return CH_ERROR_SELF_TEST_ADC_VSS;
+			return CH_ERROR_SELF_TEST_I2C;
 	}
 	return CH_ERROR_NONE;
 }
