@@ -29,14 +29,22 @@
 #define MCDC04_SLAVE_ADDRESS_WRITE		0b11101000
 
 typedef enum {
-	MCDC04_ADDR_OSR			= 0x00,	/* wo */
-	MCDC04_ADDR_AGEN		= 0x02,	/* ro */
-	MCDC04_ADDR_CREGL		= 0x06,	/* rw */
-	MCDC04_ADDR_CREGH		= 0x07,	/* rw */
-	MCDC04_ADDR_OPTREG		= 0x08,	/* rw */
-	MCDC04_ADDR_BREAK		= 0x09,	/* rw */
-	MCDC04_ADDR_EDGES		= 0x0a	/* rw */
-} Mcdc04Addr;
+	MCDC04_CONFIG_ADDR_OSR			= 0x00,	/* wo */
+	MCDC04_CONFIG_ADDR_AGEN			= 0x02,	/* ro */
+	MCDC04_CONFIG_ADDR_CREGL		= 0x06,	/* rw */
+	MCDC04_CONFIG_ADDR_CREGH		= 0x07,	/* rw */
+	MCDC04_CONFIG_ADDR_OPTREG		= 0x08,	/* rw */
+	MCDC04_CONFIG_ADDR_BREAK		= 0x09,	/* rw */
+	MCDC04_CONFIG_ADDR_EDGES		= 0x0a	/* rw */
+} Mcdc04ConfigAddr;
+
+typedef enum {
+	MCDC04_MEASURE_ADDR_OUT0		= 0x00,	/* ro */
+	MCDC04_MEASURE_ADDR_OUT1		= 0x01,	/* ro */
+	MCDC04_MEASURE_ADDR_OUT2		= 0x02,	/* ro */
+	MCDC04_MEASURE_ADDR_OUT3		= 0x03,	/* ro */
+	MCDC04_MEASURE_ADDR_OUTINT		= 0x04	/* ro */
+} Mcdc04MeasureAddr;
 
 /**
  * CHugMcdc04Init:
@@ -101,7 +109,7 @@ CHugMcdc04WriteConfig(CHugMcdc04Context *ctx)
 	}
 
 	/* send address pointer */
-	rc = WriteI2C1(MCDC04_ADDR_OSR);
+	rc = WriteI2C1(MCDC04_CONFIG_ADDR_OSR);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_CONFIG;
 		goto out;
@@ -125,7 +133,7 @@ CHugMcdc04WriteConfig(CHugMcdc04Context *ctx)
 	}
 
 	/* set address pointer */
-	rc = WriteI2C1(MCDC04_ADDR_CREGL);
+	rc = WriteI2C1(MCDC04_CONFIG_ADDR_CREGL);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_CONFIG;
 		goto out;
@@ -196,7 +204,7 @@ CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
 	}
 
 	/* send address pointer */
-	rc = WriteI2C1(MCDC04_ADDR_OSR);
+	rc = WriteI2C1(MCDC04_CONFIG_ADDR_OSR);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_CONFIG;
 		goto out;
@@ -233,7 +241,7 @@ CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
 	}
 
 	/* send address pointer */
-	rc = WriteI2C1(MCDC04_ADDR_OSR);
+	rc = WriteI2C1(MCDC04_MEASURE_ADDR_OUT1);
 	if (rc != 0x00) {
 		rc = CH_ERROR_I2C_SLAVE_CONFIG;
 		goto out;
