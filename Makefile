@@ -66,6 +66,8 @@ APP_LIB_UNINSTALLER = ${MICROCHIP_APP_LIB_ROOT}/Uninstall\ Microchip\ Applicatio
 CFLAGS  +=							\
 	-I$(MICROCHIP_TOOLCHAIN_ROOT)/h				\
 	-I${MICROCHIP_APP_LIB_ROOT}/Microchip/Include		\
+	-D__HAVE_SRAM=1						\
+	-D__HAVE_TEMP_SENSOR=1					\
 	-p18f46j50						\
 	-w3							\
 	-nw=3004
