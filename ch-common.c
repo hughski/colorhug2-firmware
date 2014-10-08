@@ -108,8 +108,8 @@ CHugSelfTestSensor(void)
 	uint8_t rc;
 
 	/* setup MCDC04 */
-	CHugMcdc04Init (&ctx);
-	CHugMcdc04SetTINT(&ctx, CH_MCDC04_TINT_64);
+	CHugMcdc04Init(&ctx);
+	CHugMcdc04SetTINT(&ctx, CH_MCDC04_TINT_128);
 	CHugMcdc04SetIREF(&ctx, CH_MCDC04_IREF_20);
 	CHugMcdc04SetDIV(&ctx, CH_MCDC04_DIV_DISABLE);
 	rc = CHugMcdc04WriteConfig(&ctx);
