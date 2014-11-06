@@ -800,14 +800,23 @@ ProcessIO(void)
 		}
 		break;
 	case CH_CMD_TAKE_READINGS:
-		/* take multiple readings without using the factory
+		/* take a quick non-adaptive reading without using the factory
 		 * calibration matrix */
-		rc = CHugMcdc04TakeReadingsAuto(&ctx,
-						&readings[CH_COLOR_OFFSET_RED],
-						&readings[CH_COLOR_OFFSET_GREEN],
-						&readings[CH_COLOR_OFFSET_BLUE]);
+		CHugMcdc04SetTINT(&ctx, CH_MCDC04_TINT_64);
+		CHugMcdc04SetIREF(&ctx, CH_MCDC04_IREF_80);
+		CHugMcdc04SetDIV(&ctx, CH_MCDC04_DIV_DISABLE);
+		rc = CHugMcdc04WriteConfig(&ctx);
 		if (rc != CH_ERROR_NONE)
 			break;
+		rc = CHugMcdc04TakeReadings(&ctx,
+					    &readings[CH_COLOR_OFFSET_RED],
+					    &readings[CH_COLOR_OFFSET_GREEN],
+					    &readings[CH_COLOR_OFFSET_BLUE]);
+		if (rc != CH_ERROR_NONE)
+			break;
+		readings[CH_COLOR_OFFSET_RED].raw *= 2048;
+		readings[CH_COLOR_OFFSET_GREEN].raw *= 2048;
+		readings[CH_COLOR_OFFSET_BLUE].raw *= 2048;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));
