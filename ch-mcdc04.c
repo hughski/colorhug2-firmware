@@ -401,5 +401,12 @@ CHugMcdc04TakeReadingsAuto(CHugMcdc04Context *ctx,
 	rc = CHugMcdc04TakeReadingsChannel(ctx, CH_MCDC04_CHAN_Z, z);
 	if (rc != CH_ERROR_NONE)
 		return rc;
+
+	/* scale with a constant factor to ensure the calibration matrix
+	 * does not have a huge unity component */
+	x->raw *= 32;
+	y->raw *= 32;
+	z->raw *= 32;
+
 	return rc;
 }
