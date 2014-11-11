@@ -402,11 +402,30 @@ CHugMcdc04TakeReadingsAuto(CHugMcdc04Context *ctx,
 	if (rc != CH_ERROR_NONE)
 		return rc;
 
-	/* scale with a constant factor to ensure the calibration matrix
-	 * does not have a huge unity component */
-	x->raw *= 32;
+	/*
+	 * Work around a possible device errata:
+	 *
+	 * The typical sensor response for X (600nm), Y (550nm), Z (445nm) is
+	 * provided in datasheet table 1. Normalised to Y=1.0, we have:
+	 *
+	 * [ 1.03 : 1.00 : 0.82 ]
+	 *
+	 * At matching frequencies, the CIE 2° observer normalized to Y=1.0 is:
+	 *
+	 * [ 1.06 : 1.00 : 1.78 ]
+	 *
+	 * To convert the deviceXYZ reading to a CIEXYZ value the channels have
+	 * to be scaled by [ 1.03 : 1.00 : 2.16 ]
+	 *
+	 * We also have to scale with a large constant factor to ensure the
+	 * calibration matrix does not have a huge unity component.
+	 * We do this as a uint32 without floating point to prevent loss of
+	 * precision. Any small fractional remander will be taken care of by
+	 * the factory matrix.
+	 */
+	x->raw *= 33;
 	y->raw *= 32;
-	z->raw *= 32;
+	z->raw *= 69;
 
 	return rc;
 }
