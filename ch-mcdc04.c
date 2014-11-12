@@ -285,24 +285,34 @@ out:
 	return rc;
 }
 
-typedef enum {
-	CH_MCDC04_CHAN_X,
-	CH_MCDC04_CHAN_Y,
-	CH_MCDC04_CHAN_Z
-} ChMcdc04Chan;
-
 /**
- * CHugMcdc04TakeReadingsChannel:
+ * CHugMcdc04TakeReadingsAuto:
+ * @ctx: A #CHugMcdc04Context
+ * @x: a #CHugPackedFloat
+ * @y: a #CHugPackedFloat
+ * @z: a #CHugPackedFloat
+ *
+ * Takes a reading from the ADC using an adaptive algorithm.
+ *
+ * This does repeated measurements, adjusting the Tint and Iref so that the
+ * reading falls into the middle 3/4 of the FSD.
+ *
+ * We never go below 256ms to avoid integration errors with either a 50Hz
+ * refresh on a CRT tube or PWM from a LED backlight.
+ *
+ * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
  **/
-static uint8_t
-CHugMcdc04TakeReadingsChannel(CHugMcdc04Context *ctx,
-			      ChMcdc04Chan chan,
-			      CHugPackedFloat *val)
+ChError
+CHugMcdc04TakeReadingsAuto(CHugMcdc04Context *ctx,
+			   CHugPackedFloat *x,
+			   CHugPackedFloat *y,
+			   CHugPackedFloat *z)
 {
 	uint8_t i;
 	uint8_t rc;
 	uint32_t scale = 1;
 	uint32_t overflow;
+	uint32_t overflow_8th;
 
 	/* set most sensitive initially */
 	ctx->iref = CH_MCDC04_IREF_20;
@@ -318,20 +328,7 @@ CHugMcdc04TakeReadingsChannel(CHugMcdc04Context *ctx,
 		rc = CHugMcdc04WriteConfig(ctx);
 		if (rc != CH_ERROR_NONE)
 			return rc;
-		switch (chan) {
-		case CH_MCDC04_CHAN_X:
-			rc = CHugMcdc04TakeReadings(ctx, val, NULL, NULL);
-			break;
-		case CH_MCDC04_CHAN_Y:
-			rc = CHugMcdc04TakeReadings(ctx, NULL, val, NULL);
-			break;
-		case CH_MCDC04_CHAN_Z:
-			rc = CHugMcdc04TakeReadings(ctx, NULL, NULL, val);
-			break;
-		default:
-			rc = CH_ERROR_INVALID_VALUE;
-			break;
-		}
+		rc = CHugMcdc04TakeReadings(ctx, x, y, z);
 		if (rc != CH_ERROR_NONE)
 			return rc;
 
@@ -340,16 +337,21 @@ CHugMcdc04TakeReadingsChannel(CHugMcdc04Context *ctx,
 		if (overflow > 0xffff)
 			overflow = 0xffff;
 
-		/* bottom 1/8th */
-		if (val->raw < overflow / 8) {
+		/* all channels are in the bottom 1/8th */
+		overflow_8th = overflow / 8;
+		if (x->raw < overflow_8th &&
+		    y->raw < overflow_8th &&
+		    z->raw < overflow_8th) {
 			ctx->tint += 2;
 			if (ctx->tint > CH_MCDC04_TINT_512)
 				ctx->tint = CH_MCDC04_TINT_512;
 			continue;
 		}
 
-		/* overflow or top 1/8th */
-		if (val->raw >= (overflow / 8) * 7) {
+		/* any channel is overflow or top 1/8th */
+		if (x->raw >= overflow - overflow_8th ||
+		    y->raw >= overflow - overflow_8th ||
+		    z->raw >= overflow - overflow_8th) {
 			ctx->iref++;
 			continue;
 		}
@@ -362,45 +364,10 @@ CHugMcdc04TakeReadingsChannel(CHugMcdc04Context *ctx,
 	scale *= (uint32_t) 1 << (CH_MCDC04_TINT_1024 - ctx->tint);
 	scale *= (uint32_t) 1 << (ctx->iref * 2);
 
-	/* scale value to absolute XYZ */
-	val->raw *= scale;
-	return rc;
-}
-
-/**
- * CHugMcdc04TakeReadingsAuto:
- * @ctx: A #CHugMcdc04Context
- * @x: a #CHugPackedFloat, or %NULL
- * @y: a #CHugPackedFloat, or %NULL
- * @z: a #CHugPackedFloat, or %NULL
- *
- * Takes a reading from the ADC using an adaptive algorithm.
- *
- * This does three sets of measurements, adjusting the Tint and Iref for each
- * channel in turn so that the reading falls into the middle 3/4 of the FSD.
- *
- * We never go below 256ms to avoid integration errors with either a 50Hz
- * refresh on a CRT tube or PWM from a LED backlight.
- *
- * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
- **/
-ChError
-CHugMcdc04TakeReadingsAuto(CHugMcdc04Context *ctx,
-			   CHugPackedFloat *x,
-			   CHugPackedFloat *y,
-			   CHugPackedFloat *z)
-{
-	uint8_t rc;
-
-	rc = CHugMcdc04TakeReadingsChannel(ctx, CH_MCDC04_CHAN_X, x);
-	if (rc != CH_ERROR_NONE)
-		return rc;
-	rc = CHugMcdc04TakeReadingsChannel(ctx, CH_MCDC04_CHAN_Y, y);
-	if (rc != CH_ERROR_NONE)
-		return rc;
-	rc = CHugMcdc04TakeReadingsChannel(ctx, CH_MCDC04_CHAN_Z, z);
-	if (rc != CH_ERROR_NONE)
-		return rc;
+	/* scale value to absolute deviceXYZ */
+	x->raw *= scale;
+	y->raw *= scale;
+	z->raw *= scale;
 
 	/*
 	 * Work around a possible device errata:
