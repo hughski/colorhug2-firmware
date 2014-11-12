@@ -308,7 +308,7 @@ CHugMcdc04TakeReadingsChannel(CHugMcdc04Context *ctx,
 	ctx->iref = CH_MCDC04_IREF_20;
 
 	/* this is probably the smallest we want to go with a 50Hz refresh */
-	ctx->tint = CH_MCDC04_TINT_64;
+	ctx->tint = CH_MCDC04_TINT_256;
 	ctx->div = CH_MCDC04_DIV_DISABLE;
 
 	/* try to get a reading in the middle 3/4 of FSD */
@@ -379,7 +379,7 @@ CHugMcdc04TakeReadingsChannel(CHugMcdc04Context *ctx,
  * This does three sets of measurements, adjusting the Tint and Iref for each
  * channel in turn so that the reading falls into the middle 3/4 of the FSD.
  *
- * We never go below 64ms to avoid integration errors with either a 50Hz
+ * We never go below 256ms to avoid integration errors with either a 50Hz
  * refresh on a CRT tube or PWM from a LED backlight.
  *
  * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
