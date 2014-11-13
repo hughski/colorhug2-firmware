@@ -189,10 +189,6 @@ CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
 	uint32_t i;
 	uint8_t rc;
 
-	/* ensure the READY pin is high */
-	if (PORTAbits.RA0 == 0)
-		return CH_ERROR_OVERFLOW_SENSOR;
-
 	/* start */
 	StartI2C1();
 
