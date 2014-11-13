@@ -649,6 +649,48 @@ ChSha1Valid(ChSha1 *sha1)
 }
 
 /**
+ * CHugTakeReadingArray:
+ **/
+static uint8_t
+CHugTakeReadingArray(uint8_t *data)
+{
+	CHugPackedFloat xyz[3];
+	uint16_t i;
+	uint16_t tmp[3];
+	uint8_t rc = CH_ERROR_NONE;
+
+	/* take a quick non-adaptive reading without using the factory
+	 * calibration matrix */
+	CHugMcdc04SetTINT(&ctx, CH_MCDC04_TINT_1);
+	CHugMcdc04SetIREF(&ctx, CH_MCDC04_IREF_20);
+	CHugMcdc04SetDIV(&ctx, CH_MCDC04_DIV_DISABLE);
+	rc = CHugMcdc04WriteConfig(&ctx);
+	if (rc != CH_ERROR_NONE)
+		goto out;
+
+	/* fully populating the SRAM, 2 bytes per reading x 3 channels is:
+	 * 8192 / (2 * 3) = 1365 measurements */
+	for (i = 0; i < 1365; i++) {
+		rc = CHugMcdc04TakeReadings(&ctx, &xyz[0], &xyz[1], &xyz[2]);
+		if (rc != CH_ERROR_NONE)
+			goto out;
+		/* possible as we only have 1ms worth of data */
+		tmp[0] = xyz[0].raw;
+		tmp[1] = xyz[1].raw;
+		tmp[2] = xyz[2].raw * 2;
+		CHugSramDmaFromCpu((uint8_t *) tmp, 6 * i, 6);
+	}
+
+	/* copy the first 30 'Y' values scaled to one byte */
+	for (i = 0; i < 30; i++) {
+		CHugSramDmaToCpu((6 * i) + 2, (uint8_t *) tmp, 2);
+		data[i] = tmp[0] / 4;
+	}
+out:
+	return rc;
+}
+
+/**
  * ProcessIO:
  **/
 static void
@@ -934,6 +976,9 @@ ProcessIO(void)
 #else
 		rc = CH_ERROR_NOT_IMPLEMENTED;
 #endif
+		break;
+	case CH_CMD_TAKE_READING_ARRAY:
+		rc = CHugTakeReadingArray(&TxBuffer[CH_BUFFER_OUTPUT_DATA]);
 		break;
 	case CH_CMD_SELF_TEST:
 		rc = CHugSelfTest();
