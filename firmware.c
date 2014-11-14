@@ -674,7 +674,14 @@ CHugTakeReadingArray(uint8_t *data)
 		rc = CHugMcdc04TakeReadings(&ctx, &xyz[0], &xyz[1], &xyz[2]);
 		if (rc != CH_ERROR_NONE)
 			goto out;
-		/* possible as we only have 1ms worth of data */
+
+		/* squeeze a 32 bit number down into 16 bits, as even the
+		 * brightest display cannot come close to saturating that in
+		 * 1ms sample duration */
+		if (xyz[0].raw > 0xffff ||
+		    xyz[1].raw > 0xffff ||
+		    xyz[2].raw > 0xffff / 2)
+			return CH_ERROR_OVERFLOW_SENSOR;
 		tmp[0] = xyz[0].raw;
 		tmp[1] = xyz[1].raw;
 		tmp[2] = xyz[2].raw * 2;
