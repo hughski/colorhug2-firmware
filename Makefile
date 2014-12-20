@@ -40,7 +40,6 @@ CC = ${MICROCHIP_TOOLCHAIN_ROOT}/bin/mcc18
 AS = ${MICROCHIP_TOOLCHAIN_ROOT}/mpasm/MPASMWIN
 LD = ${MICROCHIP_TOOLCHAIN_ROOT}/bin/mplink
 AR = ${MICROCHIP_TOOLCHAIN_ROOT}/bin/mplib
-INHX2BIN = /usr/libexec/colorhug-inhx32-to-bin
 COLORHUG_CMD = /usr/bin/colorhug-cmd
 
 MICROCHIP_APP_LIB_ROOT 	 = ${MICROCHIP_ROOT}/libs-v2013-06-15
@@ -151,8 +150,8 @@ firmware.cof firmware.hex: Makefile ${firmware_OBJS}
 	$(LD) 18F46J50.lkr $(firmware_LDFLAGS) ${firmware_OBJS} -o $@
 
 # Pad the HEX file into an easy-to-distribute BIN file
-firmware.bin: firmware.hex ${INHX2BIN}
-	${INHX2BIN} $< $@
+firmware.bin: firmware.hex $(COLORHUG_CMD)
+	$(COLORHUG_CMD) inhx32-to-bin $< $@
 
 all: sanity firmware.bin bootloader.hex
 
@@ -164,12 +163,12 @@ test: sanity firmware.bin
 	${COLORHUG_CMD} take-reading-raw -v
 
 sanity: sanity-toolchain sanity-app-lib
-	@${INHX2BIN} >/dev/null 2>&1 || test $$? -ne 127 || { 				\
-		echo "####  You need the tool '${INHX2BIN}' from the package";          \
-		echo "####  'colorhug-client' in your PATH to build the firmware.";     \
+	@${COLORHUG_CMD} >/dev/null 2>&1 || test $$? -ne 127 || { 			\
+		echo "####  You need the tool '${COLORHUG_CMD}' from the package";	\
+		echo "####  'colorhug-client' in your PATH to build the firmware.";	\
 		echo "####";              						\
-		echo "####  If colorhug-client is installed then ${INHX2BIN}";		\
-		echo "####  usually resides in /usr/bin/ or in /usr/libexec/.";		\
+		echo "####  If colorhug-client is installed then ${COLORHUG_CMD}";	\
+		echo "####  usually resides in /usr/bin.";				\
 		echo "####"; false; }
 
 clean-app-lib:
