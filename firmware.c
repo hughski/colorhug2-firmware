@@ -204,13 +204,13 @@ CHugWelcomeFlash(void)
 	if ((PcbErrata & CH_PCB_ERRATA_NO_WELCOME) > 0)
 		return;
 
-	for (i = 0; i < 0xff; i++)
+	for (i = 0; i < 0xaf; i++)
 		CHugSetLEDsDutyCycle(CH_STATUS_LED_RED, 0x05, i);
-	for (i = 0; i < 0xff; i++)
+	for (i = 0; i < 0xaf; i++)
 		CHugSetLEDsDutyCycle(CH_STATUS_LED_RED, 0x05, 0xff-i);
-	for (i = 0; i < 0xff; i++)
+	for (i = 0; i < 0xaf; i++)
 		CHugSetLEDsDutyCycle(CH_STATUS_LED_GREEN, 0x05, i);
-	for (i = 0; i < 0xff; i++)
+	for (i = 0; i < 0xaf; i++)
 		CHugSetLEDsDutyCycle(CH_STATUS_LED_GREEN, 0x05, 0xff-i);
 	CHugSetLEDsInternal(0);
 }
