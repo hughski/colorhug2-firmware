@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011-2014 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2015 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -28,8 +28,7 @@
 #include "HardwareProfile.h"
 #include "usb_config.h"
 #include "ch-common.h"
-
-#include <flash.h>
+#include "ch-flash.h"
 
 #include <USB/usb.h>
 #include <USB/usb_common.h>
@@ -206,7 +205,7 @@ ProcessIO(void)
 		memcpy (&erase_length,
 			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+2],
 			2);
-		EraseFlash(address, address + erase_length);
+		rc = CHugFlashErase(address, erase_length);
 		break;
 	case CH_CMD_READ_FLASH:
 		/* are we lost or stolen */
@@ -223,8 +222,8 @@ ProcessIO(void)
 			rc = CH_ERROR_INVALID_LENGTH;
 			break;
 		}
-		ReadFlash(address, length,
-			  (uint8_t *) &TxBuffer[CH_BUFFER_OUTPUT_DATA+1]);
+		CHugFlashRead(address, length,
+			      &TxBuffer[CH_BUFFER_OUTPUT_DATA+1]);
 		checksum = CHugCalculateChecksum (&TxBuffer[CH_BUFFER_OUTPUT_DATA+1],
 						  length);
 		TxBuffer[CH_BUFFER_OUTPUT_DATA+0] = checksum;
@@ -269,9 +268,9 @@ ProcessIO(void)
 			memcpy (FlashBuffer + CH_FLASH_TRANSFER_BLOCK_SIZE,
 				(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+4],
 				length);
-			WriteBytesFlash(address - CH_FLASH_TRANSFER_BLOCK_SIZE,
-					CH_FLASH_WRITE_BLOCK_SIZE,
-					(uint8_t *) FlashBuffer);
+			rc = CHugFlashWrite(address - CH_FLASH_TRANSFER_BLOCK_SIZE,
+					    CH_FLASH_WRITE_BLOCK_SIZE,
+					    FlashBuffer);
 		}
 		break;
 	case CH_CMD_BOOT_FLASH:
@@ -289,10 +288,11 @@ ProcessIO(void)
 			break;
 		}
 		flash_success = RxBuffer[CH_BUFFER_INPUT_DATA];
-		EraseFlash(CH_EEPROM_ADDR_FLASH_SUCCESS,
-			   CH_EEPROM_ADDR_FLASH_SUCCESS + 1);
-		WriteBytesFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
-				(uint8_t *) &RxBuffer[CH_BUFFER_INPUT_DATA]);
+		rc = CHugFlashErase(CH_EEPROM_ADDR_FLASH_SUCCESS, 1);
+		if (rc != CH_ERROR_NONE)
+			break;
+		rc = CHugFlashWrite(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
+				    &RxBuffer[CH_BUFFER_INPUT_DATA]);
 		break;
 	case CH_CMD_SELF_TEST:
 		rc = CHugSelfTest();
@@ -459,10 +459,10 @@ main(void)
 	 *  2. the flashed program exists
 	 *  3. the flash success is 0x01
 	 */
-	ReadFlash(CH_EEPROM_ADDR_RUNCODE, 2,
-		  (uint8_t *) &runcode_start);
-	ReadFlash(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
-		  (uint8_t *) &flash_success);
+	CHugFlashRead(CH_EEPROM_ADDR_RUNCODE, 2,
+		      (uint8_t *) &runcode_start);
+	CHugFlashRead(CH_EEPROM_ADDR_FLASH_SUCCESS, 1,
+		      (uint8_t *) &flash_success);
 	if (RCONbits.NOT_RI &&
 	    runcode_start != 0xffff &&
 	    flash_success == 0x01)
