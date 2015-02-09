@@ -1,5 +1,5 @@
 # Copyright (C) 2012 t-lo <thilo@thilo-fromm.de>
-# Copyright (C) 2012 Richard Hughes <richard@hughsie.com>
+# Copyright (C) 2012-2015 Richard Hughes <richard@hughsie.com>
 #
 # Licensed under the GNU General Public License Version 2
 #
@@ -30,6 +30,7 @@
 
 MICROCHIP_ROOT	= /opt/microchip
 DOWNLOAD_DIR 	= $(shell pwd)/microchip-toolchain-downloads
+PK2CMD_DIR 	= ../../pk2cmd/pk2cmd
 
 MICROCHIP_TOOLCHAIN_ROOT = ${MICROCHIP_ROOT}/mplabc18/v3.40
 TOOLCHAIN_URL = http://ww1.microchip.com/downloads/mplab/X/mplabc18-v3.40-linux-full-installer.run
@@ -157,6 +158,9 @@ all: sanity firmware.bin bootloader.hex
 
 install: sanity firmware.bin
 	${COLORHUG_CMD} flash-firmware-force firmware.bin
+
+install-bootloader: bootloader.hex
+	${PK2CMD_DIR}/pk2cmd -pPIC18F46J50 -f $< -b ${PK2CMD_DIR}/ -m -r
 
 test: sanity firmware.bin
 	${COLORHUG_CMD} set-integral-time 15 && \
