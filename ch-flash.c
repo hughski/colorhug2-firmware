@@ -40,9 +40,9 @@ CHugFlashLoadTableAtAddr(uint32_t addr)
  * CHugFlashErase:
  **/
 uint8_t
-CHugFlashErase(uint32_t addr, uint16_t len)
+CHugFlashErase(uint16_t addr, uint16_t len)
 {
-	uint32_t i;
+	uint16_t i;
 	uint8_t enable_int = FALSE;
 
 	/* check this is aligned */
@@ -76,10 +76,10 @@ CHugFlashErase(uint32_t addr, uint16_t len)
  * CHugFlashWrite:
  **/
 uint8_t
-CHugFlashWrite(uint32_t addr, uint16_t len, const uint8_t *data)
+CHugFlashWrite(uint16_t addr, uint16_t len, const uint8_t *data)
 {
 	uint16_t cnt = 0;
-	uint32_t i;
+	uint16_t i;
 	uint8_t enable_int = FALSE;
 
 	/* check this is aligned */
@@ -118,12 +118,13 @@ CHugFlashWrite(uint32_t addr, uint16_t len, const uint8_t *data)
 /**
  * CHugFlashRead:
  **/
-void
-CHugFlashRead(uint32_t addr, uint16_t len, uint8_t *data)
+uint8_t
+CHugFlashRead(uint16_t addr, uint16_t len, uint8_t *data)
 {
 	CHugFlashLoadTableAtAddr(addr);
 	while (len--) {
 		_asm TBLRDPOSTINC _endasm
 		*data++ = TABLAT;
 	}
+	return CH_ERROR_NONE;
 }

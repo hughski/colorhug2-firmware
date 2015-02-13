@@ -24,12 +24,12 @@
 
 #include "ColorHug.h"
 
-uint8_t		 CHugFlashErase		(uint32_t	 addr,
+uint8_t		 CHugFlashErase		(uint16_t	 addr,
 					 uint16_t	 len);
-uint8_t		 CHugFlashWrite		(uint32_t	 addr,
+uint8_t		 CHugFlashWrite		(uint16_t	 addr,
 					 uint16_t	 len,
 					 const uint8_t	*data);
-void		 CHugFlashRead		(uint32_t	 addr,
+uint8_t		 CHugFlashRead		(uint16_t	 addr,
 					 uint16_t	 len,
 					 uint8_t	*data);
 
