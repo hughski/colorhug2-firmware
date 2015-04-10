@@ -51,7 +51,6 @@ CHugFatalError (ChError error)
 	}
 }
 
-#if defined(__HAVE_SRAM)
 /**
  * CHugSelfTestSram:
  **/
@@ -96,7 +95,6 @@ CHugSelfTestSram(void)
 	/* success */
 	return CH_ERROR_NONE;
 }
-#endif
 
 /**
  * CHugSelfTestSensor:
@@ -185,14 +183,6 @@ CHugSelfTestFlash(void)
 
 /**
  * CHugSelfTest:
- *
- * Tests the device in the following ways:
- *  - Tests the RED sensor
- *  - Tests the GREEN sensor
- *  - Tests the BLUE sensor
- *  - Tests the SRAM functionality
- *  - Checks the I2C bus
- *  - Tests the ambient sensor
  **/
 uint8_t
 CHugSelfTest(void)
@@ -201,19 +191,16 @@ CHugSelfTest(void)
 	CHugPackedFloat tmp;
 	uint8_t rc;
 
-#if defined(__HAVE_SRAM)
 	/* check SRAM */
 	rc = CHugSelfTestSram();
 	if (rc != CH_ERROR_NONE)
 		goto out;
-#endif
 
 	/* check I2C */
 	rc = CHugSelfTestI2C();
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
-#if defined(__HAVE_TEMP_SENSOR)
 	/* get the sensor temperature */
 	rc = CHugTempGetAmbient(&tmp);
 	if (rc != CH_ERROR_NONE)
@@ -222,10 +209,14 @@ CHugSelfTest(void)
 		rc = CH_ERROR_SELF_TEST_TEMPERATURE;
 		goto out;
 	}
-#endif
 
 	/* test the flash reading and writing */
 	rc = CHugSelfTestFlash();
+	if (rc != CH_ERROR_NONE)
+		goto out;
+
+	/* test the sensor */
+	rc = CHugSelfTestSensor();
 	if (rc != CH_ERROR_NONE)
 		goto out;
 
