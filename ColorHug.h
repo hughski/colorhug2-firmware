@@ -518,6 +518,7 @@
 
 /* where the custom firmware is stored */
 #define CH_EEPROM_ADDR_RUNCODE			0x4000
+#define CH_EEPROM_ADDR_MAX			0x8000
 #define CH_EEPROM_ADDR_HIGH_INTERRUPT		0x4008
 #define CH_EEPROM_ADDR_LOW_INTERRUPT		0x4018
 
