@@ -29,6 +29,11 @@
 #include "usb_config.h"
 #include "ch-common.h"
 #include "ch-flash.h"
+#include "ch-sram.h"
+#include "ch-temp.h"
+#include "ch-mcdc04.h"
+
+#include <i2c.h>
 
 #include <USB/usb.h>
 #include <USB/usb_common.h>
@@ -100,6 +105,9 @@ static uint16_t led_counter = 0x0;
 /* protect against having a bad flash */
 static uint8_t flash_success = 0xff;
 
+/* sensor context */
+CHugMcdc04Context ctx;
+
 #pragma code
 
 #define CHugBootFlash()		(((int(*)(void))(CH_EEPROM_ADDR_RUNCODE))())
@@ -161,7 +169,7 @@ ProcessIO(void)
 		return;
 
 	/* no data was received */
-	if(HIDRxHandleBusy(USBOutHandle)) {
+	if (HIDRxHandleBusy(USBOutHandle)) {
 		if (idle_counter++ == 0xff &&
 		    idle_command != 0x00)
 			CHugDeviceIdle();
@@ -325,39 +333,91 @@ ProcessIO(void)
 static void
 InitializeSystem(void)
 {
-#if defined(__18F46J50)
-	/* Enable the PLL and wait 2+ms until the PLL locks
+	/* enable the PLL and wait 2+ms until the PLL locks
 	 * before enabling USB module */
-	unsigned int pll_startup_counter = 600;
+	uint16_t pll_startup_counter = 1200;
 	OSCTUNEbits.PLLEN = 1;
 	while (pll_startup_counter--);
 
 	/* default all pins to digital */
 	ANCON0 = 0xFF;
 	ANCON1 = 0xFF;
-#elif defined(__18F4550)
-	/* default all pins to digital */
-	ADCON1 = 0x0F;
-#endif
 
-	/* set RA0, RA1 to output (freq scaling),
-	 * set RA2, RA3 to output (color select),
+	/* set RA0 to input (READY)
+	 * set RA1 to input (unused)
+	 * set RA2 to input (unused)
+	 * set RA3 to input (unused)
+	 * set RA4 to input (missing)
 	 * set RA5 to input (frequency counter),
 	 * (RA6 is "don't care" in OSC2 mode)
 	 * set RA7 to input (OSC1, HSPLL in) */
-	TRISA = 0xf0;
+	TRISA = 0b11111111;
 
-	/* set RB0 to RB3 to input (h/w revision) others input (unused) */
-	TRISB = 0xff;
+	/* set RB0 to input (h/w revision),
+	 * set RB1 to input (h/w revision),
+	 * set RB2 to input (h/w revision),
+	 * set RB3 to input (h/w revision),
+	 * set RB4 to input (SCL),
+	 * set RB5 to input (SDA),
+	 * set RB6 to input (PGC),
+	 * set RB7 to input (PGD) */
+	TRISB = 0b11111111;
 
-	/* set RC0 to RC2 to input (unused) */
-	TRISC = 0xff;
+	/* set RC0 to input (unused),
+	 * set RC1 to output (SCK2),
+	 * set RC2 to output (SDO2)
+	 * set RC3 to input (unused)
+	 * set RC4 to input (unused)
+	 * set RC5 to input (unused)
+	 * set RC6 to input (unused
+	 * set RC7 to input (unused) */
+	TRISC = 0b11111001;
 
-	/* set RD0 to RD7 to input (unused) */
-	TRISD = 0xff;
+	/* set RD0 to input (unused),
+	/* set RD1 to input (unused),
+	 * set RD2 to input (SDI2),
+	 * set RD3 to output (SS2) [SSDMA?],
+	 * set RD4-RD7 to input (unused) */
+	TRISD = 0b11110111;
 
 	/* set RE0, RE1 output (LEDs) others input (unused) */
 	TRISE = 0x3c;
+
+	/* assign remappable input and outputs */
+	RPINR21 = 19;			/* RP19 = SDI2 */
+	RPINR22 = 12;			/* RP12 = SCK2 (input and output) */
+	RPOR12 = 0x0a;			/* RP12 = SCK2 */
+	RPOR13 = 0x09;			/* RP13 = SDO2 */
+	RPOR20 = 0x0c;			/* RP20 = SS2 (SSDMA) */
+
+	/* turn on the SPI bus */
+	SSP2STATbits.CKE = 1;		/* enable SMBus-specific inputs */
+	SSP2STATbits.SMP = 0;		/* enable slew rate for HS mode */
+	SSP2CON1bits.SSPEN = 1;		/* enables the serial port */
+	SSP2CON1bits.SSPM = 0x0;	/* SPI master mode, clk = Fosc / 4 */
+
+	/* set up the DMA controller */
+	DMACON1bits.SSCON0 = 0;		/* SSDMA (_CS) is not DMA controlled */
+	DMACON1bits.SSCON1 = 0;
+	DMACON1bits.DLYINTEN = 0;	/* don't interrupt after each byte */
+	DMACON2bits.INTLVL = 0x0;	/* interrupt only when complete */
+	DMACON2bits.DLYCYC = 0x02;	/* minimum delay between bytes */
+
+	/* clear base SRAM memory */
+	CHugSramWipe(0x0000, 0xffff);
+
+	/* set up the I2C controller */
+	SSP1ADD = 0x3e;
+	OpenI2C1(MASTER, SLEW_ON);
+
+	/* set up TCN75A */
+	CHugTempSetResolution(CH_TEMP_RESOLUTION_1_16C);
+
+	/* set up MCDC04 */
+	CHugMcdc04Init (&ctx);
+	CHugMcdc04SetTINT(&ctx, CH_MCDC04_TINT_512);
+	CHugMcdc04SetIREF(&ctx, CH_MCDC04_IREF_20);
+	CHugMcdc04SetDIV(&ctx, CH_MCDC04_DIV_DISABLE);
 
 	/* set the LED state initially */
 	PORTE = CH_STATUS_LED_RED;
