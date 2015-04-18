@@ -74,6 +74,10 @@ void	 CHugMcdc04SetIREF		(CHugMcdc04Context	*ctx,
 void	 CHugMcdc04SetDIV		(CHugMcdc04Context	*ctx,
 					 CHugMcdc04Div		 div);
 ChError	 CHugMcdc04WriteConfig		(CHugMcdc04Context	*ctx);
+ChError	 CHugMcdc04TakeReadingsRaw	(CHugMcdc04Context	*ctx,
+					 CHugPackedFloat	*x,
+					 CHugPackedFloat	*y,
+					 CHugPackedFloat	*z);
 ChError	 CHugMcdc04TakeReadings		(CHugMcdc04Context	*ctx,
 					 CHugPackedFloat	*x,
 					 CHugPackedFloat	*y,

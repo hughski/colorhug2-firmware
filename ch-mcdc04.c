@@ -169,21 +169,13 @@ out:
 }
 
 /**
- * CHugMcdc04TakeReadings:
- * @ctx: A #CHugMcdc04Context that has been set up
- * @x: a #CHugPackedFloat, or %NULL
- * @y: a #CHugPackedFloat, or %NULL
- * @z: a #CHugPackedFloat, or %NULL
- *
- * Takes a reading from the ADC using a previously set up context.
- *
- * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
+ * CHugMcdc04TakeReadingsRaw:
  **/
 ChError
-CHugMcdc04TakeReadings (CHugMcdc04Context *ctx,
-			CHugPackedFloat *x,
-			CHugPackedFloat *y,
-			CHugPackedFloat *z)
+CHugMcdc04TakeReadingsRaw(CHugMcdc04Context *ctx,
+			  CHugPackedFloat *x,
+			  CHugPackedFloat *y,
+			  CHugPackedFloat *z)
 {
 	uint16_t tmp;
 	uint32_t i;
@@ -282,6 +274,61 @@ out:
 }
 
 /**
+ * CHugMcdc04Errata01:
+ *
+ * Work around a possible device errata:
+ *
+ * The typical sensor response for X (600nm), Y (550nm), Z (445nm) is provided
+ * in datasheet table 1. Normalised to Y=1.0, we have:
+ *
+ * [ 1.03 : 1.00 : 0.82 ]
+ *
+ * At matching frequencies, the CIE 2° observer normalized to Y=1.0 is:
+ *
+ * [ 1.06 : 1.00 : 1.78 ]
+ *
+ * To convert the deviceXYZ reading to a CIEXYZ value the channels have to be
+ * scaled by [ 1.03 : 1.00 : 2.16 ]
+ *
+ * We also have to scale with a large constant factor to ensure the calibration
+ * matrix does not have a huge unity component.
+ * We do this as a uint32 without floating point to prevent loss of precision.
+ * Any small fractional remander will be taken care of by the factory matrix.
+ **/
+static void
+CHugMcdc04Errata01(CHugPackedFloat *x, CHugPackedFloat *y, CHugPackedFloat *z)
+{
+	x->raw *= 33;
+	y->raw *= 32;
+	z->raw *= 69;
+}
+
+/**
+ * CHugMcdc04TakeReadings:
+ * @ctx: A #CHugMcdc04Context that has been set up
+ * @x: a #CHugPackedFloat, or %NULL
+ * @y: a #CHugPackedFloat, or %NULL
+ * @z: a #CHugPackedFloat, or %NULL
+ *
+ * Takes a reading from the ADC using a previously set up context.
+ *
+ * Returns: a #ChError, e.g. #CH_ERROR_OVERFLOW_SENSOR
+ **/
+ChError
+CHugMcdc04TakeReadings(CHugMcdc04Context *ctx,
+		       CHugPackedFloat *x,
+		       CHugPackedFloat *y,
+		       CHugPackedFloat *z)
+{
+	ChError rc;
+	rc = CHugMcdc04TakeReadingsRaw(ctx, x, y, z);
+	if (rc != CH_ERROR_NONE)
+		return rc;
+	CHugMcdc04Errata01(x, y, z);
+	return CH_ERROR_NONE;
+}
+
+/**
  * CHugMcdc04TakeReadingsAuto:
  * @ctx: A #CHugMcdc04Context
  * @x: a #CHugPackedFloat
@@ -324,7 +371,7 @@ CHugMcdc04TakeReadingsAuto(CHugMcdc04Context *ctx,
 		rc = CHugMcdc04WriteConfig(ctx);
 		if (rc != CH_ERROR_NONE)
 			return rc;
-		rc = CHugMcdc04TakeReadings(ctx, x, y, z);
+		rc = CHugMcdc04TakeReadingsRaw(ctx, x, y, z);
 		if (rc != CH_ERROR_NONE)
 			return rc;
 
@@ -365,30 +412,8 @@ CHugMcdc04TakeReadingsAuto(CHugMcdc04Context *ctx,
 	y->raw *= scale;
 	z->raw *= scale;
 
-	/*
-	 * Work around a possible device errata:
-	 *
-	 * The typical sensor response for X (600nm), Y (550nm), Z (445nm) is
-	 * provided in datasheet table 1. Normalised to Y=1.0, we have:
-	 *
-	 * [ 1.03 : 1.00 : 0.82 ]
-	 *
-	 * At matching frequencies, the CIE 2° observer normalized to Y=1.0 is:
-	 *
-	 * [ 1.06 : 1.00 : 1.78 ]
-	 *
-	 * To convert the deviceXYZ reading to a CIEXYZ value the channels have
-	 * to be scaled by [ 1.03 : 1.00 : 2.16 ]
-	 *
-	 * We also have to scale with a large constant factor to ensure the
-	 * calibration matrix does not have a huge unity component.
-	 * We do this as a uint32 without floating point to prevent loss of
-	 * precision. Any small fractional remander will be taken care of by
-	 * the factory matrix.
-	 */
-	x->raw *= 33;
-	y->raw *= 32;
-	z->raw *= 69;
+	/* work around a possible device errata */
+	CHugMcdc04Errata01(x, y, z);
 
 	return rc;
 }

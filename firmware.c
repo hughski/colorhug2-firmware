@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2011-2014 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2011-2015 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -657,7 +657,7 @@ CHugTakeReadingArray(uint8_t *data)
 	/* fully populating the SRAM, 2 bytes per reading x 3 channels is:
 	 * 8192 / (2 * 3) = 1365 measurements */
 	for (i = 0; i < 1365; i++) {
-		rc = CHugMcdc04TakeReadings(&ctx, &xyz[0], &xyz[1], &xyz[2]);
+		rc = CHugMcdc04TakeReadingsRaw(&ctx, &xyz[0], &xyz[1], &xyz[2]);
 		if (rc != CH_ERROR_NONE)
 			goto out;
 
@@ -849,9 +849,9 @@ ProcessIO(void)
 					    &readings[CH_COLOR_OFFSET_BLUE]);
 		if (rc != CH_ERROR_NONE)
 			break;
-		readings[CH_COLOR_OFFSET_RED].raw *= 2048;
-		readings[CH_COLOR_OFFSET_GREEN].raw *= 2048;
-		readings[CH_COLOR_OFFSET_BLUE].raw *= 2048;
+		readings[CH_COLOR_OFFSET_RED].raw *= 64;
+		readings[CH_COLOR_OFFSET_GREEN].raw *= 64;
+		readings[CH_COLOR_OFFSET_BLUE].raw *= 64;
 		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
 			(const void *) readings,
 			3 * sizeof(CHugPackedFloat));
