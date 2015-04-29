@@ -79,9 +79,6 @@ CHugLowPriorityISRCode (void)
 	_asm goto CH_EEPROM_ADDR_LOW_INTERRUPT _endasm
 }
 
-/* ensure this is incremented on each released build */
-static uint16_t	FirmwareVersion[3] = { 2, 0, 0 };
-
 #pragma rom
 
 #pragma udata
@@ -192,9 +189,9 @@ ProcessIO(void)
 		idle_command = CH_CMD_RESET;
 		break;
 	case CH_CMD_GET_FIRMWARE_VERSION:
-		memcpy (&TxBuffer[CH_BUFFER_OUTPUT_DATA],
-			&FirmwareVersion,
-			2 * 3);
+		*((uint16_t *) &TxBuffer[CH_BUFFER_OUTPUT_DATA + 0]) = CH_VERSION_MAJOR;
+		*((uint16_t *) &TxBuffer[CH_BUFFER_OUTPUT_DATA + 2]) = CH_VERSION_MINOR;
+		*((uint16_t *) &TxBuffer[CH_BUFFER_OUTPUT_DATA + 4]) = CH_VERSION_MICRO;
 		break;
 	case CH_CMD_ERASE_FLASH:
 		/* are we lost or stolen */

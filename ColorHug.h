@@ -43,6 +43,11 @@
 #define	CH_USB_HID_EP_OUT			(CH_USB_HID_EP | 0x00)
 #define	CH_USB_HID_EP_SIZE			64
 
+/* ensure this is incremented on each released build */
+#define CH_VERSION_MAJOR			2
+#define CH_VERSION_MINOR			0
+#define CH_VERSION_MICRO			3
+
 /**
  * CH_CMD_GET_FIRMWARE_VERSION:
  *
