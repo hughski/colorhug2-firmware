@@ -61,12 +61,23 @@ ROM BYTE configDescriptor1[]={
 	/* Configuration Descriptor */
 	0x09,// sizeof(USB_CFG_DSC),	/* Size of this descriptor in bytes */
 	USB_DESCRIPTOR_CONFIGURATION,	/* CONFIGURATION descriptor type */
-	0x29,0x00,			/* Total length of data */
-	1,				/* Number of interfaces */
+	0x32,0x00,			/* Total length of data */
+	2,				/* Number of interfaces */
 	1,				/* Index value of this configuration */
 	0,				/* Configuration string index */
 	_DEFAULT | _SELF,		/* Attributes (this device is self-powered, but has no remote wakeup), see usb_device.h */
 	150,				/* Max power consumption (2X mA)
+
+	/* Interface Descriptor */
+	0x09,				/* Size of this descriptor in bytes */
+	USB_DESCRIPTOR_INTERFACE,	/* INTERFACE descriptor type */
+	1,				/* Interface Number */
+	0,				/* Alternate Setting Number */
+	0,				/* Number of endpoints in this intf */
+	0xff,				/* Class code */
+	'F',				/* Subclass code */
+	'W',				/* Protocol code */
+	0x03,				/* Interface string index */
 
 	/* Interface Descriptor */
 	0x09,// sizeof(USB_INTF_DSC),	/* Size of this descriptor in bytes */
@@ -134,6 +145,15 @@ sizeof(sd002),USB_DESCRIPTOR_STRING,
 
 #endif
 
+/* Firmware version string descriptor (unicode) */
+ROM struct{BYTE bLength;BYTE bDscType;WORD string[5];}sd003={
+sizeof(sd003),USB_DESCRIPTOR_STRING,
+{
+	0x30 + CH_VERSION_MAJOR,'.',
+	0x30 + CH_VERSION_MINOR,'.',
+	0x30 + CH_VERSION_MICRO
+}};
+
 /* HID descriptor -- see http://www.usb.org/developers/hidpage#HID%20Descriptor%20Tool */
 ROM struct{BYTE report[HID_RPT01_SIZE];}hid_rpt01={
 {
@@ -164,5 +184,6 @@ ROM BYTE *ROM USB_SD_Ptr[]=
 {
 	(ROM BYTE *ROM)&sd000,
 	(ROM BYTE *ROM)&sd001,
-	(ROM BYTE *ROM)&sd002
+	(ROM BYTE *ROM)&sd002,
+	(ROM BYTE *ROM)&sd003
 };
