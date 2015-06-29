@@ -52,6 +52,19 @@ CHugFatalError (ChError error)
 }
 
 /**
+ * CHugCalculateChecksum:
+ **/
+uint8_t
+CHugCalculateChecksum(uint8_t *data, uint8_t length)
+{
+	int i;
+	uint8_t checksum = 0xff;
+	for (i = 0; i < length; i++)
+		checksum ^= data[i];
+	return checksum;
+}
+
+/**
  * CHugSelfTestSram:
  **/
 static uint8_t

@@ -773,6 +773,32 @@ ProcessIO(void)
 		*((uint16_t *) &TxBuffer[CH_BUFFER_OUTPUT_DATA + 2]) = CH_VERSION_MINOR;
 		*((uint16_t *) &TxBuffer[CH_BUFFER_OUTPUT_DATA + 4]) = CH_VERSION_MICRO;
 		break;
+	case CH_CMD_READ_FLASH:
+		/* are we lost or stolen */
+		if (flash_success == 0xff) {
+			rc = CH_ERROR_DEVICE_DEACTIVATED;
+			break;
+		}
+		/* allow to read any firmware address */
+		memcpy (&address,
+			(const void *) &RxBuffer[CH_BUFFER_INPUT_DATA+0],
+			2);
+		length = RxBuffer[CH_BUFFER_INPUT_DATA+2];
+		if (length > 60) {
+			rc = CH_ERROR_INVALID_LENGTH;
+			break;
+		}
+		if (address < CH_EEPROM_ADDR_RUNCODE ||
+		    address > CH_EEPROM_ADDR_MAX) {
+			rc = CH_ERROR_INVALID_ADDRESS;
+			break;
+		}
+		CHugFlashRead(address, length,
+			      &TxBuffer[CH_BUFFER_OUTPUT_DATA+1]);
+		checksum = CHugCalculateChecksum (&TxBuffer[CH_BUFFER_OUTPUT_DATA+1],
+						  length);
+		TxBuffer[CH_BUFFER_OUTPUT_DATA+0] = checksum;
+		break;
 	case CH_CMD_GET_CALIBRATION:
 		/* get the chosen calibration matrix */
 		memcpy (&calibration_index,

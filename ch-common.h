@@ -25,6 +25,8 @@
 #include "ColorHug.h"
 
 void		 CHugFatalError		(ChError	 error);
+uint8_t		 CHugCalculateChecksum	(uint8_t	*data,
+					 uint8_t	 length);
 uint8_t		 CHugSelfTest		(void);
 
 #endif /* __CH_COMMON_H */
