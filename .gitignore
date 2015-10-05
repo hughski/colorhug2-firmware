@@ -1,4 +1,5 @@
 *.asm
+*.cab
 *.cod
 *.cof
 *.hex
