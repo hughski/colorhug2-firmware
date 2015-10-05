@@ -165,11 +165,11 @@ CHugSetLEDsInternal(uint8_t leds)
 	/* the first few boards on the P&P machines had the
 	 * LEDs soldered the wrong way around */
 	if ((PcbErrata & CH_PCB_ERRATA_SWAPPED_LEDS) > 0) {
-		PORTEbits.RE0 = (leds & CH_STATUS_LED_RED) >> 1;
-		PORTEbits.RE1 = (leds & CH_STATUS_LED_GREEN);
-	} else {
 		PORTEbits.RE0 = (leds & CH_STATUS_LED_GREEN);
 		PORTEbits.RE1 = (leds & CH_STATUS_LED_RED) >> 1;
+	} else {
+		PORTEbits.RE0 = (leds & CH_STATUS_LED_RED) >> 1;
+		PORTEbits.RE1 = (leds & CH_STATUS_LED_GREEN);
 	}
 }
 
@@ -274,6 +274,10 @@ CHugReadEEprom(void)
 		OwnerEmail[0] = '\0';
 	if (PcbErrata == 0xffff)
 		PcbErrata = CH_PCB_ERRATA_NONE;
+
+	/* fix up some PCBs we know about */
+	if (SensorSerial >= 2732 && SensorSerial <= 2732)
+		PcbErrata ^= CH_PCB_ERRATA_SWAPPED_LEDS;
 }
 
 /**
