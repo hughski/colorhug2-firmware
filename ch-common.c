@@ -137,12 +137,27 @@ CHugSelfTestSensor(void)
 		return rc;
 
 	/* are all the results invalid? */
-	if (xyz[CH_COLOR_OFFSET_RED].fraction < 0x20)
+	if (xyz[CH_COLOR_OFFSET_RED].raw < 0x20)
 		return CH_ERROR_SELF_TEST_RED;
-	if (xyz[CH_COLOR_OFFSET_GREEN].fraction < 0x20)
+	if (xyz[CH_COLOR_OFFSET_GREEN].raw < 0x20)
 		return CH_ERROR_SELF_TEST_GREEN;
-	if (xyz[CH_COLOR_OFFSET_BLUE].fraction < 0x20)
+	if (xyz[CH_COLOR_OFFSET_BLUE].raw < 0x20)
 		return CH_ERROR_SELF_TEST_BLUE;
+
+	/* are any results skewed */
+	rc = CHugMcdc04TakeReadingsAuto(&ctx,
+					&xyz[CH_COLOR_OFFSET_RED],
+					&xyz[CH_COLOR_OFFSET_GREEN],
+					&xyz[CH_COLOR_OFFSET_BLUE]);
+	if (rc != CH_ERROR_NONE)
+		return rc;
+	if (4 * xyz[CH_COLOR_OFFSET_RED].raw < xyz[CH_COLOR_OFFSET_GREEN].raw)
+		return CH_ERROR_SELF_TEST_RED;
+	if (4 * xyz[CH_COLOR_OFFSET_GREEN].raw < xyz[CH_COLOR_OFFSET_GREEN].raw)
+		return CH_ERROR_SELF_TEST_GREEN;
+	if (4 * xyz[CH_COLOR_OFFSET_BLUE].raw < xyz[CH_COLOR_OFFSET_GREEN].raw)
+		return CH_ERROR_SELF_TEST_BLUE;
+
 	return CH_ERROR_NONE;
 }
 
