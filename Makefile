@@ -257,7 +257,6 @@ clean: clean-toolchain clean-app-lib
 
 CAB_FILES=							\
 	firmware.bin						\
-	firmware.inf						\
 	firmware.metainfo.xml
 
 check: firmware.metainfo.xml

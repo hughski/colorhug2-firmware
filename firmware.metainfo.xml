@@ -20,6 +20,7 @@
   <developer_name>Hughski Limited</developer_name>
   <releases>
     <release urgency="medium" version="2.0.5" timestamp="1444059405">
+      <checksum target="content" filename="firmware.bin"/>
       <description>
         <p>This stable release fixes the following problems:</p>
         <ul>
@@ -29,6 +30,7 @@
       </description>
     </release>
     <release urgency="medium" version="2.0.3" timestamp="1429362707">
+      <checksum target="content" filename="firmware.bin"/>
       <description>
         <p>This stable release fixes the following problems:</p>
         <ul>
@@ -38,6 +40,7 @@
       </description>
     </release>
     <release urgency="high" version="2.0.2" timestamp="1415391679">
+      <checksum target="content" filename="firmware.bin"/>
       <description>
         <p>This unstable release adds the following features:</p>
         <ul>
@@ -47,6 +50,7 @@
       </description>
     </release>
     <release urgency="medium" version="2.0.1" timestamp="1410515610">
+      <checksum target="content" filename="firmware.bin"/>
       <description>
         <p>Initial firmware release.</p>
       </description>
