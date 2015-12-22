@@ -276,7 +276,7 @@ CHugReadEEprom(void)
 		PcbErrata = CH_PCB_ERRATA_NONE;
 
 	/* fix up some PCBs we know about */
-	if (SensorSerial >= 2732 && SensorSerial <= 2732)
+	if (SensorSerial >= 2732 && SensorSerial <= 3088)
 		PcbErrata ^= CH_PCB_ERRATA_SWAPPED_LEDS;
 }
 

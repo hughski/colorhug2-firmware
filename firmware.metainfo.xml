@@ -2,7 +2,7 @@
 <!-- Copyright 2015 Richard Hughes <richard@hughsie.com> -->
 <component type="firmware">
   <id>com.hughski.ColorHug2.firmware</id>
-  <name>ColorHug2 Device Update</name>
+  <name>ColorHug2</name>
   <summary>Firmware for the Hughski ColorHug2 Colorimeter</summary>
   <description>
     <p>
@@ -19,6 +19,16 @@
   <updatecontact>richard_at_hughsie.com</updatecontact>
   <developer_name>Hughski Limited</developer_name>
   <releases>
+    <release urgency="medium" version="2.0.6" timestamp="1450792062">
+      <checksum target="content" filename="firmware.bin"/>
+      <description>
+        <p>This stable release fixes the following problems:</p>
+        <ul>
+          <li>Fix the swapped LEDs on the second half of batch 16</li>
+          <li>Fix the firmware upgrade process using new versions of fwupd</li>
+        </ul>
+      </description>
+    </release>
     <release urgency="medium" version="2.0.5" timestamp="1444059405">
       <checksum target="content" filename="firmware.bin"/>
       <description>
