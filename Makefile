@@ -166,7 +166,7 @@ install: sanity firmware.bin
 	${COLORHUG_CMD} flash-firmware-force firmware.bin
 
 install-bootloader: bootloader.hex
-	${PK2CMD_DIR}/pk2cmd -pPIC18F46J50 -f $< -b ${PK2CMD_DIR}/ -m -r
+	sudo ${PK2CMD_DIR}/pk2cmd -pPIC18F46J50 -f $< -b ${PK2CMD_DIR}/ -m -r && beep
 
 test: sanity firmware.bin
 	${COLORHUG_CMD} set-integral-time 15 && \

@@ -1,7 +1,7 @@
-		ColorHug Firmware README
+		ColorHug2 Firmware README
 
 Right, you're probably reading this file as you want to make a driver
-for the ColorHug hardware.
+for the ColorHug2 hardware.
 
 If you came here for modifying, building and flashing the firmware
 please have a look at the Makefiles.
@@ -23,13 +23,13 @@ reserved types.
 
 == Communication Protocol ==
 
-The only way to contact the ColorHug is a HID 64 byte response-reply
+The only way to contact the ColorHug2 is a HID 64 byte response-reply
 format. The ColorHug never initiates any kind of data exchange and so
 only needs one non-default endpoint.
 
 To connect to the ColorHug, do the following:
 
- * Open USB device VID=0x273f, PID=0x1001                            [1]
+ * Open USB device VID=0x273f, PID=0x1005
  * Set configuration #1
  * Claim interface #0 (unregister any kernel driver if present)
 
@@ -66,27 +66,9 @@ before the device re-enumerates on the USB bus.
 
 == Getting XYZ readings from the device ==
 
- * Set the multiplier to 100%
- * Set the integral time to 0xffff
  * Take reading #1 with matrix m
  * Take reading #2 with matrix m
  * Take reading #n with matrix m
- * Set the multiplier to 0%
-
-The multiplier enables the color sensor in the device and by setting it
-to 100% enables all the inputs in the device. This uses power, and so
-the multiplier is set back to 0% (sensor off) after all the samples have
-been taken.
-
-The integral time has been set to 0xffff here, which is the maximum
-precision available (up to 98302 pulses counted per sample). A maximum
-precision reading takes about 500ms, although accurate readings can be
-still obtained using an integral time of 1/4 of this value.
-
-The integral time and the time to take a reading is approximately linear,
-although care should be taken when using the smaller integral times that
-the display refresh has happened and that the new color is actually
-showing on the monitor.
 
 The matrix 'm' is specified at sample time. Different values of 'm'
 specify different calibration matrices in the device, of which there are
@@ -134,25 +116,3 @@ different values in bootloader and firmware modes.
 
 In normal operation the device will not need to access the bootloader
 mode and no other commands are required to get an XYZ reading.
-
----
-
-[1] Before 18th May 2012, the ColorHug used VID:0x04d8, PID:0xf8da
-    for both firmware and bootloader modes. This is was an allocated
-    number from Microchip Inc which was valid for 5000 devices.
-    Devices with firmware newer than 1.1.xx use the new VID and PID
-    allocated to Hughski Limited, which is VID:0x273f and PID:0x1000 for
-    bootloader mode, and VID:0x273f and PID:0x1001 for firmware mode.
-    The bootloader code is never updated which means there are ~450
-    devices in the wild that have a bootloader with the old VID and PID.
-    This means, if you write a program to flash devices, please also
-    accept the old VID/PID numbers too.
-
-[2] Before 16th August 2012, the ColorHug firmware would send the exact
-    number of bytes when processing a command. Since then the firmware
-    has been changed to always send the full 64 bytes for each command.
-    This allows the device to work in OS X and Microsoft Windows where
-    the number of returned bytes has to match what is reported in the
-    HID descriptor. The bootloader cannot be changed on devices in the
-    wild, and this means that the firmware can only be upgraded on a
-    computer with Linux installed.
