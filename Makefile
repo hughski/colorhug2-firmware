@@ -30,7 +30,7 @@
 
 VENDOR		= hughski
 PROJECT_NAME	= colorhug2
-VERSION		= 2.0.6
+VERSION		= 2.0.7
 
 MICROCHIP_ROOT	= /opt/microchip
 DOWNLOAD_DIR 	= $(shell pwd)/microchip-toolchain-downloads

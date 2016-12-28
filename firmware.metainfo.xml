@@ -19,6 +19,15 @@
   <updatecontact>richard_at_hughsie.com</updatecontact>
   <developer_name>Hughski Limited</developer_name>
   <releases>
+    <release date="2016-12-28"  urgency="medium" version="2.0.7">
+      <checksum target="content" filename="firmware.bin"/>
+      <description>
+        <p>
+          This release fixes prevents the firmware returning an error when
+          the remote SHA1 hash was never sent.
+        </p>
+      </description>
+    </release>
     <release urgency="medium" version="2.0.6" timestamp="1450792062">
       <checksum target="content" filename="firmware.bin"/>
       <description>
